@@ -1,0 +1,11 @@
+{
+  "databases": [
+    {
+      "id": "sample",
+      "name": "Sample",
+      "description": "Tiny test database used while building the app. Not real study material.",
+      "color": "#7d858f",
+      "activeByDefault": true
+    }
+  ]
+}
