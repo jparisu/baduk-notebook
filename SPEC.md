@@ -1,0 +1,644 @@
+# Go Joseki Notebook — Specification
+
+Status: draft v1 · Date: 2026-11-16
+Layout reference: mock-up at https://claude.ai/artifact/C4kQP4gyG9hUvhKoZuxEWa (private)
+
+---
+
+## 1. Purpose and scope
+
+A personal web app, hosted on GitHub Pages, to study, store and annotate:
+
+- **Joseki**: corner sequences, including mistakes, overplays, trick plays, how to punish them, and how each line continues to its result.
+- **Shapes**: eye shapes and life-and-death patterns in the corner, on the side and in the center (straight three, bent four, L-group, bulky five…), in every surrounding situation, with the result for each player playing first.
+
+The app is built for one main user (a 7k player) but its databases are public in the repository.
+
+### 1.1 Requirements traceability
+
+| ID | Requirement | Covered in |
+|---|---|---|
+| R1 | Board and sequence visualization with a tree history | §8.3, §8.6 |
+| R2 | Propose the next correct moves, including tenuki | §8.3, §9 |
+| R3 | Named entries with parameters (difficulty, balance, style, notes…) | §4 |
+| R4 | Add notes to existing entries and create new ones | §8.7, §10 |
+| R5 | Mistakes and overplays in the tree, how to punish, how it continues | §4.3, §5 |
+| R6 | Move back/forward, play legal moves, store new branches, join existing positions | §6, §8.3, §8.7 |
+| A | "Why", characteristics and personal notes, separate for moves and positions | §4 |
+| B | Continue wrong branches to their result; entries that start from set-up positions | §4.2, §4.3 |
+| C | Find the database entry for a given position (within a margin) | §7 |
+| S1 | Change symmetry at any point (colors, corner, diagonal mirror) | §8.4 |
+| S2 | Configurable display of earlier moves' and positions' messages | §8.5 |
+| S3 | Option to always show visual aids, each in its own color | §8.5, §11.2 |
+| S4 | Icons and colors for fields (style, status, evaluation…) | §11.3 |
+| S5 | Board overlays: walls/barriers, influence, areas, etc. | §5.2, §11.4 |
+| Q | Quiz mode with spaced repetition | §9 |
+| E | Easy manual creation of entries and databases, submitted as pull requests | §10.1 |
+| M-UI | Messages shown as high-contrast blocks, told apart by shape, not color | §8.5 |
+
+---
+
+## 2. Decisions
+
+| # | Decision |
+|---|---|
+| D1 | All databases are stored as **SGF (FF[4], CA[UTF-8])** files in the repository. |
+| D2 | **Tenuki is a pass** (`B[]` / `W[]`). |
+| D3 | Custom SGF properties all start with **`X`** (no clashes with standard properties). |
+| D4 | **Point balance**: a number from **Black's point of view**, **local to the corner** (no komi). Positive means Black is better. |
+| D5 | **Difficulty** is a kyu/dan rank: `30k`…`1k`, `1d`…`9d` ("needed by about this level"). |
+| D6 | UI and content in **English**. All UI strings go through a translation catalog, and content fields reserve a language suffix (§4.6) for **Spanish** later. |
+| D7 | Joseki are matched on a **10×10 corner window**. |
+| D8 | Positions are identified by a **canonical hash** over the 8 board symmetries plus color swap, and including the player to move (§6). |
+| D9 | Content lives in **databases** (folders) that the user can switch on and off. Only active databases are shown. There is no separate "personal note" mechanism beyond databases and the note fields (§3). |
+| D10 | Changes are saved locally (IndexedDB) and exported as a **`.patch` file** or a set of changed SGF files, to be submitted as a pull request. There is no in-app write access to GitHub in v1. |
+| D11 | Tech stack: **TypeScript + Vite + Preact**, using `@sabaki/sgf`, `@sabaki/go-board`, `@sabaki/shudan` (§12). |
+| D12 | Every new display option has a **default equal to the current mock-up behavior**. |
+
+---
+
+## 3. Databases
+
+### 3.1 Repository layout
+
+```
+/db/
+  index.json                 # list of databases (manifest)
+  general/
+    joseki/*.sgf
+    shapes/*.sgf
+  jparisu/
+    joseki/*.sgf
+    shapes/*.sgf
+```
+
+`db/index.json`:
+
+```json
+{
+  "databases": [
+    { "id": "general", "name": "General", "description": "Main collection",
+      "color": "#3c7fbb", "activeByDefault": true },
+    { "id": "jparisu", "name": "jparisu", "description": "Personal notes, extra lines, mistakes seen in my games",
+      "color": "#9d4fc7", "activeByDefault": true }
+  ]
+}
+```
+
+- **Order matters**: databases listed later override earlier ones for single-value fields (§3.3).
+- The user can **switch each database on or off** at any time (top bar). The choice is remembered per browser.
+- "+ Load…" loads a database from a local folder or zip of SGF files for the current session, which is useful to try another collection.
+
+### 3.2 Merging
+
+On load, every SGF tree from every active database is put into **one position graph**:
+
+1. Each node's position is computed and given a canonical hash (§6).
+2. Nodes with the same hash become **one position**, even when reached through different move orders (transpositions) or in different orientations.
+3. A move is an edge between two positions. The same move added by two databases is one edge with two sources.
+4. Each position, edge and text field remembers **which database(s)** it came from, and shows a database badge.
+
+When a database is switched off, all positions, moves and fields that come **only** from that database are hidden. A position kept alive by another active database stays visible.
+
+### 3.3 Conflicts
+
+| Field type | Rule |
+|---|---|
+| Text (why, notes, summary, result…) | All values are shown, one block per database, each with its badge. |
+| Single value (category, evaluation, balance, difficulty…) | The value from the database **listed last** wins. The panel shows an "overridden" marker; hovering it shows the other values. |
+| Lists (tags, purposes, aliases) | Union of all values. |
+
+### 3.4 Adding content to another database's entry
+
+A database can add notes or variations to an entry it did not create. Its SGF file **repeats the move sequence** from the root to the node it annotates, carries only the new fields on those nodes, and adds new branches. Merging by hash (§3.2) attaches the content to the right position. The editor writes these files automatically (§10).
+
+---
+
+## 4. Data model (SGF properties)
+
+Values are SGF text unless stated otherwise. "List" means several values: `XTAG[a][b]`.
+
+### 4.1 Standard SGF properties used
+
+| Property | Use |
+|---|---|
+| `FF[4]`, `CA[UTF-8]`, `GM[1]`, `SZ[19]` | File header |
+| `AB`, `AW`, `AE` | Set-up stones (pre-placed positions, shapes) |
+| `PL` | Player to move at the root |
+| `B`, `W` | Moves. An empty value is a pass, which means tenuki. |
+| `TE`, `BM`, `DO`, `IT` | Written from the move category (§4.3) so other SGF programs understand it |
+| `TR`, `SQ`, `CR`, `MA`, `LB`, `AR`, `LN` | Visual aids that are always visible on that node |
+| `C` | Kept and shown as a plain "Comment". The app does not generate it. |
+
+### 4.2 Entry (root node)
+
+**Common to joseki and shapes**
+
+| Property | Meaning | Values |
+|---|---|---|
+| `XID` | Stable entry id | slug, e.g. `44-33-invasion` |
+| `XTYPE` | Entry type | `joseki` \| `shape` |
+| `XNAME` | Name | text |
+| `XALIAS` | Other names (Japanese, Korean, Chinese…) | list |
+| `XDIFF` | Difficulty | `30k`…`1k`, `1d`…`9d` |
+| `XTAG` | Tags | list |
+| `XSUM` | Summary | text with visual references (§5) |
+| `XSRC` | Sources | list |
+
+**Joseki only**
+
+| Property | Meaning | Values |
+|---|---|---|
+| `XFAM` | Family path | e.g. `4-4 point/3-3 invasion` |
+| `XERA` | Era | `classic` \| `modern` \| `ai` (list allowed) |
+| `XSTART` | How the entry starts | `empty` \| `setup`. With `setup`, the root has `AB`/`AW`, for example an approach with 2 stones already in the corner. |
+
+**Shapes only**
+
+| Property | Meaning | Values |
+|---|---|---|
+| `XSIZE` | Size of the eye space | integer |
+| `XLOC` | Location | `corner` \| `side` \| `center` |
+| `XSURR` | How enclosed it is | `full` \| `partial` \| `open` |
+| `XOLIB` | Outside liberties | integer |
+| `XINSIDE` | Attacker stones already inside | integer |
+| `XARR` | Arrangement | `connected` \| `separated` |
+| `XRESB` | Result if Black plays first | `alive` \| `dead` \| `ko` \| `seki` |
+| `XRESW` | Result if White plays first | same values |
+| `XVITAL` | Vital point(s) | list of points |
+| `XKOT` | Ko type (when the result is ko) | `direct` \| `approach1` \| `approach2` \| `10000year` |
+| `XRULE` | Rule notes | text (e.g. bent four in the corner) |
+| `XREG` | The shape's region (used for matching) | list of points / rectangles |
+
+### 4.3 Move fields (on a node with `B`/`W`)
+
+Describe **the move itself**: why it was played and what kind of move it is.
+
+| Property | Meaning | Values |
+|---|---|---|
+| `XCAT` | Category | joseki: `main` `alt` `situational` `slack` `mistake` `overplay` `trick` `punish`; shapes: `correct` `ko` `wrong` |
+| `XSTY` | Style | `aggressive` \| `balanced` \| `solid` |
+| `XPUR` | Purpose | list of: `territory` `influence` `sente` `attack` `defend` `sabaki` `probe` `reduce` `connect` `cut` `eye` `kill` |
+| `XCOND` | Conditions | list of: `ladder` `needs-support` `bad-near-opponent` `ko-threats`, plus free text |
+| `XMW` | Why: what this move does | text with visual references |
+| `XMN` | Notes about the move | text with visual references |
+| `XLINK` | The line continues in another entry | `XID` of that entry |
+
+Mapping to standard marks on write: `main`/`alt`/`punish`/`correct` → `TE[1]`; `situational`/`trick` → `IT[]`; `slack` → `DO[]`; `mistake`/`overplay`/`wrong` → `BM[1]`; `ko` → none.
+
+### 4.4 Position fields (the state after the node)
+
+Describe **the board after the move**: who stands better and what comes next.
+
+**Joseki**
+
+| Property | Meaning | Values |
+|---|---|---|
+| `XST` | Status | `start` \| `progress` \| `end` (joseki finished) \| `end-mistake` (finished after a mistake) |
+| `XEV` | Evaluation | `B++` `B+` `=` `W+` `W++` |
+| `XPB` | Point balance | real number (D4) |
+| `XPBS` | Where the balance comes from | `katago` \| `book` \| `estimate` + optional text |
+| `XSEN` | Who has sente | `B` \| `W` \| `none` |
+| `XRES` | Result | text, e.g. "W corner; B wall facing left + sente" |
+| `XTEN` | Tenuki here | text: is it OK, and what it costs |
+| `XAJI` | Aji and follow-ups | text with visual references |
+| `XPW` | Why / explanation of the position | text with visual references |
+| `XPN` | Notes about the position | text with visual references |
+
+**Shapes**
+
+| Property | Meaning | Values |
+|---|---|---|
+| `XSB` | Status if Black plays next | `alive` \| `dead` \| `ko` \| `seki` \| `unsettled` |
+| `XSW` | Status if White plays next | same values |
+| `XEYE` | Eyes | text, e.g. "1 eye space of 3" |
+| `XLIB` | Liberty count | integer or text |
+| `XPW`, `XPN` | Why / notes | as for joseki |
+
+### 4.5 Board overlays (custom visual aids)
+
+These extend the standard markup (§4.1) and are drawn on the board.
+
+| Property | Meaning | Value format |
+|---|---|---|
+| `XWALL` | Wall / barrier: thick line along stones, showing where influence stops | `pt:pt` (composed); list |
+| `XINF` | Influence direction: wide dashed arrow | `pt:pt` |
+| `XTB` / `XTW` | Area that belongs to Black / White (shaded) | list of points or `aa:cc` rectangles |
+| `XMOYO` | Framework (moyo) outline | list of points or rectangles + owner prefix `B:`/`W:` |
+| `XCUT` | Cutting point | list of points |
+| `XWEAK` | Weak group | list of points (one stone per group) |
+| `XLAD` | Ladder path | ordered list of points |
+
+### 4.6 Language
+
+Text fields are English. To add Spanish later, a field gets a language suffix: `XMWES`, `XPWES`, `XSUMES`… The app shows the field for the selected language and falls back to English.
+
+---
+
+## 5. Visual references inside text
+
+Any text field can link words to marks on the board:
+
+```
+{{TYPE:points|label}}
+{{TYPE:points}}            ← no label: shows the point's coordinate
+```
+
+| TYPE | Draws | Points |
+|---|---|---|
+| `TR` `SQ` `CR` `MA` | triangle / square / circle / X | `Q17,Q16` |
+| `LB` | letter | `Q17=a,R15=b` |
+| `AR` | arrow | `Q16-L16` |
+| `LN` | line | `Q16-Q10` |
+| `WALL` | wall / barrier | `P18-R15` |
+| `INF` | influence arrow | `Q16-K16` |
+| `TB` / `TW` | shaded area | `R17:T19` (rectangle) or a list |
+| `CUT` | cutting point | `R18` |
+
+Rules:
+
+- Coordinates are written in human form (`Q16`) in the **stored orientation** (§6.1). The app transforms them for display (§8.4).
+- **Plain coordinates in text are not transformed.** To mention a point, write `{{CR:R18}}`: it shows "R18" in the stored orientation, and the right coordinate after a transform. The editor inserts these references by clicking on the board, so they rarely need to be typed.
+- In other SGF programs the text stays readable, with the braces visible.
+- Default display: marks appear when hovering (or tapping) the linked words, and clicking keeps them shown. See §8.5 for the "always show" option.
+
+---
+
+## 6. Position identity and symmetry
+
+### 6.1 Stored orientation
+
+- Joseki are stored in the **top-right corner**. Colors are as played.
+- Shapes are stored where they belong: corner shapes in the top-right, side shapes on the right side, center shapes near the center.
+- Moves added in another corner or orientation are **converted to the stored orientation** before saving.
+
+### 6.2 Canonical hash
+
+- **Zobrist hashing** (64-bit) over the matching region, plus the player to move. The player to move is needed because a tenuki leaves the stones unchanged but changes whose turn it is. A ko-ban point is included when there is one.
+- **Joseki region**: the 10×10 corner window.
+- **Shape region**: the entry's `XREG` (its eye space plus the surrounding wall and outside liberties).
+- **Canonical form**: compute the hash for the 8 symmetries × 2 color assignments (colors swapped together with the player to move) and keep the smallest. Keep the transform that produced it so coordinates can be converted back.
+- Positions with the same canonical hash are the same position (§3.2). This is what joins transpositions and new branches with existing ones (R6).
+
+### 6.3 Shapes: translation
+
+A shape on the side is the same shape wherever it sits along that side, and a center shape is the same anywhere in the center. Shape matching therefore also **slides** the region along the side, or across the center, while keeping its distance to the edge.
+
+**Future (out of v1):** shape classes, so that every variant with the same shape and the same result counts as one entry and unknown variants are recognized. The idea is a feature description (eye space, outside liberties, attacker stones inside, location, who plays first) instead of exact stones. Fields `XSIZE`, `XLOC`, `XSURR`, `XOLIB`, `XINSIDE` and `XARR` already hold these features.
+
+---
+
+## 7. Find position (requirement C)
+
+### 7.1 Input
+
+- Place stones on an empty board: Black, White, alternate, erase, clear.
+- Load an SGF file, or paste SGF text. The position at the last move is used, and the user can step through the game to pick another move.
+- Choose the player to move (default: from the input).
+
+### 7.2 Matching, in order
+
+1. **Exact**: hash of each 10×10 corner (joseki) or shape region equals a stored position.
+2. **Contained**: all stones of a stored position are present in the user's corner, plus extra stones. Ranked by number of shared stones, then fewest extra stones.
+3. **Near**: the stored position differs by at most **2 stones**, added or missing. The result says which stones differ.
+
+Matching runs on all four corners and on every active database. Results show:
+
+- the entry name and move number,
+- the match type (Exact / Contained / Near),
+- which corner, which transform (rotation, mirror, colors swapped) and who is to play,
+- the next moves in the database.
+
+Clicking a result opens Explore at that position, **in the user's orientation** (§8.4). A notice warns when stones outside the window are nearby, because they can change the joseki (ladders, nearby support).
+
+---
+
+## 8. User interface
+
+### 8.1 Layout
+
+As in the mock-up:
+
+```
+┌──────────────────────────── Top bar ─────────────────────────────┐
+│ Modes · Databases (on/off) · Edits go to · Edit · Patch · Settings│
+├──────────┬─────────────────────────────────────┬─────────────────┤
+│ Library  │ Status line                          │ Entry           │
+│ / tools  │ Board                                │ Last move       │
+│          │ Navigation · Tenuki · Transform      │ Position        │
+│          │ View toggles                         │ Next moves      │
+├──────────┴─────────────────────────────────────┴─────────────────┤
+│ Variation tree + legend                                           │
+└───────────────────────────────────────────────────────────────────┘
+```
+
+Responsive behavior: under 1100 px wide the info panel moves below the board; under 700 px everything is one column. Must work on a phone.
+
+### 8.2 Modes
+
+| Mode | Left pane | Center | Right pane |
+|---|---|---|---|
+| Explore | Library: Joseki / Shapes tabs, search, filters (kyu, style, result) | Board with next moves | Entry, last move, position, next moves |
+| Edit (a switch within Explore) | Same | Clicking the board adds a move | All fields become inputs |
+| Find position | Set-up tools | Board editor, with matched corners outlined | Results (§7) |
+| Quiz | Deck and statistics | Board, next moves hidden | Question and feedback |
+
+### 8.3 Board and navigation
+
+- **Corner view (10×10, default)** or full board.
+- **Next moves** are drawn as colored dots with a symbol (§11.1), with a tooltip showing the category and a short label. Clicking a dot plays that move.
+- **Tenuki button** next to the board, in the color of the tenuki move's category. It is disabled when the database has no tenuki move at that position.
+- Buttons: start, back, forward along the main line, end of the main line. Keys: ← → Home End.
+- Last move marker, and a "move numbers" switch.
+- **Playing a move that is not in the database** (in any mode except Quiz):
+  - it is checked for legality (captures, suicide, ko) with `@sabaki/go-board`;
+  - if its resulting position already exists, the app **joins** it and says so ("Joins: 3-3 invasion, move 6");
+  - otherwise it creates a new branch, marked as unsaved, in the database set by "Edits go to".
+
+### 8.4 Display transform (S1)
+
+Available at any time, in Explore, Quiz and Find position:
+
+| Control | Effect |
+|---|---|
+| **Swap colors** | Black ↔ White, including the player to move and the "Black/White" words in the panels. The point balance sign is flipped. |
+| **Corner** | Top-left / top-right / bottom-left / bottom-right. |
+| **Mirror** (diagonal mirror, "corner swap") | Reflects the corner across its diagonal, so the two sides of the corner trade places. |
+
+- The transform applies to stones, next moves, marks and overlays, text references (§5), coordinate labels, and tree tooltips.
+- **Stored data is never changed.** Edits made while transformed are converted back to the stored orientation (§6.1).
+- Default: as stored (top-right, no swap, no mirror). The last transform is remembered per browser. A "reset" button restores the default.
+- In Quiz mode, the transform is chosen at random for each card (can be switched off in Settings).
+
+### 8.5 Message display (S2, S3)
+
+**Earlier messages (S2).** Setting "Show messages from":
+
+| Option | Behavior |
+|---|---|
+| Current move and position only **(default)** | As in the mock-up |
+| Current + previous *N* moves | Earlier blocks shown above, faded, with their move number |
+| Whole line | All messages from the root to here, as a scrollable list. Each one jumps to its move when clicked. |
+
+A separate setting chooses which fields count as messages: why, notes, aji, result (default: all).
+
+**Message blocks (M-UI).** Messages must stand out from the data fields **without relying on color**. Each message type has its own shape, border and icon, so it can be recognized in grayscale:
+
+| Message | Where | Shape | Border | Icon | Header |
+|---|---|---|---|---|---|
+| Why this move (`XMW`) | **Directly under the board** (default), as a callout pointing up at the board | Speech bubble with a tail | 2 px solid, hard offset shadow | speech bubble | "Black P18 · why" |
+| Position (`XPW`) | Info panel, Position section | Square corners, thick top edge (6 px) | 2 px solid, hard offset shadow | grid | "Position" |
+| Watch out (`XAJI`, and `XTEN` when tenuki is bad) | Info panel | Square corners | 4 px double line | warning triangle | "Watch out" |
+| Note (`XMN`, `XPN`) | Info panel, under the section it belongs to | Folded top-right corner | 2 px dashed | pencil | "Note" + database badge |
+
+Rules:
+- Message text is one step larger than field text (14 px vs 13 px). Every block has an uppercase header and a database badge.
+- Data fields (status, evaluation, style…) stay as compact label/value rows. Only free text becomes a block.
+- Setting "Move message position": under the board **(default)** / in the info panel.
+
+**Visual aids (S3).** Setting "Visual aids in text":
+
+| Option | Behavior |
+|---|---|
+| On hover/tap, one color **(default)** | As in the mock-up |
+| Always shown, one color per reference | Every reference in the visible messages is drawn at once. Each one gets its own color from a fixed palette, and the linked words are underlined in that same color. Hovering a reference highlights it and dims the rest. |
+
+### 8.6 Variation tree
+
+- Horizontal layout: the main line runs along the top, and branches go below it.
+- Node: a stone of the right color with its move number. The ring color is the move category. Tenuki is a square with "T".
+- A small dot in the database's color marks nodes that come only from a non-default database.
+- A dashed ring means the line continues in another entry (`XLINK`).
+- The current node is framed, and the path to it is drawn in bold.
+- Merged transpositions show a ⇄ link to the other path.
+- Click to jump. A legend sits below the tree.
+
+### 8.7 Info panel
+
+The sections, in order:
+
+1. **Entry**: §4.2 fields.
+2. **Last move**: category, style, purpose, conditions, why, notes (§4.3).
+3. **Position**: §4.4 fields.
+4. **Next moves**: one row per candidate, with category, coordinate, label, icons (§11.3) and database badge. Hovering a row highlights the move on the board.
+
+Every text block carries its database badge. In edit mode:
+
+- every field becomes an input (select lists for fixed values);
+- buttons: "+ Add move on board", "+ Add tenuki", "Draw marks/overlays";
+- note boxes have a toolbar to insert visual references by clicking points on the board.
+
+### 8.8 Settings (all defaults equal the mock-up, D12)
+
+| Group | Setting | Default |
+|---|---|---|
+| Categories | Show/hide, color and symbol for each category | Table §11.1, all shown |
+| Board | Default view | Corner 10×10 |
+| | Coordinates | Shown |
+| | Move numbers | Off |
+| | Show next moves | On |
+| | Overlays: walls, influence, areas, moyo, cuts, weak groups, ladders (each) | On |
+| Transform | Remember last transform | On |
+| | Random transform in Quiz | On |
+| Messages | Show messages from | Current only |
+| | Fields counted as messages | All |
+| | Visual aids in text | On hover, one color |
+| Icons | Show icons in panels / next-move list / tooltips | On |
+| Databases | Active databases | From `index.json` |
+| Language | UI language | English |
+
+Settings are saved in the browser (localStorage) and can be exported/imported as JSON.
+
+---
+
+## 9. Quiz mode
+
+- **Cards**: one card is (entry, position, side to play), for every position that has a `main` move, an `alt` move or a `punish` move.
+- **Deck filters**: joseki / shapes / both; up to a difficulty level; type of line (main lines only, main + mistakes, punishments only); databases; tags.
+- **Play**: the board is shown in a random transform, and next moves are hidden. The user clicks a point or presses Tenuki.
+  - **Correct** if the move's category is `main`, `alt` or `punish` (for shapes: `correct`).
+  - Otherwise the feedback names the category of what was played (e.g. "overplay") and shows the expected move with its "why".
+  - "Show all candidates" reveals every next move.
+- **Spaced repetition**: SM-2-style scheduling with Again / Hard / Good / Easy buttons.
+- **Statistics**: due today, new, streak, success rate per entry, and weakest entries.
+- Progress is stored in IndexedDB and can be exported/imported as JSON. Optionally it can be committed to `progress/<name>.json` through the same patch mechanism.
+
+---
+
+## 10. Editing and saving
+
+1. Edits go to **one target database** (top bar selector; default: the personal database).
+2. Every change is saved immediately as a **draft in IndexedDB**, so nothing is lost on reload. A counter shows the number of unsaved changes (e.g. "Download patch (3)").
+3. Creating an entry: name, type, start (empty or set-up stones), then play moves.
+4. Annotating someone else's entry: the app writes an SGF file in the target database that repeats the path to the node and adds the new fields or branches (§3.4).
+5. **Export**:
+   - **Download patch**: a unified diff (`git apply`-ready) of the target database's files, compared with the version loaded from the site.
+   - **Download changed SGF files** as a zip.
+   - The patch dialog shows the diff before downloading.
+6. "Discard drafts" with a confirmation step inside the page.
+7. SGF output is normalized (property order, one node per line, stored orientation) so diffs stay small and readable.
+
+### 10.1 Writing entries by hand
+
+The databases are filled by hand by the user, which is also how they practice, so creating an entry must be fast.
+
+**New database**
+- "+ New database" (top bar) asks for an id, name, description and color.
+- It creates an empty database in the drafts, adds it to `index.json`, and sets it as the "Edits go to" target.
+- Exporting it produces a patch that adds the new folder **and** its `index.json` entry, so one pull request adds a whole database.
+- Rule: **one database per pull request** is the recommended flow. The patch dialog lets the user choose which databases to include (default: only the target database).
+
+**Fast entry mode** (inside Edit mode)
+- Play the sequence by clicking. Moves alternate colors automatically. **P** plays tenuki.
+- After each move, single keys set the category without leaving the board: **1** main, **2** alt, **3** situational, **4** slack, **5** mistake, **6** overplay, **7** trick, **8** punish. **A** / **B** / **S** set the style (aggressive, balanced, solid).
+- **Enter** opens the "why" box for the current move. **Tab** moves to the position "why" box, and **Esc** goes back to the board.
+- **Ctrl+←** goes back one move to start a branch. The new move becomes a variation.
+- Unfilled fields are allowed. Entries with missing required fields (name, difficulty, category of each move) show a "to complete" marker and a list in the library.
+
+**Templates**
+- New joseki: starts from an empty corner, from a lone 4-4, 3-4, 3-3, 5-4 or 5-3 stone, or from a set-up position placed by hand.
+- New shape: draws the eye space, then the wall around it, then the outside liberties; the region `XREG` is filled automatically.
+- "Duplicate entry": copies an entry to start a similar one, for example the same shape with one fewer outside liberty.
+
+**Import**
+- Load any SGF file (from OGS, Sabaki, a game record…) into the target database. The app converts it to the stored orientation, keeps its variations and comments (`C`), and lets the user add categories and fields afterwards.
+- Import from a game: pick the corner and the move range; only those corner moves are kept, and moves elsewhere become tenuki.
+
+**Checks before export**
+- The same validator as CI (§12.4) runs in the browser before a patch is made. Errors (invalid values, illegal moves, duplicate `XID`) are listed with links to the node.
+- Joined positions are reported: "3 new moves join existing positions in `general`".
+
+**Submitting**
+1. Download the patch (or zip).
+2. Apply it in a local clone with `git apply`, or upload the files through GitHub's web interface.
+3. Open a pull request. CI validates the files, and once merged the Pages site serves the new database.
+
+---
+
+## 11. Visual language
+
+### 11.1 Move categories
+
+| Category | Color | Symbol |
+|---|---|---|
+| main | green `#1e9e4a` | ● |
+| alt | teal `#138f8c` | ● |
+| situational | yellow `#e0b000` | ◆ |
+| slack | gray `#7d858f` | ▼ |
+| mistake | red `#d33232` | ✕ |
+| overplay | orange `#e8741c` | ! |
+| trick | purple `#8b47d6` | ? |
+| punish | green ring | ○ |
+| correct (shapes) | green | ● |
+| ko (shapes) | blue `#2f74d0` | K |
+| wrong (shapes) | red | ✕ |
+
+Every category has a symbol as well as a color, so the board is readable for color-blind users.
+
+### 11.2 Reference palette (S3)
+
+There are 8 distinct colors for "always shown" references. They are chosen to stand out from the board, the stones and the category colors, and they repeat in order when a node has more than 8 references.
+
+### 11.3 Icons (S4)
+
+Icons come from one SVG icon set bundled with the app (Lucide, ISC license). No emoji. Each icon has a text tooltip.
+
+| Field | Value → icon |
+|---|---|
+| Style | aggressive → swords · balanced → scale · solid → shield |
+| Purpose | territory → flag · influence → brick wall · sente → zap · attack → crosshair · defend → shield-check · sabaki → feather · probe → search · reduce → minimize · connect → link · cut → scissors · eye → eye · kill → skull |
+| Conditions | ladder → stairs · needs-support → users · bad-near-opponent → alert-triangle |
+| Status | progress → more-horizontal · end → flag-checkered · end-mistake → red flag · continues elsewhere → external-link |
+| Sente | sente → zap, in the player's stone color |
+| Evaluation | colored chip `B++ B+ = W+ W++` (dark to light gradient), plus a small bar for the point balance |
+| Shape results | alive → heart · dead → x-circle · ko → "K" chip · seki → equals · unsettled → help-circle |
+| Difficulty | rank chip colored by band (DDK / SDK / dan) |
+| Database | colored badge with the database name |
+
+Icons appear in the info panel, in the next-moves list, on board tooltips and in tree tooltips.
+
+### 11.4 Board overlays (S5)
+
+| Overlay | Drawing |
+|---|---|
+| Wall / barrier (`XWALL`, `{{WALL}}`) | Thick translucent band along the stones, with a short "face" tick showing the direction it works |
+| Influence (`XINF`, `{{INF}}`) | Wide dashed arrow, fading out |
+| Areas (`XTB`/`XTW`, `{{TB}}`/`{{TW}}`) | Soft shading in the owner's color |
+| Moyo (`XMOYO`) | Dashed outline |
+| Cutting point (`XCUT`, `{{CUT}}`) | Small scissors / X mark |
+| Weak group (`XWEAK`) | Pulsing dotted halo around the group |
+| Ladder (`XLAD`) | Numbered path |
+
+- Overlays stored on a node are shown when that node is current. Each overlay type can be switched off in Settings.
+- **Future:** computed overlays, for example an estimated influence map or KataGo ownership, behind a separate setting.
+
+---
+
+## 12. Technical design
+
+### 12.1 Stack
+
+| Concern | Choice |
+|---|---|
+| Language / build | TypeScript, Vite |
+| UI | Preact |
+| Board component | `@sabaki/shudan` (supports markers, lines, arrows, heat/paint maps for overlays) |
+| Game rules | `@sabaki/go-board` |
+| SGF parse/write | `@sabaki/sgf` |
+| Local storage | IndexedDB (`idb-keyval`), localStorage for settings |
+| Patch | `diff` (jsdiff) for unified diffs; `jszip` for the zip |
+| Icons | `lucide` (tree-shaken SVGs) |
+| Tests | Vitest (unit), Playwright (end-to-end) |
+
+### 12.2 Hosting and deployment
+
+- A GitHub Pages site is built by a GitHub Actions workflow on every push to `main`.
+- The `db/` folder is copied into the site unchanged, and the app loads `db/index.json` and the SGF files with `fetch`.
+- The app is fully static and runs without a server. A service worker can be added later for offline use.
+
+### 12.3 Main modules
+
+| Module | Responsibility |
+|---|---|
+| `sgf/` | Read/write SGF, the `X*` property schema, validation, normalized output |
+| `geometry/` | Coordinates, the 8 symmetries, color swap, display transform, conversion to the stored orientation |
+| `hash/` | Zobrist tables, canonical hash, region extraction, shape translation |
+| `graph/` | Merged position graph, sources per database, conflict resolution, visibility filters |
+| `search/` | Exact / contained / near matching |
+| `refs/` | Parse and render `{{…}}` visual references |
+| `ui/` | Layout, board wrapper, panels, tree, settings, modals |
+| `edit/` | Draft store, change tracking, SGF writer for the target database, patch export |
+| `quiz/` | Card generation, scheduler, statistics |
+| `i18n/` | String catalog (English; Spanish later) |
+
+### 12.4 Non-functional
+
+- **Load**: show the first board in under 2 s with up to 5,000 positions. Build indexes on load and cache them in IndexedDB keyed by the files' hashes.
+- **Accessibility**: keyboard navigation, focus states, text labels for icons, category symbols in addition to colors, light and dark themes.
+- **Browsers**: current Chrome, Firefox, Safari (desktop and mobile).
+- **Validation**: a CI script validates every SGF in `db/` against the property schema (allowed values, valid points, no duplicate `XID`s) on each pull request.
+
+---
+
+## 13. Milestones
+
+| # | Milestone | Content |
+|---|---|---|
+| M1 | Viewer | Repo, Pages deployment, SGF loading, board, navigation, tree, info panel (read-only), categories and next moves |
+| M2 | Databases | `index.json`, on/off switches, merge by canonical hash, badges, conflicts |
+| M3 | Transforms and visual aids | Display transform, `{{…}}` references, overlays, icons, message settings |
+| M4 | Editing | Legal move play, joining existing positions, field editing, drafts, patch / zip export |
+| M5 | Find position | Board set-up, SGF input, exact / contained / near matching |
+| M6 | Shapes | Shape fields, results per player, translation-aware matching |
+| M7 | Quiz | Cards, spaced repetition, statistics |
+| M8 | Content | Entered by hand by the user with the fast entry mode (§10.1), one database per pull request. The repository starts with a tiny sample database used only for tests. |
+
+---
+
+## 14. Out of scope for v1 (future)
+
+- Shape classes: recognizing unknown variants by features (§6.3).
+- Computed influence / KataGo ownership overlays and point balances.
+- Spanish content and UI.
+- Direct commit to GitHub from the app (token-based).
+- Whole-board patterns (fuseki) and side patterns other than shapes.

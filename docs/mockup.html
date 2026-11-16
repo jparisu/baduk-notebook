@@ -1,0 +1,499 @@
+<title>Go Joseki Notebook</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: top bar · [library | board + nav | info panel] · variation tree across the bottom */
+:root{
+  --bg:#eef0ee; --panel:#ffffff; --fg:#1c2320; --muted:#5f6a65; --line:#d3d9d5; --chip:#e6ebe8;
+  --accent:#2c6b5a; --accent-fg:#ffffff; --board:#dcb35c; --boardline:#3a2c12; --markup:#d81b60;
+  --warn-bg:#fff4d6; --warn-fg:#6b5000;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#141917; --panel:#1d2421; --fg:#e4eae7; --muted:#9aa6a0; --line:#34403b; --chip:#28312d;
+  --accent:#6cc2a8; --accent-fg:#0f1513; --board:#c9a052; --boardline:#2a1f0b; --markup:#ff3d84;
+  --warn-bg:#3a3215; --warn-fg:#f2dc95; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#141917; --panel:#1d2421; --fg:#e4eae7; --muted:#9aa6a0; --line:#34403b; --chip:#28312d;
+  --accent:#6cc2a8; --accent-fg:#0f1513; --board:#c9a052; --boardline:#2a1f0b; --markup:#ff3d84;
+  --warn-bg:#3a3215; --warn-fg:#f2dc95; color-scheme:dark }
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));padding-block:10px}
+button,select,input,textarea{font:inherit;color:inherit}
+button{background:var(--chip);border:1px solid var(--line);border-radius:4px;padding:4px 9px;cursor:pointer}
+button:hover{border-color:var(--muted)}
+button.on{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.banner{background:var(--warn-bg);color:var(--warn-fg);padding:5px 10px;border-radius:4px;font-size:12px;margin-bottom:8px}
+/* top bar */
+.top{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+.top h1{font-size:16px;margin:0 6px 0 0}
+.grp{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.grp-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-right:2px}
+.layer{display:flex;align-items:center;gap:4px;font-size:13px;background:var(--chip);border:1px solid var(--line);border-radius:4px;padding:3px 7px;cursor:pointer}
+.spacer{flex:1}
+/* main grid */
+.app{display:grid;grid-template-columns:240px minmax(0,1fr) 360px;gap:10px;margin-top:10px}
+.pane{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px;min-width:0}
+.pane h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 6px}
+.pane h3{font-size:13px;margin:12px 0 6px;padding-top:8px;border-top:1px solid var(--line);display:flex;align-items:center;gap:6px}
+.pane h3:first-child{border-top:0;padding-top:0;margin-top:0}
+.center{display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.boardwrap{display:flex;justify-content:center}
+.boardwrap svg{width:100%;max-width:560px;height:auto;display:block}
+.status{font-size:13px;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
+.nav{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center}
+.nav .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
+.tenuki{display:inline-flex;align-items:center;gap:6px}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;flex:none}
+.dot.ring{background:transparent!important;border:2px solid}
+/* library */
+.tabs{display:flex;gap:4px;margin-bottom:8px}
+.lib input{width:100%;box-sizing:border-box;padding:4px 6px;border:1px solid var(--line);border-radius:4px;background:var(--bg);margin-bottom:6px}
+.filters{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+.filters select{border:1px solid var(--line);border-radius:4px;background:var(--bg);padding:2px 4px;font-size:12px}
+.fam{font-size:12px;color:var(--muted);margin:8px 0 2px;font-weight:600}
+.item{display:flex;justify-content:space-between;gap:6px;padding:4px 6px;border-radius:4px;cursor:pointer;font-size:13px}
+.item:hover{background:var(--chip)}
+.item.cur{background:var(--accent);color:var(--accent-fg)}
+.item .k{font-size:11px;opacity:.75;white-space:nowrap}
+.badge{font-size:10px;padding:1px 5px;border-radius:3px;background:var(--chip);border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.badge.jparisu{border-color:#b06bd6;color:#9d4fc7}
+.badge.general{border-color:#4f8fc7;color:#3c7fbb}
+/* info fields */
+.f{display:grid;grid-template-columns:96px minmax(0,1fr);gap:6px;font-size:13px;padding:2px 0}
+.fl{color:var(--muted);font-size:12px;padding-top:1px}
+.fv{min-width:0;overflow-wrap:anywhere}
+.f input,.f select,.f textarea{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:4px;background:var(--bg);padding:3px 5px;font-size:13px}
+.f textarea{min-height:52px;resize:vertical}
+.text{font-size:13px;line-height:1.45;margin:4px 0}
+.note{border-left:3px solid var(--line);padding:2px 0 2px 8px;margin:6px 0;font-size:13px;line-height:1.45}
+.note .badge{margin-right:4px}
+/* message blocks: told apart by border, shape and icon, not only color */
+.msg{position:relative;border:2px solid var(--fg);border-radius:8px;background:var(--panel);padding:8px 10px;margin:10px 0;font-size:14px;line-height:1.5;box-shadow:3px 3px 0 var(--fg)}
+.msg .mh{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.msg .mh svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.msg .mh .badge{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:400}
+.msg.move::before,.msg.move::after{content:"";position:absolute;top:14px;border-style:solid;border-color:transparent}
+.msg.move::before{left:-12px;border-width:8px 12px 8px 0;border-right-color:var(--fg)}
+.msg.move::after{left:-8px;top:16px;border-width:6px 9px 6px 0;border-right-color:var(--panel)}
+.msg.callout::before{left:24px;top:-12px;border-width:0 8px 12px 8px;border-color:transparent transparent var(--fg) transparent}
+.msg.callout::after{left:26px;top:-8px;border-width:0 6px 9px 6px;border-color:transparent transparent var(--panel) transparent}
+.msg.pos{border-radius:0;border-top-width:6px}
+.msg.note{border-style:dashed;border-radius:2px 18px 2px 2px;box-shadow:none;background:linear-gradient(225deg,var(--bg) 13px,var(--panel) 13px)}
+.msg.warn{border:4px double var(--fg);border-radius:0;box-shadow:none}
+.ref{border-bottom:2px dotted var(--markup);cursor:help;color:var(--fg)}
+.ref.pinned{background:color-mix(in srgb,var(--markup) 18%,transparent)}
+.cands{display:flex;flex-direction:column;gap:2px}
+.cand{display:grid;grid-template-columns:14px 46px minmax(0,1fr) auto;gap:6px;align-items:center;font-size:13px;padding:3px 4px;border-radius:4px;cursor:pointer}
+.cand:hover,.cand.hl{background:var(--chip)}
+.cand .lbl{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.addbtns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.hint{font-size:12px;color:var(--muted)}
+/* tree */
+.tree{margin-top:10px}
+.treebox{overflow-x:auto}
+.treebox svg{display:block}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:4px}
+/* results / quiz */
+.result{border:1px solid var(--line);border-radius:5px;padding:7px 8px;margin-bottom:6px;cursor:pointer;font-size:13px}
+.result:hover{border-color:var(--accent)}
+.result .t{font-weight:600}
+.result .m{font-size:12px;color:var(--muted);margin-top:2px}
+.pill{font-size:11px;padding:1px 6px;border-radius:10px;color:#fff;margin-right:4px}
+.feedback{padding:8px;border-radius:5px;font-size:13px;margin:8px 0;border:1px solid var(--line)}
+.kbd{font-family:ui-monospace,monospace;font-size:11px;background:var(--chip);border:1px solid var(--line);border-radius:3px;padding:0 4px}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;max-width:560px;width:100%;max-height:85vh;overflow:auto}
+.modal pre{background:var(--bg);border:1px solid var(--line);padding:8px;font-size:12px;overflow-x:auto}
+.setrow{display:grid;grid-template-columns:20px 130px 40px minmax(0,1fr);gap:8px;align-items:center;font-size:13px;padding:3px 0}
+.toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:6px 12px;border-radius:5px;font-size:13px;z-index:30}
+@media (max-width:1100px){.app{grid-template-columns:220px minmax(0,1fr)}.app .info{grid-column:1 / -1}}
+@media (max-width:700px){.app{grid-template-columns:minmax(0,1fr)}}
+</style>
+
+<div class="banner">Layout mock-up. Moves, evaluations and point balances are <b>sample data</b> and have not been verified. There is no Go logic: only the scripted positions work.</div>
+
+<div class="top" id="top"></div>
+<div class="app">
+  <aside class="pane lib" id="left"></aside>
+  <main class="pane center" id="center"></main>
+  <aside class="pane info" id="right"></aside>
+</div>
+<section class="pane tree" id="tree"></section>
+<div id="modal" hidden></div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+const COLS="ABCDEFGHJKLMNOPQRST";
+const xy=c=>c==='pass'?null:[COLS.indexOf(c[0]),19-parseInt(c.slice(1),10)];
+const CAT={
+  main:{label:'Main joseki',color:'#1e9e4a',sym:'●',ink:'#fff'},
+  alt:{label:'Alternative',color:'#138f8c',sym:'●',ink:'#fff'},
+  situational:{label:'Situational',color:'#e0b000',sym:'◆',ink:'#222'},
+  slack:{label:'Slack / passive',color:'#7d858f',sym:'▼',ink:'#fff'},
+  mistake:{label:'Mistake',color:'#d33232',sym:'✕',ink:'#fff'},
+  overplay:{label:'Overplay',color:'#e8741c',sym:'!',ink:'#fff'},
+  trick:{label:'Trick play',color:'#8b47d6',sym:'?',ink:'#fff'},
+  punish:{label:'Punishment',color:'#1e9e4a',sym:'',ink:'#1e9e4a',ring:true},
+  correct:{label:'Correct',color:'#1e9e4a',sym:'●',ink:'#fff'},
+  ko:{label:'Leads to ko',color:'#2f74d0',sym:'K',ink:'#fff'},
+  wrong:{label:'Wrong',color:'#d33232',sym:'✕',ink:'#fff'},
+};
+const JOSEKI_CATS=['main','alt','situational','slack','mistake','overplay','trick','punish'];
+const SHAPE_CATS=['correct','ko','wrong'];
+
+/* ---------- sample data ---------- */
+const ENTRIES={
+  j1:{type:'joseki',root:'root',layer:'general',name:'4-4 point · 3-3 invasion',aliases:'San-san invasion, 三々入り',family:'4-4 point › 3-3 invasion',difficulty:'15k',era:'Classic + AI-era',start:'Lone 4-4 stone (setup)',tags:'invasion, territory vs thickness',summary:'White takes the corner. Black chooses which side gets the wall.',sources:'Sample'},
+  s1:{type:'shape',root:'s_root',layer:'general',name:'Straight three',size:'3 points',location:'Side',surround:'Fully enclosed, 0 outside liberties',arrangement:'Connected',resB:'Alive',resW:'Dead',vital:'T15',kotype:'—',rules:'—',difficulty:'25k',summary:'Three points in a row. Whoever plays the middle point decides the result.'}
+};
+const N={};
+function node(id,parent,o){N[id]=Object.assign({id,parent,children:[],layer:'general'},o);if(parent)N[parent].children.push(id)}
+// joseki
+node('root',null,{entry:'j1',setup:{B:['Q16'],W:[]},toPlay:'W',
+  p:{status:'Start position',why:'A lone {{TR:Q16|4-4 stone}}. The {{CR:R17|3-3 point}} is still empty, so White can take the corner directly.',
+     notes:[{layer:'jparisu',text:'I usually approach instead. Invade when the Black wall would face my own strong stones.'}]}});
+node('n1','root',{color:'W',move:'R17',cat:'main',label:'3-3 invasion',
+  m:{style:'Balanced',purpose:'Territory, take the base',cond:'Best when the Black wall would face White strength',why:'Takes the corner and Black\'s base. White lives small; Black gets thickness.'},
+  p:{status:'In progress',eval:'Even',why:'Black now chooses the direction of the wall with the block.'}});
+node('a1','root',{color:'W',move:'R14',cat:'alt',label:'Low approach',stub:true,sym:'Also covers O17 (diagonal mirror)',
+  m:{style:'Balanced',purpose:'Approach, keep options',why:'Keeps the 3-3 invasion for later.'},p:{status:'Separate entry (not in mock)'}});
+node('a2','root',{color:'W',move:'pass',cat:'alt',label:'Tenuki',
+  m:{style:'Passive',purpose:'Play elsewhere',why:'Early in the game a lone 4-4 stone can be left alone.'},p:{status:'—'}});
+node('n2','n1',{color:'B',move:'Q17',cat:'main',label:'Block from the top',
+  m:{style:'Balanced',purpose:'Wall facing left',why:'Block on the side where you want the wall. {{AR:Q16-L16|The wall will face left}}.'},
+  p:{status:'In progress',eval:'Even'}});
+node('b1','n1',{color:'B',move:'R16',cat:'alt',label:'Block from the side',stub:true,sym:'Mirror of Q17',
+  m:{why:'Same joseki mirrored. Choose by direction.'},p:{status:'Mirror of the Q17 line'}});
+node('b2','n1',{color:'B',move:'pass',cat:'slack',label:'Tenuki',
+  m:{style:'Passive',why:'White lives comfortably and keeps sente.'},p:{eval:'W better'}});
+node('n3','n2',{color:'W',move:'R16',cat:'main',label:'Crawl',
+  m:{style:'Solid',purpose:'Make eye space',why:'Crawls to make room for eyes on the right side.'},p:{status:'In progress',eval:'Even'}});
+node('n4','n3',{color:'B',move:'R15',cat:'main',label:'Hane',
+  m:{style:'Aggressive',purpose:'Limit the corner',why:'Hane. {{TR:Q17,Q16,R15|These stones}} start Black\'s wall.'},p:{status:'In progress',eval:'Even'}});
+node('c1','n3',{color:'B',move:'pass',cat:'slack',label:'Tenuki',m:{why:'White slides along the edge and the corner gets much bigger.'},p:{eval:'W better'}});
+node('n5','n4',{color:'W',move:'Q18',cat:'main',label:'Hane',
+  m:{style:'Balanced',purpose:'Widen the corner',why:'Second-line hane to widen the corner. It leaves a cutting point at {{CR:R18|R18}}.'},
+  p:{status:'In progress',eval:'Even',aji:'Cut at R18'}});
+node('n6','n5',{color:'B',move:'P18',cat:'main',label:'Block',
+  m:{style:'Solid',purpose:'Build the wall',why:'Blocks. {{TR:P18,Q17,Q16,R15|Black\'s wall}} faces left and down.'},
+  p:{status:'In progress',eval:'Even',aji:'Black threatens {{CR:R18|atari at R18}}.',why:'White must deal with the cutting point before leaving.'}});
+node('e1','n5',{color:'B',move:'R18',cat:'overplay',label:'Cut at once',layer:'jparisu',
+  m:{style:'Aggressive',why:'The cutting stone has only two liberties. White can capture it.'},
+  p:{eval:'W better',notes:[{layer:'jparisu',text:'I played this in a game and lost the stone. Check the liberties before cutting.'}]}});
+node('e2','e1',{color:'W',move:'S18',cat:'punish',label:'Atari',layer:'jparisu',
+  m:{why:'Atari from the edge. {{TR:R18|The cutting stone}} cannot escape.'},
+  p:{status:'End after a mistake',eval:'W better',balance:'−3.0',src:'Sample (estimate)',result:'Black loses the cutting stone; White\'s corner gets bigger.'}});
+node('n7','n6',{color:'W',move:'R18',cat:'main',label:'Connect',
+  m:{style:'Solid',purpose:'Remove the cut',why:'Connects and removes the atari threat on {{TR:Q18|Q18}}.'},
+  p:{status:'Joseki end',sente:'Black',balance:'+0.6',src:'Sample (not verified)',eval:'Even',result:'White: corner. Black: thick wall facing two sides + sente.',tenuki:'Standard. Black plays elsewhere.',aji:'Endgame moves on the first line later.',
+     notes:[{layer:'jparisu',text:'Remember: the wall is only worth it if I use it to attack or build. Do not add another move here.'}]}});
+node('f1','n6',{color:'W',move:'pass',cat:'mistake',label:'Tenuki',layer:'jparisu',
+  m:{why:'Leaves the cut at R18 open.'},p:{eval:'B better'}});
+node('f2','f1',{color:'B',move:'R18',cat:'punish',label:'Atari on Q18',layer:'jparisu',
+  m:{why:'Atari on {{TR:Q18|Q18}}. White\'s corner shrinks.'},
+  p:{status:'End after a mistake',balance:'+4.0',src:'Sample (estimate)',eval:'B better',result:'White loses Q18 or answers and loses sente.'}});
+node('n8','n7',{color:'B',move:'pass',cat:'main',label:'Takes sente',m:{why:'Black takes sente. The joseki is finished.'},p:{status:'Joseki end',sente:'Black'}});
+// shape
+node('s_root',null,{entry:'s1',setup:{B:['T13','S13','S14','S15','S16','S17','T17'],W:['R12','R13','R14','R15','R16','R17','R18','S12','T12','S18','T18']},toPlay:'Either',
+  p:{statusB:'Alive',statusW:'Dead',eyes:'One 3-point eye space',libs:'0 outside liberties',why:'{{SQ:T14,T15,T16|The 3-point eye space}}. {{CR:T15|The vital point}} decides life and death.'}});
+node('s1','s_root',{color:'B',move:'T15',cat:'correct',label:'Vital point → alive',m:{why:'Splits the space into two eyes.'},p:{statusB:'Alive',statusW:'Alive',eyes:'2 eyes'}});
+node('s2','s_root',{color:'W',move:'T15',cat:'correct',label:'Vital point → dead',m:{why:'Takes the vital point. Black can only make one eye.'},p:{statusB:'Dead',statusW:'Dead',eyes:'1 eye'}});
+node('s3','s_root',{color:'B',move:'T14',cat:'wrong',label:'Edge point → dead',m:{why:'White plays {{CR:T15|T15}} and Black has one eye.'},p:{statusB:'Dead',statusW:'Dead'}});
+
+/* ---------- state ---------- */
+const S={mode:'explore',lib:'joseki',entry:'j1',node:'n6',layers:{general:true,jparisu:true},editLayer:'jparisu',edit:false,
+  view:'corner',nums:false,showCands:true,hover:null,pin:null,hlCand:null,quiz:null,modal:null};
+const vis=id=>S.layers[N[id].layer];
+const kids=id=>N[id].children.filter(vis);
+const path=id=>{const p=[];for(let n=id;n;n=N[n].parent)p.unshift(n);return p};
+function position(id){
+  const p=path(id),root=N[p[0]],st=new Map();
+  for(const c of ['B','W'])(root.setup[c]||[]).forEach(v=>{const[x,y]=xy(v);st.set(x+','+y,{c,num:0})});
+  let num=0,last=null;
+  p.slice(1).forEach(n=>{num++;const nd=N[n];const pt=xy(nd.move);if(pt){st.set(pt+'',{c:nd.color,num});last=pt}else last=null});
+  return {st,last,num};
+}
+const toPlay=id=>{const n=N[id];if(!n.parent)return n.toPlay;return n.color==='B'?'White':'Black'};
+const colorName=c=>c==='B'?'Black':'White';
+
+/* ---------- board svg ---------- */
+function parseRef(r){const[t,v]=r.split(':');if(t==='AR'){const[a,b]=v.split('-');return[{t,a:xy(a),b:xy(b)}]}return v.split(',').map(p=>({t,p:xy(p)}))}
+function boardSVG(o){
+  const W=o.view==='full'?[0,18,0,18]:[9,18,0,9];const[x0,x1,y0,y1]=W,pad=1.45;
+  const ex=x=>x, s=[];
+  s.push(`<svg viewBox="${x0-pad} ${y0-pad} ${x1-x0+2*pad} ${y1-y0+2*pad}" role="img" aria-label="Go board">`);
+  s.push(`<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--markup)"/></marker></defs>`);
+  s.push(`<rect x="${x0-.75}" y="${y0-.75}" width="${x1-x0+1.5}" height="${y1-y0+1.5}" fill="var(--board)" rx=".15"/>`);
+  const ys=y0===0?0:y0-.75,ye=y1===18?18:y1+.75,xs=x0===0?0:x0-.75,xe=x1===18?18:x1+.75;
+  for(let x=x0;x<=x1;x++)s.push(`<line x1="${x}" y1="${ys}" x2="${x}" y2="${ye}" stroke="var(--boardline)" stroke-width="${x===18||x===0?.06:.03}"/>`);
+  for(let y=y0;y<=y1;y++)s.push(`<line x1="${xs}" y1="${y}" x2="${xe}" y2="${y}" stroke="var(--boardline)" stroke-width="${y===0||y===18?.06:.03}"/>`);
+  [3,9,15].forEach(a=>[3,9,15].forEach(b=>{if(a>=x0&&a<=x1&&b>=y0&&b<=y1)s.push(`<circle cx="${a}" cy="${b}" r=".1" fill="var(--boardline)"/>`)}));
+  for(let x=x0;x<=x1;x++){s.push(`<text x="${x}" y="${y0-.95}" font-size=".4" text-anchor="middle" fill="var(--muted)">${COLS[x]}</text>`);s.push(`<text x="${x}" y="${y1+1.2}" font-size=".4" text-anchor="middle" fill="var(--muted)">${COLS[x]}</text>`)}
+  for(let y=y0;y<=y1;y++){s.push(`<text x="${x0-.95}" y="${y+.14}" font-size=".4" text-anchor="middle" fill="var(--muted)">${19-y}</text>`);s.push(`<text x="${x1+.95}" y="${y+.14}" font-size=".4" text-anchor="middle" fill="var(--muted)">${19-y}</text>`)}
+  if(o.outline){const[a,b,c,d]=o.outline;s.push(`<rect x="${a-.5}" y="${c-.5}" width="${b-a+1}" height="${d-c+1}" fill="none" stroke="var(--accent)" stroke-width=".08" stroke-dasharray=".25 .15"/>`)}
+  for(const[k,v]of o.st){const[x,y]=k.split(',').map(Number);if(x<x0-0||x>x1||y<y0||y>y1)continue;
+    s.push(`<circle cx="${x}" cy="${y}" r=".47" fill="${v.c==='B'?'#151515':'#f5f5f2'}" stroke="${v.c==='B'?'#000':'#666'}" stroke-width=".03"/>`);
+    if(o.nums&&v.num)s.push(`<text x="${x}" y="${y+.15}" font-size=".42" text-anchor="middle" fill="${v.c==='B'?'#fff':'#111'}">${v.num}</text>`)}
+  if(o.last&&!o.nums){const[x,y]=o.last;const c=o.st.get(o.last+'').c;s.push(`<circle cx="${x}" cy="${y}" r=".2" fill="none" stroke="${c==='B'?'#fff':'#111'}" stroke-width=".06"/>`)}
+  (o.cands||[]).forEach(c=>{const pt=xy(N[c].move);if(!pt)return;const[x,y]=pt,k=CAT[N[c].cat],hl=S.hlCand===c;
+    s.push(`<g data-go="${c}" style="cursor:pointer"><title>${k.label}: ${N[c].label}</title>`);
+    if(k.ring)s.push(`<circle cx="${x}" cy="${y}" r=".3" fill="var(--board)" stroke="${k.color}" stroke-width=".09"/>`);
+    else s.push(`<circle cx="${x}" cy="${y}" r="${hl?.38:.31}" fill="${k.color}" stroke="${hl?'var(--fg)':'none'}" stroke-width=".05"/><text x="${x}" y="${y+.13}" font-size=".34" text-anchor="middle" fill="${k.ink}">${k.sym}</text>`);
+    s.push(`</g>`)});
+  (o.marks||[]).forEach(m=>{const col='var(--markup)',sw='.08';
+    if(m.t==='AR'){s.push(`<line x1="${m.a[0]}" y1="${m.a[1]}" x2="${m.b[0]}" y2="${m.b[1]}" stroke="${col}" stroke-width=".12" marker-end="url(#ah)"/>`);return}
+    const[x,y]=m.p;
+    if(m.t==='TR')s.push(`<polygon points="${x},${y-.28} ${x-.26},${y+.17} ${x+.26},${y+.17}" fill="none" stroke="${col}" stroke-width="${sw}"/>`);
+    if(m.t==='SQ')s.push(`<rect x="${x-.22}" y="${y-.22}" width=".44" height=".44" fill="none" stroke="${col}" stroke-width="${sw}"/>`);
+    if(m.t==='CR')s.push(`<circle cx="${x}" cy="${y}" r=".25" fill="none" stroke="${col}" stroke-width="${sw}"/>`);
+  });
+  if(o.click)for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++)if(!o.st.has(x+','+y))s.push(`<rect data-pt="${COLS[x]}${19-y}" x="${x-.5}" y="${y-.5}" width="1" height="1" fill="transparent" style="cursor:pointer"/>`);
+  s.push('</svg>');return s.join('');
+}
+
+/* ---------- text with visual references ---------- */
+const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const rich=t=>esc(t||'').replace(/\{\{([A-Z]{2}:[^|]+)\|([^}]+)\}\}/g,(_,r,l)=>`<span class="ref${S.pin===r?' pinned':''}" data-ref="${r}" tabindex="0">${l}</span>`);
+const refsIn=t=>[...(t||'').matchAll(/\{\{([A-Z]{2}:[^|]+)\|/g)].map(m=>m[1]);
+
+/* ---------- top bar ---------- */
+function renderTop(){
+  const modes=[['explore','Explore'],['find','Find position'],['quiz','Quiz']];
+  document.getElementById('top').innerHTML=`
+   <h1>Go Joseki Notebook</h1>
+   <div class="grp">${modes.map(([k,l])=>`<button data-mode="${k}" class="${S.mode===k?'on':''}">${l}</button>`).join('')}</div>
+   <div class="grp"><span class="grp-label">Databases</span>
+     ${['general','jparisu'].map(l=>`<label class="layer"><input type="checkbox" data-layer="${l}" ${S.layers[l]?'checked':''}> ${l}</label>`).join('')}
+     <button data-act="addlayer" title="Load another database">+ Load…</button><button data-act="addlayer" title="Create an empty database">+ New database</button></div>
+   <div class="spacer"></div>
+   <div class="grp"><span class="grp-label">Edits go to</span>
+     <select id="editLayer" data-act="editlayer">${['jparisu','general'].map(l=>`<option ${S.editLayer===l?'selected':''}>${l}</option>`).join('')}</select>
+     <button data-act="edit" class="${S.edit?'on':''}">${S.edit?'Editing':'Edit'}</button>
+     <button data-act="patch">Download patch (3)</button>
+     <button data-act="settings">Settings</button></div>`;
+}
+
+/* ---------- left pane ---------- */
+function renderLeft(){
+  const el=document.getElementById('left');
+  if(S.mode==='find'){el.innerHTML=`
+    <h2>Set up a position</h2>
+    <div class="grp" style="margin-bottom:6px"><button class="on">● Black</button><button>○ White</button><button>Alternate</button><button>Erase</button></div>
+    <div class="grp" style="margin-bottom:10px"><button>Clear board</button><button>Load SGF file…</button><button>Paste SGF</button></div>
+    <h2>Search</h2>
+    <div class="f"><div class="fl">Area</div><div class="fv">Each 10×10 corner, automatic</div></div>
+    <div class="f"><div class="fl">Symmetry</div><div class="fv">8 orientations + color swap</div></div>
+    <div class="f"><div class="fl">Match</div><div class="fv">Exact → contained → near (±2 stones)</div></div>
+    <div class="f"><div class="fl">Search in</div><div class="fv">Joseki + shapes, active databases</div></div>
+    <p class="hint">Results update while you place stones.</p>`;return}
+  if(S.mode==='quiz'){el.innerHTML=`
+    <h2>Quiz deck</h2>
+    <div class="filters"><select><option>Joseki</option><option>Shapes</option><option>Both</option></select><select><option>Up to 10k</option><option>Up to 5k</option><option>All</option></select></div>
+    <div class="filters"><select><option>Main lines + mistakes</option><option>Main lines only</option><option>Punishments only</option></select></div>
+    <div class="f"><div class="fl">Due today</div><div class="fv">12 positions</div></div>
+    <div class="f"><div class="fl">New</div><div class="fv">5</div></div>
+    <div class="f"><div class="fl">Streak</div><div class="fv">4 days</div></div>
+    <div class="f"><div class="fl">Weakest</div><div class="fv">3-3 invasion (62%)</div></div>
+    <p class="hint">Positions you miss come back sooner (spaced repetition). Each card is shown in a random orientation.</p>`;return}
+  const items=S.lib==='joseki'?[
+    ['4-4 point',[['j1','3-3 invasion','15k'],[null,'Low approach · knight\'s move','12k'],[null,'Low approach · one-space low pincer','8k'],[null,'High approach · attach-stretch','10k']]],
+    ['3-4 point',[[null,'Small knight approach · one-space low pincer','8k'],[null,'Taisha (large knight)','2d']]],
+    ['Started positions',[[null,'4-4 + approach + knight\'s move · slide','10k']]],
+    ['jparisu',[[null,'My notes: 3-3 trick plays','—','jparisu']]]
+  ]:[
+    ['Side',[['s1','Straight three','25k'],[null,'Bent three','25k'],[null,'Straight four','20k']]],
+    ['Corner',[[null,'Bent four in the corner','10k'],[null,'L-group','8k'],[null,'Carpenter\'s square','3k']]],
+    ['Center',[[null,'Bulky five','15k'],[null,'Rabbity six','12k']]]];
+  el.innerHTML=`<div class="tabs"><button data-lib="joseki" class="${S.lib==='joseki'?'on':''}">Joseki</button><button data-lib="shapes" class="${S.lib==='shapes'?'on':''}">Shapes</button></div>
+   <input placeholder="Search by name or tag" aria-label="Search library">
+   <div class="filters"><select aria-label="Difficulty"><option>Any kyu</option><option>≤ 15k</option><option>≤ 10k</option><option>≤ 5k</option></select>
+     <select aria-label="Style"><option>Any style</option><option>Aggressive</option><option>Balanced</option><option>Solid</option></select>
+     ${S.lib==='shapes'?'<select aria-label="Result"><option>Any result</option><option>Alive</option><option>Dead</option><option>Ko</option><option>Seki</option></select>':''}</div>
+   ${items.filter(([,l])=>l.some(i=>!i[3]||S.layers[i[3]])).map(([f,list])=>`<div class="fam">${f}</div>${list.map(([id,n,k,ly])=>`<div class="item ${id&&id===S.entry?'cur':''}" data-entry="${id||''}"><span>${n} ${ly?`<span class="badge ${ly}">${ly}</span>`:''}</span><span class="k">${k}</span></div>`).join('')}`).join('')}
+   <div class="addbtns"><button data-act="stub">+ New ${S.lib==='joseki'?'joseki':'shape'}</button></div>`;
+}
+
+/* ---------- center ---------- */
+function renderCenter(){
+  const el=document.getElementById('center');
+  if(S.mode==='find'){
+    const st=new Map();
+    // the 3-3 position after move 6, rotated 180° and colors swapped, plus stones elsewhere
+    const add=(c,v)=>{const[x,y]=xy(v);st.set(x+','+y,{c,num:0})};
+    const {st:src}=position('n6');for(const[k,v]of src){const[x,y]=k.split(',').map(Number);st.set((18-x)+','+(18-y),{c:v.c==='B'?'W':'B',num:0})}
+    ['D16','Q4','K10'].forEach((v,i)=>add(i%2?'B':'W',v));
+    el.innerHTML=`<div class="boardwrap">${boardSVG({view:'full',st,outline:[0,9,9,18]})}</div>
+      <div class="status">13 stones · matching corner outlined (bottom-left)</div>`;return}
+  const nd=N[S.node],ent=ENTRIES[S.entry];const {st,last,num}=position(S.node);
+  const quiz=S.mode==='quiz';
+  const cands=(S.showCands&&!quiz)?kids(S.node):[];
+  let marks=[];const refs=S.hover||S.pin;if(refs&&!quiz)marks=parseRef(refs);
+  const passKid=kids(S.node).find(c=>N[c].move==='pass');
+  const pk=passKid&&CAT[N[passKid].cat];
+  el.innerHTML=`
+   <div class="status">${ent.name} · ${num?`Move ${num}: ${colorName(nd.color)} ${nd.move==='pass'?'tenuki':nd.move}`:'Start position'} · <b>${toPlay(S.node)} to play</b></div>
+   <div class="boardwrap">${boardSVG({view:S.view,st,last,nums:S.nums,cands,marks,click:quiz||S.edit})}</div>
+   <div class="nav">
+     <button data-nav="first" title="Start (Home)">⏮</button><button data-nav="prev" title="Back (←)">◀</button>
+     <button data-nav="next" title="Forward along main line (→)">▶</button><button data-nav="last" title="End of main line (End)">⏭</button>
+     <span class="sep"></span>
+     ${quiz?`<button data-quiz="pass">Tenuki</button>`:`<button class="tenuki" data-go="${passKid||''}" ${passKid?'':'disabled'}>${pk?`<span class="dot ${pk.ring?'ring':''}" style="background:${pk.color};border-color:${pk.color}"></span>`:''}Tenuki${pk?` · ${pk.label}`:''}</button>`}
+     <span class="sep"></span>
+     <button data-act="view" title="Switch view">${S.view==='corner'?'Full board':'Corner view'}</button>
+     <button data-act="nums" class="${S.nums?'on':''}">Move numbers</button>
+     ${quiz?'':`<button data-act="cands" class="${S.showCands?'on':''}">Show next moves</button>`}
+   </div>
+   ${!quiz&&!S.edit&&nd.m&&nd.m.why?msg('move',`${colorName(nd.color)} ${nd.move==='pass'?'tenuki':nd.move} · why`,nd.m.why,nd.layer,'callout'):''}
+   ${S.edit?`<p class="hint" style="text-align:center">Edit mode: click an empty point to add a variation to <b>${S.editLayer}</b>. If the position already exists in a database, the new move joins it.</p>`:''}`;
+}
+
+/* ---------- right pane ---------- */
+function F(label,val,kind){if(S.edit)return`<div class="f"><div class="fl">${label}</div><div class="fv">${kind==='sel'?`<select><option>${esc(val||'—')}</option></select>`:kind==='area'?`<textarea>${esc(val||'')}</textarea>`:`<input value="${esc(val||'')}">`}</div></div>`;
+  if(val===undefined||val==='')return'';return`<div class="f"><div class="fl">${label}</div><div class="fv">${rich(val)}</div></div>`}
+const ICON={
+  move:'<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/></svg>',
+  pos:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>',
+  note:'<svg viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>',
+  warn:'<svg viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/></svg>'};
+function msg(kind,title,text,layer,extra=''){return text?`<div class="msg ${kind} ${extra}"><div class="mh">${ICON[kind]}${title}${layer?`<span class="badge ${layer}">${layer}</span>`:''}</div>${rich(text)}</div>`:''}
+function notes(arr){const vis=(arr||[]).filter(n=>S.layers[n.layer]);
+  return vis.map(n=>msg('note','Note',n.text,n.layer)).join('')+(S.edit?`<div class="f"><div class="fl">My note</div><div class="fv"><textarea placeholder="Note saved to ${S.editLayer}. Use {{TR:Q17,Q16|text}} to link marks."></textarea></div></div>`:'')}
+function why(text,layer,kind){if(S.edit)return F('Why',text,'area');return msg(kind||'move',kind==='pos'?'Position':'Why this move',text,layer)}
+function renderRight(){
+  const el=document.getElementById('right');
+  if(S.mode==='find'){el.innerHTML=`<h2>Matches</h2>
+    <div class="result" data-goto="n6"><div class="t"><span class="pill" style="background:#1e9e4a">Exact</span>4-4 point · 3-3 invasion — after move 6</div>
+      <div class="m">Bottom-left corner · rotated 180° · colors swapped · White to play</div><div class="m">Next: R18 connect (main), tenuki (mistake)</div></div>
+    <div class="result" data-goto="n4"><div class="t"><span class="pill" style="background:#138f8c">Contained</span>3-3 invasion — after move 4</div>
+      <div class="m">Your corner contains this position + 2 extra stones</div></div>
+    <div class="result" data-goto="n7"><div class="t"><span class="pill" style="background:#7d858f">Near</span>3-3 invasion — joseki end</div>
+      <div class="m">Differs by 1 stone: R18 (in database orientation) is missing</div></div>
+    <h3>Other corners</h3><p class="hint">Top-left (D16), bottom-right (Q4): no matching entry. Center stone K10 ignored.</p>`;return}
+  if(S.mode==='quiz'){const q=S.quiz;const nd=N[S.node];const exp=kids(S.node).find(c=>N[c].cat==='main');
+    el.innerHTML=`<h2>Card 3 of 12</h2>
+     <div class="text"><b>${toPlay(S.node)} to play.</b> Find the joseki move. Tenuki counts as a move.</div>
+     <div class="hint">From: 4-4 point · 3-3 invasion (shown in a random orientation)</div>
+     ${q?`<div class="feedback" style="border-color:${q.ok?'#1e9e4a':'#d33232'}"><b>${q.ok?'Correct':'Not the joseki move'}</b> — you played ${q.pt==='pass'?'tenuki':q.pt}.
+       ${q.ok?'':`<br>The joseki move is <b>${N[exp].move}</b>.`}<br><br>${rich(N[exp].m.why)}</div>
+       <div class="addbtns"><button data-act="qreveal">Show all candidates</button><button data-act="qnext">Next card</button></div>
+       <p class="hint">Rate: <button>Again</button> <button>Hard</button> <button>Good</button> <button>Easy</button></p>`
+     :`<p class="hint">Click a point on the board or press Tenuki.</p><div class="addbtns"><button data-act="qreveal">Give up and show</button></div>`}`;return}
+  const nd=N[S.node],ent=ENTRIES[S.entry],isJ=ent.type==='joseki',p=nd.p||{},m=nd.m||{};
+  const cs=kids(S.node);const layerOf=nd.layer;
+  let h=`<h3>${isJ?'Joseki':'Shape'} <span class="badge ${ent.layer}">${ent.layer}</span></h3>`;
+  h+=`<div class="text"><b>${esc(ent.name)}</b></div>`;
+  if(isJ)h+=F('Also called',ent.aliases)+F('Family',ent.family)+F('Difficulty',ent.difficulty,'sel')+F('Era',ent.era,'sel')+F('Start',ent.start)+F('Tags',ent.tags)+F('Summary',ent.summary,'area');
+  else h+=F('Eye space',ent.size)+F('Location',ent.location,'sel')+F('Surroundings',ent.surround)+F('Arrangement',ent.arrangement,'sel')+F('Black first',ent.resB,'sel')+F('White first',ent.resW,'sel')+F('Vital point',ent.vital)+F('Difficulty',ent.difficulty,'sel')+F('Summary',ent.summary,'area');
+  if(nd.parent){const k=CAT[nd.cat];
+    h+=`<h3>Last move: ${colorName(nd.color)} ${nd.move==='pass'?'tenuki':nd.move} <span class="dot ${k.ring?'ring':''}" style="background:${k.color};border-color:${k.color}"></span><span style="font-weight:400;font-size:12px">${k.label}</span> <span class="badge ${layerOf}">${layerOf}</span></h3>`;
+    if(isJ)h+=F('Category',k.label,'sel')+F('Style',m.style,'sel')+F('Purpose',m.purpose)+F('Conditions',m.cond);
+    else h+=F('Category',k.label,'sel');
+    h+=(S.edit?why(m.why,layerOf):(m.why?'<p class="hint">Why this move: shown under the board.</p>':''))+notes(m.notes);}
+  h+=`<h3>Position</h3>`;
+  if(isJ)h+=F('Status',p.status,'sel')+F('Evaluation',p.eval,'sel')+F('Point balance',p.balance?`${p.balance} (Black's view) · ${p.src}`:(S.edit?'':undefined))+F('Sente',p.sente,'sel')+F('Result',p.result)+F('Tenuki',p.tenuki)+(S.edit?F('Aji',p.aji,'area'):'');
+  else h+=F('Black first',p.statusB,'sel')+F('White first',p.statusW,'sel')+F('Eyes',p.eyes)+F('Liberties',p.libs);
+  h+=why(p.why,nd.parent?layerOf:ent.layer,'pos')+(S.edit?'':msg('warn','Watch out',p.aji,layerOf))+notes(p.notes);
+  h+=`<h3>Next moves (${cs.length})</h3><div class="cands">${cs.map(c=>{const n=N[c],k=CAT[n.cat];
+    return`<div class="cand ${S.hlCand===c?'hl':''}" data-go="${c}" data-hl="${c}"><span class="dot ${k.ring?'ring':''}" style="background:${k.color};border-color:${k.color}"></span><b>${n.move==='pass'?'Tenuki':n.move}</b><span class="lbl">${k.label} · ${n.label}${n.sym?` · ${n.sym}`:''}</span><span class="badge ${n.layer}">${n.layer}</span></div>`}).join('')||'<p class="hint">End of this line.</p>'}</div>`;
+  if(S.edit)h+=`<div class="addbtns"><button>+ Add move on board</button><button>+ Add tenuki</button><button>Draw marks…</button></div>`;
+  el.innerHTML=h;
+}
+
+/* ---------- tree ---------- */
+function renderTree(){
+  const el=document.getElementById('tree');
+  if(S.mode==='find'){el.innerHTML='<h2>Variation tree</h2><p class="hint">Pick a match to open its tree.</p>';return}
+  const root=path(S.node)[0],pos={};let row=0,maxX=0;
+  (function place(id,d,r){pos[id]=[d,r];maxX=Math.max(maxX,d);kids(id).forEach((k,i)=>{if(i===0)place(k,d+1,r);else{row++;place(k,d+1,row)}})})(root,0,0);
+  const onPath=new Set(path(S.node)),dx=38,dy=30,ox=18,oy=18,s=[];
+  s.push(`<svg width="${(maxX+1)*dx+20}" height="${(row+1)*dy+12}" role="img" aria-label="Variation tree">`);
+  for(const id in pos){const n=N[id];if(!n.parent||!pos[n.parent])continue;const[a,b]=pos[n.parent],[c,d]=pos[id];
+    const x1=ox+a*dx,y1=oy+b*dy,x2=ox+c*dx,y2=oy+d*dy,on=onPath.has(id);
+    s.push(`<path d="M${x1} ${y1} L${x1+dx*.5} ${y2} L${x2} ${y2}" fill="none" stroke="${on?'var(--fg)':'var(--line)'}" stroke-width="${on?2.2:1.4}"/>`)}
+  for(const id in pos){const n=N[id],[c,d]=pos[id],x=ox+c*dx,y=oy+d*dy,k=n.parent?CAT[n.cat]:null,cur=id===S.node;
+    s.push(`<g data-go="${id}" style="cursor:pointer"><title>${n.parent?`${colorName(n.color)} ${n.move==='pass'?'tenuki':n.move} — ${k.label}${n.layer!=='general'?' ('+n.layer+')':''}`:'Start'}</title>`);
+    if(cur)s.push(`<rect x="${x-14}" y="${y-14}" width="28" height="28" rx="4" fill="none" stroke="var(--accent)" stroke-width="2"/>`);
+    if(!n.parent)s.push(`<rect x="${x-8}" y="${y-8}" width="16" height="16" fill="var(--chip)" stroke="var(--muted)"/>`);
+    else if(n.move==='pass')s.push(`<rect x="${x-9}" y="${y-9}" width="18" height="18" rx="3" fill="${n.color==='B'?'#151515':'#f5f5f2'}" stroke="${k.color}" stroke-width="3"/><text x="${x}" y="${y+4}" font-size="10" text-anchor="middle" fill="${n.color==='B'?'#fff':'#111'}">T</text>`);
+    else s.push(`<circle cx="${x}" cy="${y}" r="9" fill="${n.color==='B'?'#151515':'#f5f5f2'}" stroke="${k.color}" stroke-width="3" ${n.stub?'stroke-dasharray="3 2"':''}/><text x="${x}" y="${y+3.5}" font-size="9" text-anchor="middle" fill="${n.color==='B'?'#fff':'#111'}">${path(id).length-1}</text>`);
+    if(n.layer!=='general')s.push(`<circle cx="${x+9}" cy="${y-9}" r="3.5" fill="#9d4fc7"/>`);
+    s.push('</g>')}
+  s.push('</svg>');
+  const cats=ENTRIES[S.entry].type==='joseki'?JOSEKI_CATS:SHAPE_CATS;
+  el.innerHTML=`<h2>Variation tree</h2><div class="treebox">${s.join('')}</div>
+    <div class="legend">${cats.map(c=>`<span><span class="dot ${CAT[c].ring?'ring':''}" style="background:${CAT[c].color};border-color:${CAT[c].color}"></span>${CAT[c].label}</span>`).join('')}
+    <span>T = tenuki</span><span>dashed = continues in another entry</span><span><span class="dot" style="background:#9d4fc7"></span>from jparisu</span></div>`;
+}
+
+/* ---------- modals ---------- */
+function renderModal(){
+  const el=document.getElementById('modal');if(!S.modal){el.hidden=true;return}el.hidden=false;
+  if(S.modal==='settings')el.innerHTML=`<div class="modal"><div class="box"><h2 style="margin-top:0">Settings</h2>
+    <h3>Move categories</h3>${JOSEKI_CATS.concat(['ko']).map(c=>`<div class="setrow"><input type="checkbox" checked aria-label="Show ${CAT[c].label}"><span>${CAT[c].label}</span><input type="color" value="${CAT[c].color}" aria-label="Color"><span class="hint">Symbol: ${CAT[c].sym||'ring'}</span></div>`).join('')}
+    <h3>Board</h3>
+    <div class="f"><div class="fl">Default view</div><div class="fv"><select><option>Corner (10×10)</option><option>Full board</option></select></div></div>
+    <div class="f"><div class="fl">Marks</div><div class="fv"><select><option>Show on hover / tap of linked text</option><option>Always show</option></select></div></div>
+    <div class="f"><div class="fl">Coordinates</div><div class="fv"><select><option>A–T, 1–19</option><option>Hidden</option></select></div></div>
+    <div class="f"><div class="fl">Language</div><div class="fv"><select><option>English</option><option disabled>Español (later)</option></select></div></div>
+    <div class="addbtns"><button data-act="close">Close</button><button data-act="close">Reset to defaults</button></div></div></div>`;
+  if(S.modal==='patch')el.innerHTML=`<div class="modal"><div class="box"><h2 style="margin-top:0">Download patch</h2>
+    <p class="text">3 changes in <b>jparisu</b>, compared with the version loaded from the repository.</p>
+<pre>--- a/db/jparisu/joseki/4-4-3-3-invasion.sgf
++++ b/db/jparisu/joseki/4-4-3-3-invasion.sgf
+@@ -12,6 +12,10 @@
+ ;W[pr]C[...]
++(;B[qr]XCAT[overplay]XMW[The cutting stone has only two liberties...]
++ ;W[rr]XCAT[punish]XPB[-3.0])
++;W[qs]XPU[Remember: the wall is only worth it if I use it...]</pre>
+    <p class="hint">Apply with <span class="kbd">git apply</span> and open a pull request.</p>
+    <div class="addbtns"><button data-act="close">Download .patch</button><button data-act="close">Download changed SGF files</button><button data-act="close">Cancel</button></div></div></div>`;
+}
+
+function render(){renderTop();renderLeft();renderCenter();renderRight();renderTree();renderModal()}
+let tt;function toast(t){const e=document.getElementById('toast');e.textContent=t;e.hidden=false;clearTimeout(tt);tt=setTimeout(()=>e.hidden=true,1800)}
+
+/* ---------- events ---------- */
+function go(id){if(!id||!N[id])return;if(N[id].stub){toast('This line continues in another entry (not in the mock)');}S.node=id;S.pin=null;S.hover=null;render()}
+function nav(k){const n=N[S.node];
+  if(k==='first')go(path(S.node)[0]);
+  if(k==='prev'&&n.parent)go(n.parent);
+  if(k==='next'){const c=kids(S.node);if(c.length)go(c[0])}
+  if(k==='last'){let id=S.node;while(kids(id).length)id=kids(id)[0];go(id)}}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-mode],[data-layer],[data-lib],[data-entry],[data-go],[data-nav],[data-act],[data-ref],[data-goto],[data-pt],[data-quiz]');if(!t)return;
+  const d=t.dataset;
+  if(d.mode){S.mode=d.mode;S.edit=false;if(d.mode==='quiz'){S.entry='j1';S.node='n4';S.quiz=null;S.view='corner'}if(d.mode==='explore'&&S.entry==='j1'&&!N[S.node])S.node='n6';render()}
+  else if(d.layer!==undefined&&t.tagName==='INPUT'){S.layers[d.layer]=t.checked;let id=S.node;while(!vis(id))id=N[id].parent;S.node=id;render()}
+  else if(d.lib){S.lib=d.lib;const e2=d.lib==='joseki'?'j1':'s1';S.entry=e2;S.node=ENTRIES[e2].root;render()}
+  else if(d.entry!==undefined){if(!d.entry){toast('Not in the mock');return}S.entry=d.entry;S.node=ENTRIES[d.entry].root;render()}
+  else if(d.goto){S.mode='explore';S.entry='j1';go(d.goto)}
+  else if(d.quiz){answer('pass')}
+  else if(d.pt){if(S.mode==='quiz')answer(d.pt);else toast(`New move ${d.pt} would be added to ${S.editLayer}`)}
+  else if(d.go!==undefined){go(d.go)}
+  else if(d.nav)nav(d.nav);
+  else if(d.ref){S.pin=S.pin===d.ref?null:d.ref;renderCenter();renderRight()}
+  else if(d.act){const a=d.act;
+    if(a==='edit'){S.edit=!S.edit;render()}
+    if(a==='view'){S.view=S.view==='corner'?'full':'corner';renderCenter()}
+    if(a==='nums'){S.nums=!S.nums;renderCenter()}
+    if(a==='cands'){S.showCands=!S.showCands;renderCenter()}
+    if(a==='settings'||a==='patch'){S.modal=a;renderModal()}
+    if(a==='close'){S.modal=null;renderModal()}
+    if(a==='addlayer'||a==='stub')toast('Not in the mock');
+    if(a==='qreveal'){S.mode='explore';render()}
+    if(a==='qnext'){S.node='n5';S.quiz=null;render()}}
+});
+document.addEventListener('change',e=>{if(e.target.id==='editLayer'){S.editLayer=e.target.value;render()}});
+function answer(pt){const exp=kids(S.node).find(c=>N[c].cat==='main');S.quiz={pt,ok:N[exp].move===pt};
+  const {st}=position(S.node);renderRight()}
+document.addEventListener('mouseover',e=>{const r=e.target.closest('[data-ref]');const h=e.target.closest('[data-hl]');
+  const nr=r?r.dataset.ref:null,nh=h?h.dataset.hl:null;
+  if(nr!==S.hover){S.hover=nr;renderCenter()}
+  if(nh!==S.hlCand){S.hlCand=nh;renderCenter()}});
+document.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
+  const m={ArrowLeft:'prev',ArrowRight:'next',Home:'first',End:'last'}[e.key];if(m&&S.mode==='explore'){nav(m);e.preventDefault()}
+  if(e.key==='Escape'&&S.modal){S.modal=null;renderModal()}});
+render();
+</script>
