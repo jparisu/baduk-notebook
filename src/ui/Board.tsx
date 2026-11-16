@@ -22,6 +22,10 @@ interface Props {
   markers: BoardMarker[]
   marks: Mark[]
   coordinates: boolean
+  /** Called when any point is clicked (edit, find and quiz modes). Markers keep their own click. */
+  onPoint?: (pt: Pt) => void
+  /** Points picked but not used yet (e.g. first end of an arrow). */
+  pending?: Pt[]
 }
 
 const STAR = [3, 9, 15]
@@ -75,7 +79,7 @@ function MarkShape({ m, board }: { m: Mark; board: SignMap }) {
   }
 }
 
-export function Board({ window: win, board, last, numbers, markers, marks, coordinates }: Props) {
+export function Board({ window: win, board, last, numbers, markers, marks, coordinates, onPoint, pending }: Props) {
   const [x0, x1, y0, y1] = win
   const pad = coordinates ? 1.45 : 0.8
   const xs = x0 === 0 ? 0 : x0 - 0.75, xe = x1 === SIZE - 1 ? SIZE - 1 : x1 + 0.75
@@ -147,6 +151,15 @@ export function Board({ window: win, board, last, numbers, markers, marks, coord
       {last && !numbers && inWin(last) && board[last[1]][last[0]] !== 0 && (
         <circle cx={last[0]} cy={last[1]} r=".2" fill="none" stroke={board[last[1]][last[0]] === 1 ? '#fff' : '#111'} stroke-width=".06" />
       )}
+      {onPoint &&
+        range(y0, y1).flatMap((y) =>
+          range(x0, x1).map((x) => (
+            <rect key={`p${x},${y}`} class="hit" x={x - 0.5} y={y - 0.5} width="1" height="1" fill="transparent" onClick={() => onPoint([x, y])} />
+          )),
+        )}
+      {(pending ?? []).filter(inWin).map(([x, y]) => (
+        <circle key={`pd${x},${y}`} cx={x} cy={y} r=".36" fill="none" stroke="var(--markup)" stroke-width=".07" stroke-dasharray=".15 .1" pointer-events="none" />
+      ))}
       {markers.filter((m) => inWin(m.pt)).map((m, i, all) => {
         const k = m.cat ? CATEGORIES[m.cat] : { color: '#888', symbol: '·', ink: '#fff', ring: false, label: 'Unclassified' }
         // Two markers on one point (Black and White both have a move there): put them side by side.

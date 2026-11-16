@@ -81,6 +81,9 @@ export function SettingsDialog({ s, set, close, databases, active, toggleDb }: {
         {sel('icons', 'Icons', [[true, 'Shown'], [false, 'Hidden']])}
         <h3>Orientation</h3>
         {sel('rememberTransform', 'Remember corner / mirror / colors', [[true, 'Yes'], [false, 'No']])}
+        <h3>Quiz</h3>
+        {sel('quizRandom', 'Random orientation for each card', [[true, 'Yes'], [false, 'No']])}
+        {sel('quizNewPerDay', 'New cards per day', [[5, '5'], [10, '10'], [20, '20'], [50, '50']])}
         <div class="actions">
           <button onClick={() => set({ ...DEFAULT_SETTINGS, activeDatabases: s.activeDatabases })}>Reset to defaults</button>
           <button class="on" onClick={close}>Close</button>

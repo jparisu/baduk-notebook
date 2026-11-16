@@ -19,6 +19,8 @@ export interface Settings {
   moveMessage: 'board' | 'panel'
   icons: boolean
   rememberTransform: boolean
+  quizRandom: boolean
+  quizNewPerDay: number
   display: DisplayOptions
   activeDatabases: string[] | null // null = use activeByDefault from db/index.json
 }
@@ -37,6 +39,8 @@ export const DEFAULT_SETTINGS: Settings = {
   moveMessage: 'board',
   icons: true,
   rememberTransform: true,
+  quizRandom: true,
+  quizNewPerDay: 10,
   display: { corner: 'tr', mirror: false, swap: false },
   activeDatabases: null,
 }

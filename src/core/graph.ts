@@ -14,6 +14,9 @@ export interface Contribution {
   db: string
   props: Props
   toCanon: Transform
+  /** The SGF node this came from (used by the editor to write changes back). */
+  file: string
+  node: SgfNode
 }
 
 export interface Edge {
@@ -100,7 +103,7 @@ export function buildGraph(files: SourceFile[]): Graph {
             const sign = (parent.toCanon.swap ? -move.sign : move.sign) as Sign
             parent.node.edges.push((edge = { child: key, sign, pt, rel, contribs: [] }))
           }
-          edge.contribs.push({ db: file.db, props: moveProps, toCanon: parent.toCanon })
+          edge.contribs.push({ db: file.db, props: moveProps, toCanon: parent.toCanon, file: file.path, node })
         }
 
         if (!parent) {
@@ -114,10 +117,10 @@ export function buildGraph(files: SourceFile[]): Graph {
             const type = entryProps.XTYPE?.[0] === 'shape' ? 'shape' : 'joseki'
             g.entries.set(id, (entry = { id, type, root: key, contribs: [] }))
           }
-          entry?.contribs.push({ db: file.db, props: entryProps, toCanon })
+          entry?.contribs.push({ db: file.db, props: entryProps, toCanon, file: file.path, node })
           for (const k of Object.keys(entryProps)) delete posProps[k]
         }
-        pos.contribs.push({ db: file.db, props: posProps, toCanon })
+        pos.contribs.push({ db: file.db, props: posProps, toCanon, file: file.path, node })
 
         for (const child of node.children) walk(child, board, { node: pos, toCanon }, nextToMove)
       }

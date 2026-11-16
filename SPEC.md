@@ -473,7 +473,8 @@ Settings are saved in the browser (localStorage) and can be exported/imported as
   - "Show all candidates" reveals every next move.
 - **Spaced repetition**: SM-2-style scheduling with Again / Hard / Good / Easy buttons.
 - **Statistics**: due today, new, streak, success rate per entry, and weakest entries.
-- Progress is stored in IndexedDB and can be exported/imported as JSON. Optionally it can be committed to `progress/<name>.json` through the same patch mechanism.
+- Progress is stored in the browser and can be exported/imported as JSON.
+- A wrong answer comes back after 10 minutes. New cards per day and random orientation are settings.
 
 ---
 
@@ -635,7 +636,7 @@ Icons appear in the info panel, in the next-moves list, on board tooltips and in
 
 ## 13. Milestones
 
-Done: M1 (viewer), M2 (databases), M3 (transforms and visual aids).
+Done: M1–M7. Phone layout and themes added on top. M8 (content) is ongoing.
 
 | # | Milestone | Content |
 |---|---|---|
