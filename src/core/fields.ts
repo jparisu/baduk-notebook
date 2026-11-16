@@ -36,9 +36,9 @@ export const CATEGORIES: Record<Category, CategoryInfo> = {
   mistake: { label: 'Mistake', color: '#d33232', symbol: '✕', ink: '#fff', good: false },
   overplay: { label: 'Overplay', color: '#e8741c', symbol: '!', ink: '#fff', good: false },
   trick: { label: 'Trick play', color: '#8b47d6', symbol: '?', ink: '#fff', good: false },
-  punish: { label: 'Punishment', color: '#1e9e4a', symbol: '', ink: '#1e9e4a', ring: true, good: true },
+  punish: { label: 'Punishment', color: '#2563eb', symbol: '', ink: '#2563eb', ring: true, good: true },
   correct: { label: 'Correct', color: '#1e9e4a', symbol: '●', ink: '#fff', good: true },
-  ko: { label: 'Leads to ko', color: '#2f74d0', symbol: 'K', ink: '#fff', good: false },
+  ko: { label: 'Leads to ko', color: '#0891b2', symbol: 'K', ink: '#fff', good: false },
   wrong: { label: 'Wrong', color: '#d33232', symbol: '✕', ink: '#fff', good: false },
 }
 export const JOSEKI_CATEGORIES: Category[] = ['main', 'alt', 'situational', 'slack', 'mistake', 'overplay', 'trick', 'punish']

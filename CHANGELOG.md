@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Free play**: click any empty point to play outside the databases. Back and forward also step through your own moves. Messages come back when the line reaches a known position, also by transposition. "Save this line" stores the moves in a database.
+- **Empty corner** entry: Black chooses the first move (4-4, 3-4, 3-3, 5-4, 5-3) and the line continues into the joseki that start there. The status line and info panel show the most specific entry.
+- **Visual aids**: on touch screens a tap shows the marks and a second tap hides them; with a mouse, hover shows them and a click keeps them. New setting "Click or tap only".
+- Punishment moves are now blue; ko moves (shapes) are cyan.
+
 ## v0.1.0
 
 First version of Baduk Notebook.

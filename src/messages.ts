@@ -4,7 +4,7 @@ import type { Settings } from './settings'
 import { moveFields, positionFields, type Ctx, type Step } from './view'
 import type { MessageKind } from './ui/Message'
 import { ptName, apply } from './core/geometry'
-import { frame } from './view'
+import { frame, moveOf } from './view'
 
 export interface Msg {
   kind: MessageKind
@@ -19,10 +19,11 @@ export interface Msg {
 
 function moveName(ctx: Ctx, path: Step[], i: number) {
   const step = path[i]
-  if (!step.edge) return 'Start'
+  const m = moveOf(step)
+  if (!m) return 'Start'
   const F = frame(ctx, path[i - 1])
-  const sign = (F.swap ? -step.edge.sign : step.edge.sign) === 1 ? 'Black' : 'White'
-  return `${sign} ${step.edge.pt ? ptName(apply(F, step.edge.pt)) : 'tenuki'}`
+  const sign = (F.swap ? -m.sign : m.sign) === 1 ? 'Black' : 'White'
+  return `${sign} ${m.pt ? ptName(apply(F, m.pt)) : 'tenuki'}`
 }
 
 function forStep(ctx: Ctx, path: Step[], i: number, current: boolean, settings: Settings): Msg[] {

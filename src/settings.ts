@@ -15,7 +15,7 @@ export interface Settings {
   hiddenCategories: Category[]
   overlays: boolean
   history: 'current' | 'last3' | 'line'
-  aids: 'hover' | 'always'
+  aids: 'hover' | 'click' | 'always'
   moveMessage: 'board' | 'panel'
   icons: boolean
   rememberTransform: boolean

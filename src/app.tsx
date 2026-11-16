@@ -9,7 +9,7 @@ import { CATEGORIES, JOSEKI_CATEGORIES, SHAPE_CATEGORIES } from './core/fields'
 import { apply, applySign, compose, cornerWindow, inverse, parseSgfPtList, ptName, userTransform, type Corner, type Pt, type Sign } from './core/geometry'
 import type { Mark } from './core/refs'
 import { applyTheme, loadSettings, saveSettings, type Settings } from './settings'
-import { candidates, displayBoard, frame, entryFields, positionFields, rootStep, toMove, type Ctx, type Step } from './view'
+import { candidates, displayBoard, frame, entryFields, inBook, moveOf, playFree, positionFields, rebaseLine, rootStep, toMove, type Ctx, type Step } from './view'
 import { collectMessages } from './messages'
 import { Board } from './ui/Board'
 import { Tree } from './ui/Tree'
@@ -63,7 +63,11 @@ export function App() {
   const [drawer, setDrawer] = useState(false)
   const [viewOpen, setViewOpen] = useState(false)
   const [entryId, setEntryId] = useState<string | null>(null)
-  const [path, setPath] = useState<Step[]>([])
+  const [line, setLine] = useState<{ path: Step[]; future: Step[] }>({ path: [], future: [] })
+  const path = line.path
+  /** Replaces the line; the moves after it are forgotten unless `keepFuture`. */
+  const setPath = (p: Step[] | ((old: Step[]) => Step[])) =>
+    setLine((l) => ({ path: typeof p === 'function' ? p(l.path) : p, future: [] }))
   const [hovered, setHovered] = useState<string | null>(null)
   const [pinned, setPinned] = useState<string | null>(null)
   const [highlighted, setHighlighted] = useState<string | null>(null)
@@ -132,8 +136,8 @@ export function App() {
       if (first) open(first.id)
       return
     }
-    const fresh = rebase(ctx, entryId, path.map((s) => s.key))
-    if (fresh.length !== path.length || fresh.some((s, i) => s.key !== path[i].key)) setPath(fresh)
+    const fresh = rebaseLine(ctx, entryId, path)
+    if (fresh.length !== path.length || fresh.some((s, i) => s.key !== path[i].key || s.edge !== path[i].edge)) setLine((l) => ({ path: fresh, future: l.future }))
   }, [graph, shown])
 
   function open(id: string, keys?: string[]) {
@@ -150,13 +154,44 @@ export function App() {
     setHovered(null)
     setPending([])
   }
+  const resetMarks = () => {
+    setPinned(null)
+    setHovered(null)
+    setPending([])
+  }
+  // Back and forward keep the moves you step back over, in or out of the database (SPEC §8.3).
+  const back = () => {
+    resetMarks()
+    setLine((l) => (l.path.length > 1 ? { path: l.path.slice(0, -1), future: [l.path[l.path.length - 1], ...l.future] } : l))
+  }
+  const forward = () => {
+    resetMarks()
+    setLine((l) => {
+      if (!ctx || !l.path.length) return l
+      if (l.future.length) return { path: [...l.path, l.future[0]], future: l.future.slice(1) }
+      const c = candidates(ctx, l.path[l.path.length - 1])[0]
+      return c ? { path: [...l.path, c.step], future: [] } : l
+    })
+  }
+  const toStart = () => {
+    resetMarks()
+    setLine((l) => ({ path: l.path.slice(0, 1), future: [...l.path.slice(1), ...l.future] }))
+  }
+  const toEnd = () => {
+    resetMarks()
+    setLine((l) => {
+      if (!ctx) return l
+      if (l.future.length) return { path: [...l.path, ...l.future], future: [] }
+      return { path: mainLineEnd(ctx, l.path), future: [] }
+    })
+  }
 
   /** After an edit: rebuild the graph, keep the line, save drafts. */
   const commit = (msg?: string, adjust?: (c: Ctx, p: Step[]) => Step[] | null) => {
     const w = ws.current!
     const g = buildGraph(w.files)
     const c: Ctx = { graph: g, active: shown, order: w.databases.map((d) => d.id), U: userTransform(settings.display) }
-    let p = entryId ? rebase(c, entryId, path.map((s) => s.key)) : []
+    let p = entryId ? rebaseLine(c, entryId, path) : []
     if (adjust) p = adjust(c, p) ?? p
     setGraph(g)
     setPath(p)
@@ -174,20 +209,10 @@ export function App() {
         return
       }
       if (!ctx || mode !== 'explore' || dialog) return
-      const nav: Record<string, (p: Step[]) => Step[]> = {
-        ArrowLeft: (p) => (p.length > 1 ? p.slice(0, -1) : p),
-        ArrowRight: (p) => {
-          const c = p.length ? candidates(ctx, p[p.length - 1])[0] : undefined
-          return c ? [...p, c.step] : p
-        },
-        Home: (p) => p.slice(0, 1),
-        End: (p) => mainLineEnd(ctx, p),
-      }
+      const nav: Record<string, () => void> = { ArrowLeft: back, ArrowRight: forward, Home: toStart, End: toEnd }
       if (nav[e.key]) {
         e.preventDefault()
-        setPath((p) => (p.length ? nav[e.key](p) : p))
-        setPinned(null)
-        setHovered(null)
+        nav[e.key]()
         return
       }
       if (!edit || e.ctrlKey || e.metaKey || e.altKey) return
@@ -264,7 +289,27 @@ export function App() {
     flash(joined ? `Joins an existing position: ${joined}` : `Added ${sign === 1 ? 'Black' : 'White'} ${pt ? ptName(pt) : 'tenuki'} to ${target}`)
   }
 
+  /** Plays a move that may not be in any database (SPEC §8.3 free play). */
+  function playFreeMove(pt: Pt | null) {
+    const sign: Sign = toPlay || (lastSign ? (-lastSign as Sign) : 1)
+    const check = checkMove(ctx!, path, sign, pt)
+    if (!check.ok) return flash(check.reason)
+    const next = playFree(ctx!, step, sign, pt)
+    const fut = line.future[0]
+    const same = fut && fut.key === next.key
+    setLine({ path: [...path, next], future: same ? line.future.slice(1) : [] })
+    resetMarks()
+    if (inBook(ctx!, step) && !inBook(ctx!, next)) flash('Out of the database. Keep playing, or save this line.')
+    else if (!inBook(ctx!, step) && inBook(ctx!, next)) flash('Back in a known position.')
+  }
+
+  function saveLine() {
+    locate(w, ctx!, path, target, entryId!, true)
+    commit(`Saved this line to ${target}`)
+  }
+
   function onPoint(pt: Pt) {
+    if (!edit) return playFreeMove(pt)
     if (refType) return setPending([...pending, pt])
     if (tool === 'move') return playMove(pt)
     const setup = SETUP_TOOLS.has(tool)
@@ -325,8 +370,9 @@ export function App() {
   const numbers = new Map<string, number>()
   let last: Pt | null = null
   path.forEach((st, i) => {
-    if (!st.edge) return
-    const pt = st.edge.pt ? apply(frame(ctx, path[i - 1]), st.edge.pt) : null
+    const mv = moveOf(st)
+    if (!mv) return
+    const pt = mv.pt ? apply(frame(ctx, path[i - 1]), mv.pt) : null
     if (pt) numbers.set(`${pt[0]},${pt[1]}`, i)
     if (i === path.length - 1) last = pt
   })
@@ -348,17 +394,25 @@ export function App() {
       ),
     ),
   ]
-  const refs: RefHandlers = { hovered, pinned, colors, onHover: setHovered, onPin: (id) => setPinned(pinned === id ? null : id) }
+  const refs: RefHandlers = { hovered, pinned, colors, hover: settings.aids === 'hover', onHover: setHovered, onPin: (id) => setPinned((p) => (p === id ? null : id)) }
 
   const callout = messages.filter((m) => m.place === 'callout')
+  const offBook = !inBook(ctx, step)
+  const firstFree = path.findIndex((s) => !inBook(ctx, s))
+  const freeCount = path.filter((s) => s.free && !s.edge).length
+  // The most specific entry along the line (e.g. "Empty corner" → "4-4 point · 3-3 invasion").
+  let shownIdx = 0
+  path.forEach((s, i) => {
+    if (i > 0 && inBook(ctx, s) && entries.some((e) => e.root === s.key && e.id !== entryId)) shownIdx = i
+  })
+  const shownEntry = shownIdx ? entries.find((e) => e.root === path[shownIdx].key && e.id !== entryId)!.id : entryId
   const moveNo = path.length - 1
-  const lastSign = step.edge ? applySign(frame(ctx, path[path.length - 2]), step.edge.sign) : 0
+  const lastMove = moveOf(step)
+  const lastSign = lastMove ? applySign(frame(ctx, path[path.length - 2]), lastMove.sign) : 0
   const lastName = `${lastSign === 1 ? 'Black' : 'White'} ${last ? ptName(last) : 'tenuki'}`
   const setDisplay = (d: Partial<Settings['display']>) => setSettings({ ...settings, display: { ...settings.display, ...d } })
   const nChanges = changeCount(w)
 
-  const back = () => path.length > 1 && go(path.slice(0, -1))
-  const forward = () => cands[0] && go([...path, cands[0].step])
   let touch: { x: number; y: number } | null = null
   const onTouchStart = (e: TouchEvent) => {
     const t = e.touches[0]
@@ -413,18 +467,18 @@ export function App() {
   )
   const navButtons = (
     <>
-      <button class="icon" disabled={path.length < 2} onClick={() => go(path.slice(0, 1))} aria-label="Start (Home)"><SkipBack size={18} /></button>
+      <button class="icon" disabled={path.length < 2} onClick={toStart} aria-label="Start (Home)"><SkipBack size={18} /></button>
       <button class="icon" disabled={path.length < 2} onClick={back} aria-label="Back (←)"><ChevronLeft size={18} /></button>
       {edit ? (
         <button class="tenuki" onClick={() => playMove(null)}>+ Tenuki</button>
       ) : (
-        <button class="tenuki" disabled={!tenuki} onClick={() => tenuki && go([...path, tenuki.step])}>
+        <button class="tenuki" onClick={() => (tenuki ? go([...path, tenuki.step]) : playFreeMove(null))} title={tenuki ? undefined : 'Pass: not in the database'}>
           {tenuki && <CategoryDot cat={tenuki.cat} />}
           Tenuki{!phone && tenuki?.cat ? ` · ${CATEGORIES[tenuki.cat].label}` : ''}
         </button>
       )}
-      <button class="icon" disabled={!cands.length} onClick={forward} aria-label="Forward (→)"><ChevronRight size={18} /></button>
-      <button class="icon" disabled={!cands.length} onClick={() => go(mainLineEnd(ctx, path))} aria-label="End of main line (End)"><SkipForward size={18} /></button>
+      <button class="icon" disabled={!cands.length && !line.future.length} onClick={forward} aria-label="Forward (→)"><ChevronRight size={18} /></button>
+      <button class="icon" disabled={!cands.length && !line.future.length} onClick={toEnd} aria-label="End of main line (End)"><SkipForward size={18} /></button>
     </>
   )
   const viewOptions = (
@@ -497,10 +551,11 @@ export function App() {
       <main class="pane center">
         <div class="status">
           {phone ? (
-            <button class="entry-title" onClick={() => setDrawer(true)}>{entryName(entryId)}</button>
+            <button class="entry-title" onClick={() => setDrawer(true)}>{entryName(shownEntry)}</button>
           ) : (
-            <span>{entryName(entryId)} · </span>
+            <span>{entryName(shownEntry)} · </span>
           )}
+          {offBook && <span class="offbook-pill">Free play</span>}
           <span>{moveNo ? `Move ${moveNo}: ${lastName}` : 'Start position'} · <b>{toPlay === 1 ? 'Black' : toPlay === -1 ? 'White' : 'Either side'} to play</b></span>
         </div>
         <div class="board-wrap" onTouchStart={edit ? undefined : onTouchStart} onTouchEnd={edit ? undefined : onTouchEnd}>
@@ -511,7 +566,7 @@ export function App() {
             numbers={settings.moveNumbers ? numbers : null}
             coordinates={settings.coordinates}
             marks={marks}
-            onPoint={edit ? onPoint : undefined}
+            onPoint={onPoint}
             pending={pending}
             markers={settings.showNext && !(edit && (tool !== 'move' || refType)) ? cands.filter((c) => c.pt).map((c) => ({
               pt: c.pt!,
@@ -560,7 +615,27 @@ export function App() {
             }}
           />
         ) : (
-          <InfoPanel ctx={ctx} entryId={entryId} path={path} settings={settings} messages={messages} refs={refs} dbColor={dbColor} highlighted={highlighted} onHighlight={setHighlighted} onGo={go} />
+          <>
+            {offBook && (
+              <div class="offbook">
+                <h3>Out of the database</h3>
+                <p class="text">
+                  {freeCount} move{freeCount === 1 ? '' : 's'} played freely {firstFree > 1 ? `after move ${firstFree - 1}` : 'from the start'}. Messages and next moves come back when the line reaches a known position.
+                </p>
+                <div class="grp">
+                  <button onClick={() => go(path.slice(0, firstFree))}>Back to the database</button>
+                  <label class="target">
+                    <span class="grp-label">Save to</span>
+                    <select value={target} onChange={(e) => setTarget((e.target as HTMLSelectElement).value)} aria-label="Database to save this line to">
+                      {databases.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                    </select>
+                  </label>
+                  <button class="on" onClick={saveLine}>Save this line</button>
+                </div>
+              </div>
+            )}
+            <InfoPanel ctx={ctx} entryId={shownEntry} path={path.slice(shownIdx)} settings={settings} messages={messages} refs={refs} dbColor={dbColor} highlighted={highlighted} onHighlight={setHighlighted} onGo={(p) => go([...path.slice(0, shownIdx), ...p])} />
+          </>
         )}
       </aside>
       <section class="pane tree">
