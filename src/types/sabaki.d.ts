@@ -30,7 +30,3 @@ declare module '@sabaki/go-board' {
   }
 }
 
-declare module '@sabaki/shudan' {
-  import type { ComponentType } from 'preact'
-  export const Goban: ComponentType<Record<string, unknown>>
-}

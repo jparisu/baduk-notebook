@@ -2,9 +2,12 @@ name: CI
 
 on:
   pull_request:
+  push:
+    branches: [main]
 
 jobs:
-  build:
+  checks:
+    name: Types, unit tests and database validation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -13,4 +16,20 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run typecheck
+      # Includes src/core/db.test.ts, which validates every SGF file in db/.
+      - run: npm test
       - run: npm run build
+
+  e2e:
+    name: Browser tests (desktop and phone)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test --trace off

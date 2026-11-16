@@ -52,7 +52,7 @@ The app is built for one main user (a 7k player) but its databases are public in
 | D8 | Positions are identified by a **canonical hash** over the 8 board symmetries plus color swap, and including the player to move (§6). |
 | D9 | Content lives in **databases** (folders) that the user can switch on and off. Only active databases are shown. There is no separate "personal note" mechanism beyond databases and the note fields (§3). |
 | D10 | Changes are saved locally (IndexedDB) and exported as a **`.patch` file** or a set of changed SGF files, to be submitted as a pull request. There is no in-app write access to GitHub in v1. |
-| D11 | Tech stack: **TypeScript + Vite + Preact**, using `@sabaki/sgf`, `@sabaki/go-board`, `@sabaki/shudan` (§12). |
+| D11 | Tech stack: **TypeScript + Vite + Preact**, using `@sabaki/sgf` and `@sabaki/go-board`. The board is drawn by the app's own SVG component, because category colors, per-reference colors and overlays need more control than `@sabaki/shudan` offers (§12). |
 | D12 | Every new display option has a **default equal to the current mock-up behavior**. |
 
 ---
@@ -259,6 +259,7 @@ Any text field can link words to marks on the board:
 Rules:
 
 - Coordinates are written in human form (`Q16`) in the **stored orientation** (§6.1). The app transforms them for display (§8.4).
+- Words such as "Black" and "White" inside free text are not changed when the display swaps colors. Structured fields (evaluation, sente, point balance, shape results) are.
 - **Plain coordinates in text are not transformed.** To mention a point, write `{{CR:R18}}`: it shows "R18" in the stored orientation, and the right coordinate after a transform. The editor inserts these references by clicking on the board, so they rarely need to be typed.
 - In other SGF programs the text stays readable, with the braces visible.
 - Default display: marks appear when hovering (or tapping) the linked words, and clicking keeps them shown. See §8.5 for the "always show" option.
@@ -333,7 +334,15 @@ As in the mock-up:
 └───────────────────────────────────────────────────────────────────┘
 ```
 
-Responsive behavior: under 1100 px wide the info panel moves below the board; under 700 px everything is one column. Must work on a phone.
+Responsive behavior: under 1100 px wide the info panel moves below the board.
+
+**Phone layout (under 700 px):**
+- A compact sticky header: menu button, app name, settings button.
+- The menu button (or tapping the entry name above the board) opens a **drawer** with the modes, the library and the database switches.
+- The board fills the width. Orientation and view options are folded behind a "View" button.
+- A **bottom bar** holds the navigation (start, back, tenuki, forward, end) with 44 px touch targets, above the phone's safe area.
+- **Swipe** on the board: left = forward, right = back.
+- Settings open as a bottom sheet.
 
 ### 8.2 Modes
 
@@ -433,6 +442,8 @@ Every text block carries its database badge. In edit mode:
 
 | Group | Setting | Default |
 |---|---|---|
+| Appearance | Theme: **Modern** (rounded cards, soft depth, indigo accent, shaded stones) / Simple (calm neutral colors) / Minimalist (black and white, flat, square) | Modern |
+| | Light / dark | Auto (follows the device) |
 | Categories | Show/hide, color and symbol for each category | Table §11.1, all shown |
 | Board | Default view | Corner 10×10 |
 | | Coordinates | Shown |
@@ -462,7 +473,8 @@ Settings are saved in the browser (localStorage) and can be exported/imported as
   - "Show all candidates" reveals every next move.
 - **Spaced repetition**: SM-2-style scheduling with Again / Hard / Good / Easy buttons.
 - **Statistics**: due today, new, streak, success rate per entry, and weakest entries.
-- Progress is stored in IndexedDB and can be exported/imported as JSON. Optionally it can be committed to `progress/<name>.json` through the same patch mechanism.
+- Progress is stored in the browser and can be exported/imported as JSON.
+- A wrong answer comes back after 10 minutes. New cards per day and random orientation are settings.
 
 ---
 
@@ -583,7 +595,7 @@ Icons appear in the info panel, in the next-moves list, on board tooltips and in
 |---|---|
 | Language / build | TypeScript, Vite |
 | UI | Preact |
-| Board component | `@sabaki/shudan` (supports markers, lines, arrows, heat/paint maps for overlays) |
+| Board component | Own SVG component (`src/ui/Board.tsx`): stones, category markers, SGF markup, overlays |
 | Game rules | `@sabaki/go-board` |
 | SGF parse/write | `@sabaki/sgf` |
 | Local storage | IndexedDB (`idb-keyval`), localStorage for settings |
@@ -623,6 +635,8 @@ Icons appear in the info panel, in the next-moves list, on board tooltips and in
 ---
 
 ## 13. Milestones
+
+Done: M1–M7. Phone layout and themes added on top. M8 (content) is ongoing.
 
 | # | Milestone | Content |
 |---|---|---|

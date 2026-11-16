@@ -48,6 +48,7 @@ function databases(): Plugin {
 export default defineConfig({
   base: '/baduk-notebook/',
   plugins: [preact(), databases()],
+  test: { include: ['src/**/*.test.ts'] },
   resolve: {
     // @sabaki/sgf falls back to UTF-8 when these optional modules are missing; we only use UTF-8 files.
     alias: {

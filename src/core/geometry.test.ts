@@ -1,0 +1,44 @@
+import { describe, expect, it } from 'vitest'
+import { IDENTITY, SYMMETRIES, apply, compose, cornerWindow, inverse, parsePt, ptName, userTransform } from './geometry'
+import { canonical } from './hash'
+import type { SignMap } from './geometry'
+
+const empty = (): SignMap => Array.from({ length: 19 }, () => Array(19).fill(0))
+
+describe('geometry', () => {
+  it('parses and prints coordinates', () => {
+    expect(parsePt('Q16')).toEqual([15, 3])
+    expect(ptName([15, 3])).toBe('Q16')
+    expect(parsePt('I5')).toBeNull()
+  })
+  it('composes and inverts symmetries', () => {
+    for (const s of SYMMETRIES) {
+      expect(compose(s, inverse(s))).toEqual({ ...IDENTITY })
+      for (const t of SYMMETRIES) {
+        const p: [number, number] = [15, 3]
+        expect(apply(compose(t, s), p)).toEqual(apply(t, apply(s, p)))
+      }
+    }
+  })
+  it('moves the top-right corner to the chosen corner', () => {
+    const p = parsePt('Q16')!
+    expect(ptName(apply(userTransform({ corner: 'tl', mirror: false, swap: false }), p))).toBe('D16')
+    expect(ptName(apply(userTransform({ corner: 'bl', mirror: false, swap: false }), p))).toBe('D4')
+    // mirror swaps the two sides of the corner: R17 (3-3) stays, R14 ↔ O17
+    expect(ptName(apply(userTransform({ corner: 'tr', mirror: true, swap: false }), parsePt('R14')!))).toBe('O17')
+    expect(cornerWindow('br')).toEqual([9, 18, 9, 18])
+  })
+})
+
+describe('canonical hash', () => {
+  it('gives the same key for all orientations and for swapped colors', () => {
+    const a = empty(), b = empty(), c = empty()
+    a[3][15] = 1; a[2][16] = -1 // Q16 black, R17 white (top-right)
+    b[15][3] = 1; b[16][2] = -1 // same shape in the bottom-left
+    c[3][15] = -1; c[2][16] = 1 // colors swapped
+    const ka = canonical(a, 1).key
+    expect(canonical(b, 1).key).toBe(ka)
+    expect(canonical(c, -1).key).toBe(ka)
+    expect(canonical(a, -1).key).not.toBe(ka) // the player to move matters
+  })
+})

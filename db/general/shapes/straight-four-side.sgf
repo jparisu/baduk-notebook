@@ -1,0 +1,16 @@
+(;FF[4]CA[UTF-8]GM[1]SZ[19]
+XID[straight-four-side]XTYPE[shape]XNAME[Straight four · side · enclosed]XDIFF[25k]
+XSIZE[4]XLOC[side]XSURR[full]XOLIB[0]XINSIDE[0]XARR[connected]XRESB[alive]XRESW[alive]
+XREG[qb:si]XTAG[eye shape]
+XSUM[Four points in a row. Alive even if White plays first: Black always answers on the other middle point.]
+AB[rc:rh][sc][sh]AW[qb:qi][rb][sb][ri][si]
+XSB[alive]XSW[alive]XEYE[One eye space of 4 points]XLIB[0 outside liberties]
+XPW[{{SQ:T13,T14,T15,T16|The 4-point eye space}} has {{CR:T14,T15|two middle points}}. White can take only one of them.]
+(;W[sf]XCAT[wrong]XMW[Takes one middle point.]
+XSB[alive]XSW[alive]
+;B[se]XCAT[correct]XMW[Takes the other middle point. Two eyes.]
+XSB[alive]XSW[alive]XEYE[Two eyes])
+(;W[se]XCAT[wrong]XMW[Takes the other middle point.]
+XSB[alive]XSW[alive]
+;B[sf]XCAT[correct]XMW[Takes the remaining middle point. Two eyes.]
+XSB[alive]XSW[alive]XEYE[Two eyes]))

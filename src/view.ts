@@ -1,0 +1,160 @@
+/** View model: turns the canonical graph into what the screen shows, after transforms and database filters. */
+import type { Graph, Contribution, Edge, PosNode } from './core/graph'
+import { edgeCategory, visibleEdges } from './core/graph'
+import { CATEGORY_ORDER, COLOR_PROPS, LIST_PROPS, TEXT_PROPS, flipValue, type Category } from './core/fields'
+import { apply, applySign, compose, inverse, parseSgfPtList, transformMap, type Pt, type Sign, type SignMap, type Transform } from './core/geometry'
+import { parseText, propMarks, transformMarks, type Mark, type Segment } from './core/refs'
+
+/** One step of the current line. `D` maps the node's canonical frame to the entry's stored frame. */
+export interface Step {
+  key: string
+  D: Transform
+  edge?: Edge
+}
+
+export interface Ctx {
+  graph: Graph
+  active: Set<string>
+  order: string[] // database order from index.json (later wins)
+  U: Transform // user display transform
+}
+
+export const frame = (ctx: Ctx, step: Step) => compose(ctx.U, step.D)
+export const node = (ctx: Ctx, step: Step): PosNode => ctx.graph.nodes.get(step.key)!
+
+export function rootStep(ctx: Ctx, entryId: string): Step {
+  const e = ctx.graph.entries.get(entryId)!
+  return { key: e.root, D: inverse(e.contribs[0].toCanon) }
+}
+
+export function childStep(parent: Step, edge: Edge): Step {
+  return { key: edge.child, D: compose(parent.D, inverse(edge.rel)), edge }
+}
+
+export function displayBoard(ctx: Ctx, step: Step): SignMap {
+  return transformMap(frame(ctx, step), node(ctx, step).board)
+}
+
+export const toMove = (ctx: Ctx, step: Step): Sign => applySign(frame(ctx, step), node(ctx, step).toMove)
+
+export interface Candidate {
+  edge: Edge
+  step: Step
+  cat: Category | null
+  pt: Pt | null // display frame
+  sign: Sign // display colors
+  label: string
+  dbs: string[]
+}
+
+export function candidates(ctx: Ctx, step: Step): Candidate[] {
+  const F = frame(ctx, step)
+  const list = visibleEdges(ctx.graph, step.key, ctx.active).map((edge) => {
+    const cat = edgeCategory(edge, ctx.active, ctx.order)
+    const why = edge.contribs.find((c) => ctx.active.has(c.db) && c.props.XMW)?.props.XMW?.[0] ?? ''
+    return {
+      edge,
+      step: childStep(step, edge),
+      cat,
+      pt: edge.pt ? apply(F, edge.pt) : null,
+      sign: applySign(F, edge.sign),
+      label: shortLabel(why),
+      dbs: [...new Set(edge.contribs.filter((c) => ctx.active.has(c.db)).map((c) => c.db))],
+    }
+  })
+  const rank = (c: Candidate) => (c.cat ? CATEGORY_ORDER.indexOf(c.cat) : 99)
+  return list.sort((a, b) => rank(a) - rank(b))
+}
+
+/** First sentence of a "why" text, without references markup. */
+function shortLabel(text: string) {
+  const plain = text.replace(/\{\{[^|}]*\|([^}]*)\}\}/g, '$1').replace(/\{\{([A-Z]+):([^}]*)\}\}/g, '$2')
+  const first = plain.split(/(?<=\.)\s/)[0]
+  return first.length > 60 ? first.slice(0, 57) + '…' : first
+}
+
+/* ---- Field resolution (SPEC §3.3) ---- */
+
+export interface TextValue {
+  db: string
+  segments: Segment[]
+}
+export interface Resolved {
+  value: string
+  db: string
+  overridden: { db: string; value: string }[]
+}
+
+/** Transform from a contribution's file frame to the display frame. */
+const fileToDisplay = (F: Transform, c: Contribution) => compose(F, c.toCanon)
+
+export class Fields {
+  constructor(
+    private ctx: Ctx,
+    private contribs: Contribution[],
+    private F: Transform,
+    private idPrefix: string,
+  ) {}
+
+  private visible() {
+    return this.contribs
+      .filter((c) => this.ctx.active.has(c.db))
+      .sort((a, b) => this.ctx.order.indexOf(a.db) - this.ctx.order.indexOf(b.db))
+  }
+
+  /** True when this contribution's colors are swapped relative to the display. */
+  swapped(c: Contribution) {
+    return fileToDisplay(this.F, c).swap
+  }
+
+  text(prop: string): TextValue[] {
+    return this.visible().flatMap((c, i) =>
+      (c.props[prop] ?? []).map((t, j) => ({ db: c.db, segments: parseText(t, fileToDisplay(this.F, c), `${this.idPrefix}:${prop}:${i}:${j}`) })),
+    )
+  }
+
+  /** Single value: the database listed last wins. Color-dependent values are flipped when needed. */
+  one(prop: string): Resolved | null {
+    const vals = this.visible().flatMap((c) => {
+      const v = c.props[prop]?.[0]
+      if (v === undefined || v === '') return []
+      return [{ db: c.db, value: COLOR_PROPS.has(prop) && this.swapped(c) ? flipValue(prop, v) : v }]
+    })
+    if (!vals.length) return null
+    const last = vals[vals.length - 1]
+    return { ...last, overridden: vals.slice(0, -1).filter((v) => v.value !== last.value) }
+  }
+
+  list(prop: string): string[] {
+    return [...new Set(this.visible().flatMap((c) => c.props[prop] ?? []))]
+  }
+
+  /** Board markup and overlays stored on the node (always visible). */
+  marks(): Mark[] {
+    return this.visible().flatMap((c) => transformMarks(fileToDisplay(this.F, c), propMarks(c.props)))
+  }
+
+  /** SGF point list values (e.g. XVITAL) in the display frame. */
+  points(prop: string): Pt[] {
+    return this.visible().flatMap((c) => (c.props[prop] ?? []).flatMap(parseSgfPtList).map((p) => apply(fileToDisplay(this.F, c), p)))
+  }
+
+  /** The first visible contribution with this property, for swap checks (e.g. XRESB/XRESW). */
+  firstWith(prop: string): Contribution | undefined {
+    return this.visible().find((c) => c.props[prop])
+  }
+}
+
+export function isText(prop: string) {
+  return TEXT_PROPS.has(prop)
+}
+export function isList(prop: string) {
+  return LIST_PROPS.has(prop)
+}
+
+export const positionFields = (ctx: Ctx, step: Step) => new Fields(ctx, node(ctx, step).contribs, frame(ctx, step), `p:${step.key}`)
+export function moveFields(ctx: Ctx, parent: Step, edge: Edge) {
+  return new Fields(ctx, edge.contribs, frame(ctx, parent), `m:${edge.child}`)
+}
+export const entryFields = (ctx: Ctx, entryId: string, rootStep: Step) =>
+  new Fields(ctx, ctx.graph.entries.get(entryId)!.contribs, frame(ctx, rootStep), `e:${entryId}`)
