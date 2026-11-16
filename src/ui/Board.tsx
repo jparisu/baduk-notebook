@@ -88,6 +88,16 @@ export function Board({ window: win, board, last, numbers, markers, marks, coord
   return (
     <svg class="board" viewBox={`${x0 - pad} ${y0 - pad} ${x1 - x0 + 2 * pad} ${y1 - y0 + 2 * pad}`} role="img" aria-label="Go board">
       <defs>
+        <radialGradient id="g-black" cx="35%" cy="30%" r="70%">
+          <stop offset="0%" stop-color="#6b6b6b" />
+          <stop offset="45%" stop-color="#1f1f1f" />
+          <stop offset="100%" stop-color="#050505" />
+        </radialGradient>
+        <radialGradient id="g-white" cx="35%" cy="30%" r="75%">
+          <stop offset="0%" stop-color="#ffffff" />
+          <stop offset="70%" stop-color="#e9e9e4" />
+          <stop offset="100%" stop-color="#bdbdb6" />
+        </radialGradient>
         <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto">
           <path d="M0 0L10 5L0 10z" fill="currentColor" />
         </marker>
@@ -95,7 +105,7 @@ export function Board({ window: win, board, last, numbers, markers, marks, coord
           <path d="M0 0L10 5L0 10z" fill="currentColor" />
         </marker>
       </defs>
-      <rect x={x0 - 0.75} y={y0 - 0.75} width={x1 - x0 + 1.5} height={y1 - y0 + 1.5} fill="var(--board)" rx=".12" />
+      <rect class="board-bg" x={x0 - 0.75} y={y0 - 0.75} width={x1 - x0 + 1.5} height={y1 - y0 + 1.5} rx=".12" />
       {below.map((m, i) => <MarkShape key={'b' + i} m={m} board={board} />)}
       {range(x0, x1).map((x) => (
         <line key={'v' + x} x1={x} y1={ys} x2={x} y2={ye} stroke="var(--board-line)" stroke-width={x === 0 || x === SIZE - 1 ? 0.06 : 0.03} />
@@ -125,7 +135,8 @@ export function Board({ window: win, board, last, numbers, markers, marks, coord
           const n = numbers?.get(`${x},${y}`)
           return (
             <g key={`st${x},${y}`}>
-              <circle cx={x} cy={y} r=".47" fill={s === 1 ? 'var(--stone-black)' : 'var(--stone-white)'} stroke={s === 1 ? '#000' : '#777'} stroke-width=".03" />
+              <circle class="stone-shadow" cx={x + 0.05} cy={y + 0.07} r=".47" />
+              <circle class={s === 1 ? 'stone-b' : 'stone-w'} cx={x} cy={y} r=".47" />
               {n !== undefined && (
                 <text x={x} y={y + 0.15} font-size=".4" text-anchor="middle" fill={s === 1 ? '#fff' : '#111'}>{n}</text>
               )}

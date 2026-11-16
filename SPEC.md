@@ -334,7 +334,15 @@ As in the mock-up:
 └───────────────────────────────────────────────────────────────────┘
 ```
 
-Responsive behavior: under 1100 px wide the info panel moves below the board; under 700 px everything is one column. Must work on a phone.
+Responsive behavior: under 1100 px wide the info panel moves below the board.
+
+**Phone layout (under 700 px):**
+- A compact sticky header: menu button, app name, settings button.
+- The menu button (or tapping the entry name above the board) opens a **drawer** with the modes, the library and the database switches.
+- The board fills the width. Orientation and view options are folded behind a "View" button.
+- A **bottom bar** holds the navigation (start, back, tenuki, forward, end) with 44 px touch targets, above the phone's safe area.
+- **Swipe** on the board: left = forward, right = back.
+- Settings open as a bottom sheet.
 
 ### 8.2 Modes
 
@@ -434,6 +442,8 @@ Every text block carries its database badge. In edit mode:
 
 | Group | Setting | Default |
 |---|---|---|
+| Appearance | Theme: **Modern** (rounded cards, soft depth, indigo accent, shaded stones) / Simple (calm neutral colors) / Minimalist (black and white, flat, square) | Modern |
+| | Light / dark | Auto (follows the device) |
 | Categories | Show/hide, color and symbol for each category | Table §11.1, all shown |
 | Board | Default view | Corner 10×10 |
 | | Coordinates | Shown |

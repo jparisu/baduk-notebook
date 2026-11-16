@@ -2,7 +2,12 @@
 import type { Category } from './core/fields'
 import type { DisplayOptions } from './core/geometry'
 
+export type Theme = 'simple' | 'minimal' | 'modern'
+export type ColorMode = 'auto' | 'light' | 'dark'
+
 export interface Settings {
+  theme: Theme
+  colorMode: ColorMode
   view: 'corner' | 'full'
   coordinates: boolean
   moveNumbers: boolean
@@ -19,6 +24,8 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
+  theme: 'modern',
+  colorMode: 'auto',
   view: 'corner',
   coordinates: true,
   moveNumbers: false,
@@ -53,4 +60,11 @@ export function saveSettings(s: Settings) {
   } catch {
     /* ignore */
   }
+}
+
+/** Applies the theme to the page (data attributes read by styles.css). */
+export function applyTheme(s: Settings) {
+  const root = document.documentElement
+  root.dataset.style = s.theme
+  root.dataset.mode = s.colorMode
 }

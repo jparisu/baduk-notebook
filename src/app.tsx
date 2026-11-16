@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'preact/hooks'
-import { ArrowLeftRight, ChevronLeft, ChevronRight, Contrast, RotateCcw, Settings as SettingsIcon, SkipBack, SkipForward } from 'lucide-preact'
+import { ArrowLeftRight, BookOpen, ChevronLeft, ChevronRight, Contrast, Menu, RotateCcw, Settings as SettingsIcon, SkipBack, SkipForward, SlidersHorizontal, X } from 'lucide-preact'
 import { loadDatabases, type DatabaseInfo } from './data/load'
 import { buildGraph, type Graph } from './core/graph'
 import { CATEGORIES } from './core/fields'
 import { apply, applySign, cornerWindow, ptName, userTransform, type Corner, type Pt } from './core/geometry'
 import type { Mark } from './core/refs'
-import { loadSettings, saveSettings, type Settings } from './settings'
+import { applyTheme, loadSettings, saveSettings, type Settings } from './settings'
 import { candidates, displayBoard, frame, entryFields, positionFields, rootStep, toMove, type Ctx, type Step } from './view'
 import { collectMessages } from './messages'
 import { Board } from './ui/Board'
@@ -14,6 +14,8 @@ import { InfoPanel, CategoryDot } from './ui/InfoPanel'
 import { Message } from './ui/Message'
 import { Rich, type RefHandlers } from './ui/Rich'
 import { SettingsDialog } from './ui/SettingsDialog'
+import { Library } from './ui/Library'
+import { useMedia } from './ui/useMedia'
 
 // Distinct colors for "always show" references (SPEC §11.2).
 const REF_PALETTE = ['#d81b60', '#1e88e5', '#00897b', '#f4511e', '#8e24aa', '#6d4c41', '#3949ab', '#c0ca33']
@@ -24,7 +26,9 @@ export function App() {
   const [error, setError] = useState<string | null>(null)
   const [settings, setSettingsState] = useState<Settings>(loadSettings)
   const [lib, setLib] = useState<'joseki' | 'shape'>('joseki')
-  const [query, setQuery] = useState('')
+  const [drawer, setDrawer] = useState(false)
+  const [viewOpen, setViewOpen] = useState(false)
+  const phone = useMedia('(max-width: 700px)')
   const [entryId, setEntryId] = useState<string | null>(null)
   const [path, setPath] = useState<Step[]>([])
   const [hovered, setHovered] = useState<string | null>(null)
@@ -36,6 +40,7 @@ export function App() {
     setSettingsState(s)
     saveSettings(s)
   }
+  useEffect(() => applyTheme(settings), [settings.theme, settings.colorMode])
 
   useEffect(() => {
     loadDatabases()
@@ -59,6 +64,11 @@ export function App() {
     ? [...graph.entries.values()].filter((e) => e.contribs.some((c) => active.has(c.db)))
     : []
   const entryName = (id: string) => (ctx ? entryFields(ctx, id, rootStep(ctx, id)).one('XNAME')?.value ?? id : id)
+  const toggleDb = (id: string) => {
+    const next = new Set(active)
+    next.has(id) ? next.delete(id) : next.add(id)
+    setSettings({ ...settings, activeDatabases: databases.map((d) => d.id).filter((d) => next.has(d)) })
+  }
 
   // Open the first entry once loaded; keep the path valid when databases are switched off.
   useEffect(() => {
@@ -81,6 +91,7 @@ export function App() {
     setEntryId(id)
     setPath([rootStep(ctx, id)])
     setPinned(null)
+    setDrawer(false)
   }
   const go = (p: Step[]) => {
     setPath(p)
@@ -165,73 +176,124 @@ export function App() {
   const toPlay = toMove(ctx, step)
 
   const setDisplay = (d: Partial<Settings['display']>) => setSettings({ ...settings, display: { ...settings.display, ...d } })
-  const toggleDb = (id: string) => {
-    const next = new Set(active)
-    next.has(id) ? next.delete(id) : next.add(id)
-    setSettings({ ...settings, activeDatabases: databases.map((d) => d.id).filter((d) => next.has(d)) })
+  const back = () => path.length > 1 && go(path.slice(0, -1))
+  const forward = () => cands[0] && go([...path, cands[0].step])
+  // Swipe on the board: left = forward, right = back.
+  let touch: { x: number; y: number } | null = null
+  const onTouchStart = (e: TouchEvent) => {
+    const t = e.touches[0]
+    touch = { x: t.clientX, y: t.clientY }
+  }
+  const onTouchEnd = (e: TouchEvent) => {
+    if (!touch) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - touch.x, dy = t.clientY - touch.y
+    touch = null
+    if (Math.abs(dx) > 60 && Math.abs(dy) < 50) (dx < 0 ? forward : back)()
   }
 
-  const libEntries = entries
-    .filter((e) => e.type === lib)
-    .map((e) => ({ e, name: entryName(e.id), f: entryFields(ctx, e.id, rootStep(ctx, e.id)) }))
-    .filter(({ name, f }) => !query || (name + ' ' + f.list('XTAG').join(' ')).toLowerCase().includes(query.toLowerCase()))
-  const families = new Map<string, typeof libEntries>()
-  for (const it of libEntries) {
-    const fam = lib === 'joseki' ? (it.f.one('XFAM')?.value.split('/')[0] ?? 'Other') : (it.f.one('XLOC')?.value ?? 'Other')
-    families.set(fam, [...(families.get(fam) ?? []), it])
-  }
+  const library = (
+    <Library ctx={ctx} entries={entries} current={entryId} lib={lib} setLib={setLib} onOpen={open} />
+  )
+  const modes = (
+    <div class="seg modes" role="group" aria-label="Mode">
+      <button class="on">Explore</button>
+      <button disabled title="Coming soon">Find</button>
+      <button disabled title="Coming soon">Quiz</button>
+    </div>
+  )
+  const navButtons = (
+    <>
+      <button class="icon" disabled={path.length < 2} onClick={() => go(path.slice(0, 1))} aria-label="Start (Home)"><SkipBack size={18} /></button>
+      <button class="icon" disabled={path.length < 2} onClick={back} aria-label="Back (←)"><ChevronLeft size={18} /></button>
+      <button class="tenuki" disabled={!tenuki} onClick={() => tenuki && go([...path, tenuki.step])}>
+        {tenuki && <CategoryDot cat={tenuki.cat} />}
+        Tenuki{!phone && tenuki?.cat ? ` · ${CATEGORIES[tenuki.cat].label}` : ''}
+      </button>
+      <button class="icon" disabled={!cands.length} onClick={forward} aria-label="Forward (→)"><ChevronRight size={18} /></button>
+      <button class="icon" disabled={!cands.length} onClick={() => go(mainLineEnd(ctx, path))} aria-label="End of main line (End)"><SkipForward size={18} /></button>
+    </>
+  )
+  const viewOptions = (
+    <div class="view-options">
+      <span class="corner-pick" role="group" aria-label="Corner">
+        {(['tl', 'tr', 'bl', 'br'] as Corner[]).map((c) => (
+          <button key={c} class={settings.display.corner === c ? 'on' : ''} onClick={() => setDisplay({ corner: c })} title={`Show in the ${{ tl: 'top-left', tr: 'top-right', bl: 'bottom-left', br: 'bottom-right' }[c]} corner`} aria-label={`${{ tl: 'Top-left', tr: 'Top-right', bl: 'Bottom-left', br: 'Bottom-right' }[c]} corner`}>
+            <span class={`corner-icon c-${c}`} aria-hidden />
+          </button>
+        ))}
+      </span>
+      <button class={settings.display.mirror ? 'on' : ''} onClick={() => setDisplay({ mirror: !settings.display.mirror })} title="Mirror the corner along its diagonal">
+        <ArrowLeftRight size={15} /> Mirror
+      </button>
+      <button class={settings.display.swap ? 'on' : ''} onClick={() => setDisplay({ swap: !settings.display.swap })} title="Swap Black and White">
+        <Contrast size={15} /> Swap colors
+      </button>
+      <button class="icon" onClick={() => setDisplay({ corner: 'tr', mirror: false, swap: false })} title="Show as stored" aria-label="Reset orientation"><RotateCcw size={15} /></button>
+      <span class="sep" />
+      <button class={settings.view === 'full' ? 'on' : ''} onClick={() => setSettings({ ...settings, view: settings.view === 'full' ? 'corner' : 'full' })}>Full board</button>
+      <button class={settings.moveNumbers ? 'on' : ''} onClick={() => setSettings({ ...settings, moveNumbers: !settings.moveNumbers })}>Numbers</button>
+      <button class={settings.showNext ? 'on' : ''} onClick={() => setSettings({ ...settings, showNext: !settings.showNext })}>Next moves</button>
+    </div>
+  )
 
   return (
-    <div class="layout">
-      <header class="pane top">
-        <h1>Baduk Notebook</h1>
-        <div class="grp">
-          <button class="on">Explore</button>
-          <button disabled title="Coming in milestone M5">Find position</button>
-          <button disabled title="Coming in milestone M7">Quiz</button>
-        </div>
-        <div class="grp">
-          <span class="grp-label">Databases</span>
-          {databases.map((d) => (
-            <label key={d.id} class="layer" title={d.description}>
-              <input type="checkbox" checked={active.has(d.id)} onChange={() => toggleDb(d.id)} />
-              <span class="swatch" style={{ background: d.color }} />
-              {d.name}
-            </label>
-          ))}
-        </div>
-        <span class="spacer" />
-        <div class="grp">
-          <button disabled title="Coming in milestone M4">Edit</button>
-          <button onClick={() => setShowSettings(true)} aria-label="Settings"><SettingsIcon size={16} /> Settings</button>
-        </div>
-      </header>
-
-      <aside class="pane left">
-        <div class="tabs">
-          <button class={lib === 'joseki' ? 'on' : ''} onClick={() => setLib('joseki')}>Joseki</button>
-          <button class={lib === 'shape' ? 'on' : ''} onClick={() => setLib('shape')}>Shapes</button>
-        </div>
-        <input class="search" placeholder="Search by name or tag" value={query} onInput={(e) => setQuery((e.target as HTMLInputElement).value)} aria-label="Search library" />
-        {[...families].map(([fam, list]) => (
-          <div key={fam}>
-            <div class="fam">{fam}</div>
-            {list.map(({ e, name, f }) => (
-              <button key={e.id} class={`item ${e.id === entryId ? 'cur' : ''}`} onClick={() => open(e.id)}>
-                <span>{name}</span>
-                <span class="k">{f.one('XDIFF')?.value ?? ''}</span>
-              </button>
+    <div class={`layout ${phone ? 'phone' : ''}`}>
+      <header class="top">
+        {phone && (
+          <button class="icon ghost" onClick={() => setDrawer(true)} aria-label="Open library and menu"><Menu size={20} /></button>
+        )}
+        <h1><span class="logo" aria-hidden />Baduk Notebook</h1>
+        {!phone && modes}
+        {!phone && (
+          <div class="grp dbs">
+            {databases.map((d) => (
+              <label key={d.id} class="layer" title={d.description}>
+                <input type="checkbox" checked={active.has(d.id)} onChange={() => toggleDb(d.id)} />
+                <span class="swatch" style={{ background: d.color }} />
+                {d.name}
+              </label>
             ))}
           </div>
-        ))}
-        {libEntries.length === 0 && <p class="hint">No entries in the active databases.</p>}
-      </aside>
+        )}
+        <span class="spacer" />
+        {!phone && <button disabled title="Coming soon">Edit</button>}
+        <button class={phone ? 'icon ghost' : ''} onClick={() => setShowSettings(true)} aria-label="Settings"><SettingsIcon size={phone ? 20 : 16} />{!phone && ' Settings'}</button>
+      </header>
+
+      {phone && drawer && (
+        <div class="drawer-backdrop" onClick={(e) => e.target === e.currentTarget && setDrawer(false)}>
+          <nav class="drawer" aria-label="Library and menu">
+            <div class="drawer-head">
+              <b><BookOpen size={18} /> Library</b>
+              <button class="icon ghost" onClick={() => setDrawer(false)} aria-label="Close"><X size={20} /></button>
+            </div>
+            {modes}
+            {library}
+            <div class="fam">Databases</div>
+            {databases.map((d) => (
+              <label key={d.id} class="layer wide">
+                <input type="checkbox" checked={active.has(d.id)} onChange={() => toggleDb(d.id)} />
+                <span class="swatch" style={{ background: d.color }} />
+                {d.name}
+              </label>
+            ))}
+          </nav>
+        </div>
+      )}
+
+      {!phone && <aside class="pane left">{library}</aside>}
 
       <main class="pane center">
         <div class="status">
-          {entryName(entryId)} · {moveNo ? `Move ${moveNo}: ${lastName}` : 'Start position'} · <b>{toPlay === 1 ? 'Black' : toPlay === -1 ? 'White' : 'Either side'} to play</b>
+          {phone ? (
+            <button class="entry-title" onClick={() => setDrawer(true)}>{entryName(entryId)}</button>
+          ) : (
+            <span>{entryName(entryId)} · </span>
+          )}
+          <span>{moveNo ? `Move ${moveNo}: ${lastName}` : 'Start position'} · <b>{toPlay === 1 ? 'Black' : toPlay === -1 ? 'White' : 'Either side'} to play</b></span>
         </div>
-        <div class="board-wrap">
+        <div class="board-wrap" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
           <Board
             window={win}
             board={board}
@@ -250,38 +312,17 @@ export function App() {
             })) : []}
           />
         </div>
-        <div class="nav">
-          <button disabled={path.length < 2} onClick={() => go(path.slice(0, 1))} aria-label="Start (Home)"><SkipBack size={16} /></button>
-          <button disabled={path.length < 2} onClick={() => go(path.slice(0, -1))} aria-label="Back (←)"><ChevronLeft size={16} /></button>
-          <button disabled={!cands.length} onClick={() => go([...path, cands[0].step])} aria-label="Forward (→)"><ChevronRight size={16} /></button>
-          <button disabled={!cands.length} onClick={() => go(mainLineEnd(ctx, path))} aria-label="End of main line (End)"><SkipForward size={16} /></button>
-          <span class="sep" />
-          <button class="tenuki" disabled={!tenuki} onClick={() => tenuki && go([...path, tenuki.step])}>
-            {tenuki && <CategoryDot cat={tenuki.cat} />}
-            Tenuki{tenuki?.cat ? ` · ${CATEGORIES[tenuki.cat].label}` : ''}
-          </button>
-        </div>
-        <div class="nav">
-          <span class="grp-label">Orientation</span>
-          <span class="corner-pick" role="group" aria-label="Corner">
-            {(['tl', 'tr', 'bl', 'br'] as Corner[]).map((c) => (
-              <button key={c} class={settings.display.corner === c ? 'on' : ''} onClick={() => setDisplay({ corner: c })} title={`Show in the ${{ tl: 'top-left', tr: 'top-right', bl: 'bottom-left', br: 'bottom-right' }[c]} corner`}>
-                {{ tl: '◰', tr: '◳', bl: '◱', br: '◲' }[c]}
-              </button>
-            ))}
-          </span>
-          <button class={settings.display.mirror ? 'on' : ''} onClick={() => setDisplay({ mirror: !settings.display.mirror })} title="Mirror the corner along its diagonal">
-            <ArrowLeftRight size={15} /> Mirror
-          </button>
-          <button class={settings.display.swap ? 'on' : ''} onClick={() => setDisplay({ swap: !settings.display.swap })} title="Swap Black and White">
-            <Contrast size={15} /> Swap colors
-          </button>
-          <button onClick={() => setDisplay({ corner: 'tr', mirror: false, swap: false })} title="Show as stored"><RotateCcw size={15} /></button>
-          <span class="sep" />
-          <button class={settings.view === 'full' ? 'on' : ''} onClick={() => setSettings({ ...settings, view: settings.view === 'full' ? 'corner' : 'full' })}>Full board</button>
-          <button class={settings.moveNumbers ? 'on' : ''} onClick={() => setSettings({ ...settings, moveNumbers: !settings.moveNumbers })}>Move numbers</button>
-          <button class={settings.showNext ? 'on' : ''} onClick={() => setSettings({ ...settings, showNext: !settings.showNext })}>Next moves</button>
-        </div>
+        {!phone && <div class="nav">{navButtons}</div>}
+        {phone ? (
+          <>
+            <button class={`view-toggle ${viewOpen ? 'on' : ''}`} onClick={() => setViewOpen(!viewOpen)} aria-expanded={viewOpen}>
+              <SlidersHorizontal size={15} /> View
+            </button>
+            {viewOpen && viewOptions}
+          </>
+        ) : (
+          viewOptions
+        )}
         {callout.map((m, i) => (
           <Message key={i} kind="move" title={m.title} db={m.db} dbColor={dbColor(m.db)} callout>
             <Rich segments={m.segments} h={refs} />
@@ -319,7 +360,11 @@ export function App() {
         </div>
       </section>
 
-      {showSettings && <SettingsDialog s={settings} set={setSettings} close={() => setShowSettings(false)} />}
+      {phone && <div class="bottom-bar" role="toolbar" aria-label="Move navigation">{navButtons}</div>}
+
+      {showSettings && (
+        <SettingsDialog s={settings} set={setSettings} close={() => setShowSettings(false)} databases={databases} active={active} toggleDb={toggleDb} />
+      )}
     </div>
   )
 }
