@@ -1,0 +1,28 @@
+:root {
+  --bg: #eef0ee; --panel: #fff; --fg: #1c2320; --muted: #5f6a65; --line: #d3d9d5; --chip: #e6ebe8; --accent: #2c6b5a;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #141917; --panel: #1d2421; --fg: #e4eae7; --muted: #9aa6a0; --line: #34403b; --chip: #28312d; --accent: #6cc2a8; color-scheme: dark; }
+}
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px system-ui, sans-serif; }
+button { font: inherit; color: inherit; background: var(--chip); border: 1px solid var(--line); border-radius: 4px; padding: 4px 9px; cursor: pointer; }
+button:disabled { opacity: .45; cursor: default; }
+.layout { display: grid; grid-template-columns: 240px minmax(0, 1fr) 340px; grid-template-areas: "top top top" "left center right"; gap: 10px; padding: 10px max(12px, env(safe-area-inset-left)); }
+.pane { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px; min-width: 0; }
+.top { grid-area: top; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.top h1 { font-size: 16px; margin: 0; }
+.left { grid-area: left; display: flex; flex-direction: column; gap: 4px; }
+.center { grid-area: center; display: flex; flex-direction: column; align-items: center; gap: 8px; overflow-x: auto; }
+.right { grid-area: right; }
+h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 6px; }
+.item { display: flex; justify-content: space-between; text-align: left; background: none; border-color: transparent; }
+.item.on { background: var(--accent); color: var(--panel); }
+.k { font-size: 11px; opacity: .75; }
+.nav { display: flex; gap: 6px; }
+.badge { font-size: 11px; padding: 1px 6px; border: 1px solid var(--line); border-radius: 3px; margin-left: 6px; }
+.msg { border: 2px solid var(--fg); border-radius: 8px; padding: 8px 10px; box-shadow: 3px 3px 0 var(--fg); }
+.hint { color: var(--muted); font-size: 12px; }
+.spacer { flex: 1; }
+.error { color: #d33232; }
+@media (max-width: 1000px) { .layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "center" "right" "left"; } }

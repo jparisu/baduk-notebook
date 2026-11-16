@@ -1,0 +1,8 @@
+(;FF[4]CA[UTF-8]GM[1]SZ[19]
+XID[test-3-3-invasion]XTYPE[joseki]XNAME[Test: 3-3 invasion (first moves)]XDIFF[15k]
+XSUM[Test data only. Used to check that the app loads and shows an entry.]
+AB[pd]PL[W]
+;W[qc]XCAT[main]XMW[Invades at the 3-3 point.]
+(;B[pc]XCAT[main]XMW[Blocks from the top.]
+;W[qd]XCAT[main]XMW[Crawls.])
+(;B[qd]XCAT[alt]XMW[Blocks from the side.]))
