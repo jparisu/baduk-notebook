@@ -495,6 +495,21 @@ Settings are saved in the browser (localStorage) and can be exported/imported as
 
 ---
 
+### 8.9 Shareable links
+
+Any joseki, shape or position can be opened from a link:
+
+| Parameter | Meaning | Example |
+|---|---|---|
+| `open` | Label id: opens that joseki or shape at its first move. Without it, the line starts at the empty corner. | `?open=3-4-low-approach` |
+| `line` | Moves after the start, as SGF points in the start's stored orientation, separated by dots. `-` is a pass; a move whose color does not alternate gets a `B` or `W` prefix. | `&line=pe.kc` |
+| `view` | Orientation: corner (`tl`, `tr`, `bl`, `br`), `m` = mirrored, `s` = colors swapped. | `&view=br-m` |
+
+- The address bar always holds the link to the current position (explore mode), so copying it from the browser works.
+- "Copy link" next to the title copies the link to the exact position; "Copy link" in This joseki copies the link to its first move.
+- A link wins over the last position. If its joseki is in a database that is switched off, that database is switched on. An unknown id, or a move that cannot be played, is reported and the rest is ignored.
+- Positions set up by hand have no link yet.
+
 ## 9. Quiz mode
 
 - **Cards**: one card is (entry, position, side to play), for every position that has a `main` move, an `alt` move or a `punish` move.

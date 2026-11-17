@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Shareable links
+- Links open a joseki, shape or exact position: `?open=<id>`, `&line=<moves>`, `&view=<corner>[-m][-s]`. The address bar follows the board; "Copy link" buttons next to the title and in This joseki.
+
+
 ### Layout and data fixes
 - Tree of moves: shows 3 moves back and 4 ahead of the current one (⋯N marks hidden earlier moves, › marks hidden continuations), at most 210 px tall with its own scroll, and lines with more contrast. White stones in the tree are white again.
 - "Save lines (n)" moved to the top bar; "back to the database" and "erase" sit next to the "Free play" label. The session box is gone.

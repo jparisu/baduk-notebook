@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import {
-  ArrowLeftRight, ArrowRight, BookOpen, GitBranch, Grid3x3, MessageSquare, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Search, ChevronLeft, ChevronRight, Contrast, Flag, Menu, Pencil, Plus, RotateCcw, Save,
+  ArrowLeftRight, ArrowRight, Link2, BookOpen, GitBranch, Grid3x3, MessageSquare, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Search, ChevronLeft, ChevronRight, Contrast, Flag, Menu, Pencil, Plus, RotateCcw, Save,
   Settings as SettingsIcon, SkipBack, SkipForward, SlidersHorizontal, Trash2, Upload, X,
 } from 'lucide-preact'
 import { loadDatabases, type DatabaseInfo } from './data/load'
@@ -30,6 +30,7 @@ import { changeCount, createWorkspace, discardDrafts, restoreDrafts, saveDrafts,
 import { checkMove, createDatabase, createEntry, deleteMove, locate, setProps } from './edit/ops'
 import { sgfPoint } from './edit/sgfio'
 import { previewName } from './storage'
+import { decodeLine, linkFor, readUrl } from './share'
 import { erase, loadPosition, loadSession, record, remove, savePosition, saveSession, sameStart, type Line } from './session'
 
 // Distinct colors for "always show" references (SPEC §11.2).
@@ -118,16 +119,40 @@ export function App() {
         const restored = await restoreDrafts(w)
         ws.current = w
         const g = buildGraph(w.files)
-        const s0 = loadSettings()
+        let s0 = loadSettings()
         const act = new Set(s0.activeDatabases ?? w.databases.filter((d) => d.activeByDefault).map((d) => d.id))
+        // A shared link wins over the last position (SPEC §8.9).
+        const shared = readUrl()
+        let note: string | null = null
+        if (shared?.start.kind === 'label') {
+          const e = g.entries.get(shared.start.id)
+          if (!e) {
+            note = `"${shared.start.id}" is not in the databases of this site.`
+          } else if (!e.contribs.some((c) => act.has(c.db))) {
+            // The link points into a database that is switched off here: switch it on.
+            const dbs = [...new Set(e.contribs.map((c) => c.db))]
+            dbs.forEach((d) => act.add(d))
+            s0 = { ...s0, activeDatabases: w.databases.map((d) => d.id).filter((d) => act.has(d)) }
+            note = `Switched on ${dbs.join(', ')} to open this link.`
+          }
+        }
+        if (shared?.view) s0 = { ...s0, display: shared.view }
+        if (shared) {
+          setSettingsState(s0)
+          saveSettings(s0)
+        }
         const c: Ctx = { graph: g, active: act, order: w.databases.map((d) => d.id), U: userTransform(s0.display) }
         const last = loadPosition()
-        const st: Start = last?.start ?? { kind: 'empty' }
+        const useShared = shared && !(shared.start.kind === 'label' && !g.entries.has(shared.start.id))
+        const st: Start = useShared ? shared!.start : last?.start ?? { kind: 'empty' }
+        const p = useShared ? decodeLine(c, st, shared!.line) : replay(c, st, last?.moves ?? [])
+        if (useShared && shared!.line && p.length - 1 < shared!.line.split('.').length) note = `This link's moves stop at move ${p.length - 1}: the next one cannot be played.`
         setStart(st)
-        setLine({ path: replay(c, st, last?.moves ?? []), future: [] })
+        setLine({ path: p, future: [] })
+        if (note) setToast(note)
         setGraph(g)
         setTarget(w.databases[w.databases.length - 1]?.id ?? '')
-        if (restored) setToast(`Restored ${restored} unsaved change${restored > 1 ? 's' : ''} from this browser.`)
+        if (restored && !note) setToast(`Restored ${restored} unsaved change${restored > 1 ? 's' : ''} from this browser.`)
       })
       .catch((e: Error) => setError(e.message))
   }, [])
@@ -161,6 +186,17 @@ export function App() {
     window.addEventListener('pagehide', save)
     return () => window.removeEventListener('pagehide', save)
   }, [])
+
+  // The address bar always holds the link to what is on the board (explore mode).
+  useEffect(() => {
+    if (!ctx || !path.length || mode !== 'explore') return
+    const url = linkFor(ctx, start, path, settings.display)
+    try {
+      history.replaceState(null, '', url ?? location.pathname)
+    } catch {
+      /* ignore */
+    }
+  }, [path, start, settings.display, mode, graph])
 
   // Keep the current tree node visible.
   useEffect(() => {
@@ -373,6 +409,16 @@ export function App() {
     if (!loc) return
     setProps(w, loc, Object.fromEntries(['TR', 'SQ', 'CR', 'MA', 'LB', 'XCUT', 'XWALL', 'XINF', 'AR', 'LN', 'XTB', 'XTW'].map((k) => [k, null])))
     commit('Marks cleared on this position')
+  }
+
+  async function copyLink(url: string | null, what: string) {
+    if (!url) return flash('Positions set up by hand have no link yet.')
+    try {
+      await navigator.clipboard.writeText(url)
+      flash(`Link to ${what} copied`)
+    } catch {
+      flash(url)
+    }
   }
 
   /* ---- session lines ---- */
@@ -647,7 +693,7 @@ export function App() {
       </div>
       <Card id="search" title="Search positions" icon={<Search size={15} />}>{library}</Card>
       <Card id="joseki" title={isShape ? 'This shape' : 'This joseki'} icon={<BookOpen size={15} />}>
-        <JosekiInfo {...common} onOpenLabel={onOpenLabel} />
+        <JosekiInfo {...common} onOpenLabel={onOpenLabel} onCopyLink={(id) => copyLink(linkFor(ctx, { kind: 'label', id }, [startStep(ctx, { kind: 'label', id })], { corner: 'tr', mirror: false, swap: false }), entryName(id))} />
       </Card>
       {!edit && <Card id="eval" title="Position evaluation" icon={<Grid3x3 size={15} />}><PositionEval {...common} /></Card>}
     </aside>
@@ -684,6 +730,9 @@ export function App() {
       {step.free && !step.edge && (
         <button class="link small danger-text" onClick={eraseVariation} title="Erase this move and what follows from the session"><Trash2 size={13} /> erase</button>
       )}
+      <button class="icon ghost copy-link" onClick={() => copyLink(linkFor(ctx, start, path, settings.display), 'this position')} title="Copy a link to this position" aria-label="Copy link to this position">
+        <Link2 size={15} />
+      </button>
       <span class="turn">
         {moveNo ? `Move ${moveNo}: ${lastName}` : 'Start'} · <span class={`stone-ico ${(toPlay || nextSide) === 1 ? 'b' : 'w'}`} aria-hidden />{' '}
         <b>{toPlay === 1 ? 'Black' : toPlay === -1 ? 'White' : bothSides ? (side === 1 ? 'Black' : 'White') : 'Either side'} to play</b>
@@ -751,7 +800,7 @@ export function App() {
           {tab === 'next' && nextMoves}
           {tab === 'pos' && <PositionEval {...common} />}
           {tab === 'tree' && <><div class="tree-box">{treeView}</div>{treeLegend}</>}
-          {tab === 'about' && <JosekiInfo {...common} onOpenLabel={onOpenLabel} />}
+          {tab === 'about' && <JosekiInfo {...common} onOpenLabel={onOpenLabel} onCopyLink={(id) => copyLink(linkFor(ctx, { kind: 'label', id }, [startStep(ctx, { kind: 'label', id })], { corner: 'tr', mirror: false, swap: false }), entryName(id))} />}
         </div></div>
       </section>
       <div class="bottom-bar" role="toolbar" aria-label="Move navigation">{navButtons}</div>

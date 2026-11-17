@@ -40,6 +40,8 @@ Fast keys in Edit mode (when the board has focus):
 | `Esc` | Back to the board |
 | `←` `→` `Home` `End` | Navigate (also outside Edit mode) |
 
+**Sharing**: the address bar always links to what is on the board, and the 🔗 buttons copy it. For example `https://jparisu.github.io/baduk-notebook/?open=3-4-low-approach` opens that joseki at its first move; `&line=…` adds moves and `&view=br` the orientation (SPEC.md §8.9).
+
 **By hand**: write SGF files in `db/<database>/joseki/` or `db/<database>/shapes/`. `XID` + `XNAME` on any node names that position (SPEC.md §4.2). New databases also need a line in `db/index.json`.
 
 ## Development

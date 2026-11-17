@@ -97,7 +97,7 @@ export function crumbsOf(ctx: Ctx, path: Step[]): string[] {
 
 /* ---------- Left: This joseki ---------- */
 
-export function JosekiInfo(p: Common & { onOpenLabel: (id: string) => void }) {
+export function JosekiInfo(p: Common & { onOpenLabel: (id: string) => void; onCopyLink?: (id: string) => void }) {
   const { ctx, path } = p
   const label = primaryLabel(ctx, path)
   if (!label) {
@@ -128,9 +128,12 @@ export function JosekiInfo(p: Common & { onOpenLabel: (id: string) => void }) {
           ))}
         </div>
       )}
-      {at < path.length - 1 && (
-        <button class="link go-first" onClick={() => p.onOpenLabel(label)}>⏮ Go to its first move{at > 0 ? ` (move ${at})` : ''}</button>
-      )}
+      <div class="info-links">
+        {at < path.length - 1 && (
+          <button class="link go-first" onClick={() => p.onOpenLabel(label)}>⏮ Go to its first move{at > 0 ? ` (move ${at})` : ''}</button>
+        )}
+        {p.onCopyLink && <button class="link" onClick={() => p.onCopyLink!(label)} title="Copy a link that opens this joseki at its first move">🔗 Copy link</button>}
+      </div>
       <div class="kvs">
         {one('XFAM') && <Row label="Family">{one('XFAM')!.replace(/\//g, ' › ')}</Row>}
         {one('XDIFF') && <Row label="Difficulty"><span class="chip">{one('XDIFF')}</span></Row>}
