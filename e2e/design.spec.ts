@@ -68,3 +68,34 @@ test('the library shows mistake joseki only when asked', async ({ page }) => {
   await page.locator('.kind-filter').getByRole('button', { name: 'All' }).click()
   await expect(page.locator('.library .lib-name.mistake')).toHaveCount(1)
 })
+
+test('the tree shows only this joseki, from its start; you can move the start and limit how far ahead', async ({ page }) => {
+  await openDesign(page, './')
+  await clickPoint(page, 'Q16') // 4-4 point
+  await clickPoint(page, 'R14') // low approach
+  const nodes = page.locator('.dtree-canvas .tree-node')
+  await expect(page.locator('.tree-start')).toContainText('Tree starts at move 1')
+  const joseki = await nodes.count()
+  // Moving back and forth inside the tree keeps the same tree.
+  await nodes.last().click()
+  expect(await nodes.count()).toBe(joseki)
+  await nodes.nth(1).click()
+  expect(await nodes.count()).toBe(joseki)
+  // Everything: from the empty corner, other joseki included.
+  await page.locator('.design').getByRole('button', { name: 'Everything' }).click()
+  await expect(page.locator('.tree-start')).toHaveCount(0)
+  expect(await nodes.count()).toBeGreaterThan(joseki)
+  await page.locator('.design').getByRole('button', { name: 'This joseki' }).click()
+  expect(await nodes.count()).toBe(joseki)
+  // Only the next 3 moves after the selected one.
+  await page.locator('.ahead select').selectOption('3')
+  expect(await nodes.count()).toBeLessThan(joseki)
+  await page.locator('.ahead select').selectOption('all')
+  // Start the tree at a later move: fewer nodes; the joseki start comes back with one click.
+  await nodes.nth(2).click({ button: 'right' })
+  await page.locator('.ctx-menu').getByRole('menuitem', { name: /Start the tree here/ }).click()
+  await expect(page.locator('.tree-start')).toContainText('move 3')
+  expect(await nodes.count()).toBeLessThan(joseki)
+  await page.locator('.tree-start').getByRole('button', { name: /Joseki start/ }).click()
+  expect(await nodes.count()).toBe(joseki)
+})

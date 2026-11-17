@@ -824,3 +824,7 @@ button.link.small { font-size: 12px; display: inline-flex; align-items: center; 
   .design-info { grid-column: auto; }
   .dtree-canvas { min-height: 280px; }
 }
+.tree-start { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; font-size: 12px; color: var(--muted); }
+.tree-start b { color: var(--fg); }
+.ahead { display: inline-flex; align-items: center; gap: 4px; }
+.ahead select { font-size: 12px; padding: 3px 6px; }

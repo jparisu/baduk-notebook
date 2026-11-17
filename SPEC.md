@@ -519,7 +519,12 @@ Any joseki, shape or position can be opened from a link:
 A workspace to build and annotate trees of moves (good joseki and "mistake joseki" alike), next to Explore, Find and Quiz.
 
 - **Three panels:** board (with navigation and drawing tools) | **tree** (the widest) | **info** of the selected node. Under 1200 px the info panel moves under the tree; on a phone the panels stack. The info panel folds into a rail.
-- **Tree:** the whole tree "From the start" or "From selection", stones labelled with coordinates, zoom − / + and Fit. Moves only in the browser cache are dashed red; a flag marks where a name starts.
+- **Tree:** stones labelled with coordinates, zoom − / + and Fit. Moves only in the browser cache are dashed red; a flag marks where a name starts.
+  - **This joseki** (default): the tree starts at the first move of the current joseki ("Tree starts at move n"), drawn as a stone with a `⋯` badge for the moves before it. It shows every move after that start, back and forth, so moving along the line never changes the tree. The start stays while you move inside the same family (e.g. into "4-4 point/Low approach"). It follows a new joseki only when you move before the start or open another joseki.
+  - Other joseki (a name whose family is not inside the tree's family) appear as a single dashed stub "→ name" and are not expanded.
+  - **Start here** (button, or right-click → *Start the tree here*) sets the start at any move; **Joseki start** returns to the automatic start.
+  - **Ahead:** all moves, or only the next 3 / 6 / 10 moves after the selected one.
+  - **Everything:** the whole tree from the start of the line, other joseki included.
 - **Info tabs:** **Move** (category buttons, why, style, purpose, conditions, note), **Position** (result in points, evaluation, status, explanation, sente, outcome, tenuki, watch out, note), **Name** (name this position; name, family, difficulty, summary, aliases, tags, sources).
 - **Right-click** (or long-press) a move: category, mark as joseki end / end after a mistake, set the result, edit why, name a joseki from here, make this the main line (moves stored in the target database), copy link, fold / unfold the branch, delete the move and what follows (session moves at once; stored moves after confirmation).
 - **Folding** is only a view of the Design tab, kept in the browser; it is not stored.

@@ -5,6 +5,7 @@
 ### Design tab
 - New **Design** mode with three panels: board, a large tree of moves, and the info of the selected move (Move / Position / Name tabs).
 - Right-click a move in the tree: category, joseki end, result, why, name a joseki, make it the main line, copy link, fold, delete.
+- The Design tree shows **this joseki** from its first move, back and forth, with other joseki as one-line stubs; set its start with *Start the tree here*, limit it to the next 3 / 6 / 10 moves, or switch to **Everything**.
 - Folding is only a Design view. Moves stay in the browser cache until **Save to database**; **Export / pull request** adds **Propose on GitHub**, which opens GitHub with the new files filled in.
 - Library: **Good only / All / Mistakes**; joseki that start with a mistake show in red.
 

@@ -87,7 +87,10 @@ export function App() {
   const [phoneTab, setPhoneTab] = useState<'next' | 'pos' | 'tree' | 'about' | 'edit'>('next')
   const [toast, setToast] = useState<string | null>(null)
   // Design tab (SPEC §8.10)
-  const [designFrom, setDesignFrom] = useState<'start' | 'selection'>('start')
+  const [designView, setDesignView] = useState<'joseki' | 'everything'>('joseki')
+  const [anchorKey, setAnchorKey] = useState<string | null>(null)
+  const autoRoot = useRef<{ key: string; fam: string } | null>(null) // first move of the Design tree, kept while in its family
+  const [designAhead, setDesignAhead] = useState<number | null>(null)
   const [designTab, setDesignTab] = useState<'move' | 'pos' | 'name'>('move')
   const [infoFolded, setInfoFolded] = useState(false)
   const [showFolded, setShowFolded] = useState(false)
@@ -248,6 +251,8 @@ export function App() {
   function openStart(st: Start) {
     if (!ctx) return
     setStart(st)
+    autoRoot.current = null
+    setAnchorKey(null)
     setLine({ path: [startStep(ctx, st)], future: [] })
     setDrawer(false)
     resetMarks()
@@ -823,20 +828,50 @@ export function App() {
   )
 
   /* ---- Design tab (SPEC §8.10): board | big tree | info of the selected node ---- */
-  const fromSel = designFrom === 'selection'
-  const designPath = fromSel ? path.slice(-1) : path
-  const prefix = fromSel ? path.slice(0, -1) : []
+  // The tree starts where the current joseki starts, or at a move you chose; it stops at other joseki.
+  const lastKnown = (() => {
+    let i = path.length
+    while (i > 1 && !inBook(ctx, path[i - 1])) i--
+    return i
+  })()
+  const treeLabel = primaryLabel(ctx, path.slice(0, lastKnown))
+  const anchorIdx = anchorKey ? path.findIndex((x) => x.key === anchorKey) : -1
+  // The tree stays put while its first move is still on the line, so moving into a named
+  // variation (or back) does not redraw a different tree; before it, it follows the joseki again.
+  const famOf = (id: string) => entryFields(ctx, id, rootStep(ctx, id)).one('XFAM')?.value ?? ''
+  const labelIdx = treeLabel ? labelStart(ctx, path, treeLabel) : 0
+  const labelFam = treeLabel ? famOf(treeLabel) : ''
+  const sticky = autoRoot.current
+  const stickyIdx = sticky ? path.findIndex((x) => x.key === sticky.key) : -1
+  const keep = stickyIdx >= 0 && stickyIdx <= labelIdx && !!sticky!.fam && (labelFam === sticky!.fam || labelFam.startsWith(sticky!.fam + '/'))
+  const autoIdx = keep ? stickyIdx : labelIdx
+  const rootIdx = designView === 'everything' ? 0 : anchorIdx >= 0 ? anchorIdx : autoIdx
+  if (mode === 'design' && !keep) autoRoot.current = path[autoIdx] ? { key: path[autoIdx].key, fam: labelFam } : null
+  const rootEntry = entries.find((e) => e.root === path[rootIdx].key) ?? (treeLabel ? graph!.entries.get(treeLabel) : undefined)
+  const rootFam = rootEntry ? famOf(rootEntry.id) : ''
+  const stopAt = (key: string): string | null => {
+    if (designView === 'everything') return null
+    const here = entries.filter((e) => e.root === key && e.id !== rootEntry?.id)
+    if (!here.length) return null
+    // Variations of the same joseki (family inside the tree's family) stay in the tree.
+    if (rootFam && here.every((e) => famOf(e.id).startsWith(rootFam + '/'))) return null
+    return entryName(here[0].id)
+  }
+  const prefix = path.slice(0, rootIdx)
   const designZoom = settings.designZoom
   const setDesignZoom = (z: number) => setSettings({ ...settings, designZoom: Math.max(0.5, Math.min(2, Math.round(z * 100) / 100)) })
   const designTree = (
     <Tree
       ctx={ctx}
-      path={designPath}
+      path={path.slice(rootIdx)}
       forward={[]}
       mode="complete"
       zoom={designZoom}
       labels="coord"
-      first={prefix.length}
+      first={rootIdx}
+      rootParent={rootIdx > 0 ? path[rootIdx - 1] : undefined}
+      stopAt={stopAt}
+      maxDepth={designAhead === null ? undefined : path.length - 1 - rootIdx + designAhead}
       defaultDb={databases[0]?.id ?? ''}
       onSelect={(l) => {
         go([...prefix, ...l])
@@ -907,6 +942,7 @@ export function App() {
         )}
         <button role="menuitem" onClick={() => { copyLink(linkFor(ctx, start, ctxMenu.line, settings.display), 'this position'); setCtxMenu(null) }}>Copy link</button>
         <hr />
+        <button role="menuitem" onClick={() => { setAnchorKey(ctxLast.key); setDesignView('joseki'); setCtxMenu(null); flash('The tree now starts at this move') }}>⤒ Start the tree here</button>
         <button role="menuitem" onClick={() => { toggleFold(ctxLast.key); setCtxMenu(null) }}>{folded.has(ctxLast.key) ? 'Unfold this branch' : 'Fold this branch (only in Design)'}</button>
         {ctxMenu.line.length > 1 && (
           <button role="menuitem" class="danger-text" onClick={() => { setCtxMenu(null); deleteAt(ctxMenu.line) }}>Delete this move and what follows…</button>
@@ -946,10 +982,19 @@ export function App() {
       </section>
       <section class="card design-tree" aria-label="Tree of moves">
         <div class="dtree-bar">
-          <div class="seg" role="group" aria-label="Tree starts at">
-            <button class={!fromSel ? 'on' : ''} onClick={() => setDesignFrom('start')}>From the start</button>
-            <button class={fromSel ? 'on' : ''} onClick={() => setDesignFrom('selection')}>From selection</button>
+          <div class="seg" role="group" aria-label="What the tree shows">
+            <button class={designView === 'joseki' ? 'on' : ''} onClick={() => setDesignView('joseki')} title="The joseki you are working on, from its first move (or the start you chose); other joseki are not expanded">This joseki</button>
+            <button class={designView === 'everything' ? 'on' : ''} onClick={() => setDesignView('everything')} title="Every move from the start of the line, including other joseki">Everything</button>
           </div>
+          <label class="ahead">
+            <span class="grp-label">Ahead</span>
+            <select value={designAhead === null ? 'all' : String(designAhead)} onChange={(e) => { const v = (e.target as HTMLSelectElement).value; setDesignAhead(v === 'all' ? null : Number(v)) }} aria-label="How many moves after the selected one are shown">
+              <option value="all">All moves</option>
+              <option value="3">Next 3</option>
+              <option value="6">Next 6</option>
+              <option value="10">Next 10</option>
+            </select>
+          </label>
           <div class="zoom" role="group" aria-label="Tree size">
             <button class="icon" onClick={() => setDesignZoom(designZoom - 0.15)} aria-label="Smaller tree">−</button>
             <span class="zoom-val">{Math.round(designZoom * 100)}%</span>
@@ -960,6 +1005,18 @@ export function App() {
             <button class={showFolded ? 'on' : ''} onClick={() => setShowFolded(!showFolded)} aria-pressed={showFolded}>Show folded ({folded.size})</button>
           )}
         </div>
+        {designView === 'joseki' && (
+          <div class="tree-start">
+            <span>
+              Tree starts at <b>{rootIdx ? `move ${rootIdx}` : 'the start'}</b>
+              {rootEntry ? <> · {entryName(rootEntry.id)}</> : null}
+              {anchorKey && anchorIdx < 0 && <span class="hint"> · your chosen start is not on this line</span>}
+            </span>
+            <span class="spacer" />
+            {path.length - 1 !== rootIdx && <button class="link small" onClick={() => setAnchorKey(path[path.length - 1].key)}>⤒ Start here</button>}
+            {anchorKey && <button class="link small" onClick={() => setAnchorKey(null)}>↺ Joseki start</button>}
+          </div>
+        )}
         <div class="dtree-canvas">{designTree}</div>
         <div class="legend">
           <span><MoveMark cat="main" />joseki</span>

@@ -30,6 +30,10 @@ interface Placed {
   pt: Pt | null
   /** Folded in Design: number of moves hidden below. */
   folded: number
+  /** Leads into another joseki: its name (drawn as a stub, not expanded). */
+  stub: string | null
+  /** The tree starts at a move (not at the start of the line). */
+  rootMove: boolean
 }
 
 const DX = 34, DY = 30, OX = 18, OY = 24, MAX_NODES = 800
@@ -57,6 +61,12 @@ interface Props {
   labels?: 'number' | 'coord'
   /** Number of the first move drawn (when the tree starts at the selection). */
   first?: number
+  /** The step before the root, when the tree starts at a move: the root is drawn as that move. */
+  rootParent?: Step
+  /** Complete mode: name of the joseki a position starts, when the tree must stop there (another joseki). */
+  stopAt?: (key: string) => string | null
+  /** Complete mode: how many moves below the root are drawn. */
+  maxDepth?: number
 }
 
 export function Tree(props: Props) {
@@ -76,10 +86,15 @@ export function Tree(props: Props) {
   }
 
   const placed: Placed[] = []
-  const add = (p: Omit<Placed, 'tag' | 'more' | 'transposition' | 'ahead' | 'folded'> & Partial<Placed>) =>
-    placed.push({ tag: props.tagOf?.(p.step.key) ?? null, more: false, transposition: false, ahead: false, folded: 0, ...p }) - 1
+  const add = (p: Omit<Placed, 'tag' | 'more' | 'transposition' | 'ahead' | 'folded' | 'stub' | 'rootMove'> & Partial<Placed>) =>
+    placed.push({ tag: props.tagOf?.(p.step.key) ?? null, more: false, transposition: false, ahead: false, folded: 0, stub: null, rootMove: false, ...p }) - 1
   const root = path[0]
-  add({ step: root, line: [root], parent: -1, x: 0, y: 0, cat: null, sign: 0, pass: false, label: 'Start of the line', extraDb: false, session: false, pt: null })
+  if (props.rootParent && moveOf(root)) {
+    const d = describe(props.rootParent, root)
+    add({ step: root, line: [root], parent: -1, x: 0, y: 0, ...d, label: `Tree start · ${d.label}`, rootMove: true })
+  } else {
+    add({ step: root, line: [root], parent: -1, x: 0, y: 0, cat: null, sign: 0, pass: false, label: 'Start of the line', extraDb: false, session: false, pt: null })
+  }
   /** Moves below a position (capped), for the badge of a folded branch. */
   const countBelow = (step: Step, base: Step[], seen = new Set<string>()): number => {
     let n = 0
@@ -104,6 +119,10 @@ export function Tree(props: Props) {
       const known = new Set(cands.map((c) => c.step.key))
       const extra = (props.extra?.(keysOf(i)) ?? []).filter((s) => !known.has(s.key))
       const kids = [...cands.map((c) => c.step), ...extra]
+      if (props.maxDepth !== undefined && depth >= props.maxDepth) {
+        placed[i].more = kids.length > 0
+        return
+      }
       kids.forEach((child, k) => {
         if (placed.length > MAX_NODES) return
         const y = k === 0 ? r : ++row
@@ -112,6 +131,11 @@ export function Tree(props: Props) {
         const d = describe(placed[i].step, child, cands)
         const j = add({ step: child, line: [...placed[i].line, child], parent: i, x: depth + 1, y, ...d, transposition })
         if (transposition) return
+        const other = props.stopAt?.(child.key)
+        if (other) {
+          placed[j].stub = other
+          return
+        }
         if (props.folded?.has(child.key) && !props.showFolded) {
           placed[j].folded = countBelow(child, placed[j].line)
           return
@@ -165,8 +189,9 @@ export function Tree(props: Props) {
   else placed.forEach((p, i) => p.y === 0 && onLine.add(i))
 
   const maxX = Math.max(...placed.map((p) => p.x))
-  const W = (maxX + 1) * DX + 24, H = rows * DY + 14
-  const pos = (p: Placed) => [OX + p.x * DX, OY + p.y * DY]
+  const W = (maxX + 1) * DX + 24 + (placed.some((p) => p.stub) ? 170 : 0) + (placed[0].rootMove ? 24 : 0), H = rows * DY + 14
+  const shiftX = placed[0].rootMove && (props.first ?? 0) > 1 ? 24 : 0
+  const pos = (p: Placed) => [OX + shiftX + p.x * DX, OY + p.y * DY]
 
   return (
     <svg width={W * props.zoom} height={H * props.zoom} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Tree of moves (${mode})`}>
@@ -191,7 +216,7 @@ export function Tree(props: Props) {
         const ring = p.session ? 'var(--markup)' : k?.color ?? 'var(--muted)'
         const fill = p.sign === 1 ? '#151515' : '#f5f5f2'
         const ink = p.sign === 1 ? '#fff' : '#111'
-        const dashed = p.transposition || p.session || (p.tag && !p.pass && p.parent >= 0)
+        const dashed = p.transposition || p.session || !!p.stub || (p.tag && !p.pass && p.parent >= 0)
         return (
           <g
             key={'n' + i}
@@ -208,7 +233,7 @@ export function Tree(props: Props) {
           >
             <title>{p.label}{p.tag ? ` — start of ${p.tag}` : ''}</title>
             {i === cur && <rect x={x - 14} y={y - 14} width="28" height="28" rx="5" fill="none" stroke="var(--accent)" stroke-width="2.4" />}
-            {p.parent < 0 ? (
+            {p.parent < 0 && !p.rootMove ? (
               <rect x={x - 8} y={y - 8} width="16" height="16" rx="3" fill="var(--chip)" stroke="var(--muted)" />
             ) : p.pass ? (
               <>
@@ -224,7 +249,16 @@ export function Tree(props: Props) {
               </>
             )}
             {p.extraDb && <circle cx={x + 9} cy={y - 9} r="3.5" fill="var(--db-extra)" />}
-            {p.more && !p.folded && <text x={x + 13} y={y + 4} font-size="12" fill="var(--muted)" aria-hidden>›</text>}
+            {p.rootMove && (props.first ?? 0) > 1 && (
+              <g class="before-badge">
+                <rect x={x - 34} y={y - 7} width="20" height="14" rx="7" fill="var(--chip)" stroke="var(--muted)" />
+                <text x={x - 24} y={y + 3.5} font-size="8" text-anchor="middle" fill="var(--chip-fg)">⋯{(props.first ?? 0) - 1}</text>
+              </g>
+            )}
+            {p.stub && (
+              <text x={x + 14} y={y + 3.5} font-size="9" fill="var(--accent)" font-weight="700">→ {p.stub.length > 28 ? p.stub.slice(0, 27) + '…' : p.stub}</text>
+            )}
+            {p.more && !p.folded && !p.stub && <text x={x + 13} y={y + 4} font-size="12" fill="var(--muted)" aria-hidden>›</text>}
             {p.folded > 0 && (
               <g class="fold-badge">
                 <rect x={x + 12} y={y - 7} width={p.folded > 9 ? 26 : 20} height="14" rx="7" fill="var(--chip)" stroke="var(--muted)" />
