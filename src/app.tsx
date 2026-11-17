@@ -273,13 +273,16 @@ export function App() {
     resetMarks()
     setLine((l) => (l.path.length > 1 ? { path: l.path.slice(0, -1), future: [l.path[l.path.length - 1], ...l.future] } : l))
   }
+  // The line shown ahead in the tree (set while rendering): → and End follow it.
+  const aheadRef = useRef<{ path: Step[]; ahead: Step[] }>({ path: [], ahead: [] })
+  const shownAhead = (l: { path: Step[]; future: Step[] }) =>
+    l.future.length ? l.future : aheadRef.current.path === l.path ? aheadRef.current.ahead : []
   const forward = () => {
     resetMarks()
     setLine((l) => {
       if (!ctx || !l.path.length) return l
-      if (l.future.length) return { path: [...l.path, l.future[0]], future: l.future.slice(1) }
-      const c = candidates(ctx, l.path[l.path.length - 1])[0]
-      return c ? { path: [...l.path, c.step], future: [] } : l
+      const ahead = shownAhead(l)
+      return ahead.length ? { path: [...l.path, ahead[0]], future: ahead.slice(1) } : l
     })
   }
   const toStart = () => {
@@ -288,7 +291,7 @@ export function App() {
   }
   const toEnd = () => {
     resetMarks()
-    setLine((l) => (!ctx ? l : l.future.length ? { path: [...l.path, ...l.future], future: [] } : { path: mainLineEnd(ctx, l.path), future: [] }))
+    setLine((l) => (!ctx ? l : { path: [...l.path, ...shownAhead(l)], future: [] }))
   }
 
   /** After an edit: rebuild the graph, keep the line, drop session lines that are now stored, save drafts. */
@@ -680,7 +683,17 @@ export function App() {
     </div>
   )
   // Tree of moves: mode (linear, proximity, complete) and zoom are remembered (SPEC §8.6).
-  const forwardLine = line.future.length ? line.future : mainLineEnd(ctx, path).slice(path.length)
+  // Ahead: the moves you stepped back over; else the last line you saw through here (the trail); else the main line.
+  const trailSteps = trail.filter((l) => sameStart(l.start, start)).map((l) => replay(ctx, start, l.moves))
+  const fromTrail = (() => {
+    for (let k = trailSteps.length - 1; k >= 0; k--) {
+      const t = trailSteps[k]
+      if (t.length > path.length && path.every((s, i) => t[i].key === s.key)) return rebaseLine(path, t)
+    }
+    return null
+  })()
+  const forwardLine = line.future.length ? line.future : fromTrail ?? mainLineEnd(ctx, path).slice(path.length)
+  aheadRef.current = { path, ahead: forwardLine }
   const ZOOMS = [0.6, 0.75, 0.9, 1, 1.15, 1.35, 1.6]
   const zoomIdx = Math.max(0, ZOOMS.findIndex((z) => z >= settings.treeZoom - 0.001))
   const setZoom = (d: number) => setSettings({ ...settings, treeZoom: ZOOMS[Math.max(0, Math.min(ZOOMS.length - 1, zoomIdx + d))] })
@@ -717,8 +730,20 @@ export function App() {
       {showHiddenBtn}
     </div>
   )
-  // Lines visited in this session that start at the same position (the trail).
-  const trailSteps = trail.filter((l) => sameStart(l.start, start)).map((l) => replay(ctx, start, l.moves))
+  /**
+   * A line picked in the tree, rebuilt on the current line's steps: where it follows the current line it
+   * keeps its orientation (a move can be played mirrored), so the board never flips.
+   */
+  const onPathFrame = (l: Step[]): Step[] => {
+    const shown = [...path, ...forwardLine]
+    const out: Step[] = []
+    for (let i = 0; i < l.length; i++) {
+      if (i < shown.length && shown[i].key === l[i].key && (i === 0 || out[i - 1] === shown[i - 1])) out.push(shown[i])
+      else if (i === 0) out.push(l[0])
+      else out.push(rebaseLine(out.slice(0, i), l.slice(0, i + 1))[0])
+    }
+    return out
+  }
   /** The tree, from move `root` of the line (Explore: 0). */
   const treeFor = (o: { root: number; zoom: number; labels?: 'coord'; keepChild?: (p: Step, c: Step) => boolean }) => {
     const pre = path.slice(0, o.root)
@@ -735,10 +760,9 @@ export function App() {
         rootParent={o.root > 0 ? path[o.root - 1] : undefined}
         ahead={ahead ?? undefined}
         keepChild={o.keepChild}
-        trail={trailSteps.filter((t) => t.length > o.root && t[o.root].key === path[o.root].key).map((t) => t.slice(o.root))}
         defaultDb={databases[0]?.id ?? ''}
         onSelect={(l0) => {
-          const l = full(l0)
+          const l = onPathFrame(full(l0))
           setCtxMenu(null)
           // Selecting a move ahead on the same line keeps the rest of it for "forward".
           const same = l.length > path.length && l.slice(0, path.length).every((s, i) => s.key === path[i].key)
@@ -753,7 +777,7 @@ export function App() {
         folded={folded}
         showFolded={showFolded}
         onContext={(l0, x, y) => {
-          const l = full(l0)
+          const l = onPathFrame(full(l0))
           if (mode === 'design') go(l) // Design: the menu edits the selected move
           setCtxMenu({ line: l, x, y })
         }}
@@ -1302,6 +1326,19 @@ export function App() {
 }
 
 /** Follows the best next move while it is a good one, so End never walks into a mistake. */
+/**
+ * Continues `path` with the steps of `source` after it (`source` starts with the same positions).
+ * Each step keeps its orientation relative to its parent, so the board does not flip.
+ */
+function rebaseLine(path: Step[], source: Step[]): Step[] {
+  const out = [...path]
+  for (let i = path.length; i < source.length; i++) {
+    const rel = compose(inverse(source[i - 1].D), source[i].D)
+    out.push({ ...source[i], D: compose(out[i - 1].D, rel) })
+  }
+  return out.slice(path.length)
+}
+
 function mainLineEnd(ctx: Ctx, path: Step[]): Step[] {
   const out = [...path]
   const seen = new Set(out.map((s) => s.key))

@@ -176,6 +176,10 @@ export function Tree(props: Props) {
         j = add({ step: line[d], line: line.slice(0, d + 1), parent: i, ...describe(line[d - 1], line[d]) })
       }
       placed[i].transposition = false
+      if (isMain && placed[j].step !== line[d]) {
+        // The current line's own steps: a move may have been played mirrored; show it as played.
+        Object.assign(placed[j], { step: line[d], line: line.slice(0, d + 1), ...describe(line[d - 1], line[d]) })
+      }
       if (isMain && d >= path.length) placed[j].ahead = true
       visible.add(j)
       if (placed[j].folded) return

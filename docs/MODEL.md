@@ -116,19 +116,25 @@ Find matches a position by sliding its stones along the free directions, for all
 
 The tree draws the graph around the line you are on.
 
+### Layout
+- The tree is always laid out like the complete tree, in a fixed order (database moves best first,
+  then your own moves). Moving through it never moves it: selecting the third child moves the
+  selection to the third row. The modes only hide parts of it; hidden rows keep their place.
+- The tree has a fixed size and scrolls only when the current move would leave it.
+
 ### Your trail
 - The app remembers the lines you visit in this session (the **trail**).
-- If you go back and play something else, the line you left **stays in the tree as a branch**;
-  it is never replaced.
+- **Ahead** of the current move the tree shows, in this order: the moves you stepped back over; the
+  last line you saw through this position (from the trail); the main line. → and End follow it.
 - A move that is not in any database (free play) opens a new branch at that point.
 - The trail is kept in the browser with the session.
 
-### Explore
+### Modes
 | Mode | Shows |
 |---|---|
-| **Linear** | The line you are on, plus its future. If you just opened a sequence, that is the main path; if you came back, it is the last line you saw. Lines on your trail stay as branches. |
-| **Proximity** | Linear, plus the other moves from the current position. |
-| **Complete** | Every move in the active databases, except hidden branches. |
+| **Linear** | Only this line: the moves before the current one and the line ahead. |
+| **Proximity** | Only this line, plus the other moves from the current position. |
+| **Complete** | Every move in the active databases and your own moves, except hidden branches. |
 
 - Placing stones moves the tree to that line. If the line leaves the databases, it branches there.
 - **Right-click a move:**

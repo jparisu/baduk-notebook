@@ -15,8 +15,10 @@
 ### Tree
 - The tree never moves when you move through it: it is always laid out like the complete tree, in a fixed order, and Linear / Proximity only hide parts of it. It sits at the top of the right panel with a fixed size.
 - Dashed nodes mean only one thing: not stored in a database yet.
-- **Trail**: the lines you visit stay in the tree, so going back and playing elsewhere never removes the line you left.
-- Linear / Proximity / Complete in Explore and Design, with **Ahead** (all, next 3 / 6 / 10) and zoom.
+- **Trail**: the app remembers the lines you visit; going back to a move shows (and → / End follow) the last line you saw there.
+- **Linear** shows only this line; **Proximity** this line plus the moves from the current position; **Complete** everything.
+- A move played mirrored (e.g. R16 where the database has Q17) keeps its orientation when you move through the tree.
+- In Explore and Design, with **Ahead** (all, next 3 / 6 / 10) and zoom.
 - Right-click: **Hide this branch** (view only, with a "+n" badge and *Show hidden*), **Forget this branch**, remove moves that are not in a database.
 - Design: **Only new** shows the position you started from and only the moves added since you opened Design.
 

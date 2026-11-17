@@ -145,16 +145,31 @@ test('proximity shows the line and only the other options after the current move
   expect(await col(7)).toBe(1)
 })
 
-test('the tree keeps the lines you leave (the trail), and a branch can be hidden', async ({ page }) => {
+test('Linear and Proximity show only this line; going back to a move follows the last line you saw there', async ({ page }) => {
   await page.locator('.tree-toolbar').getByRole('button', { name: 'Linear' }).click()
-  for (const p of ['Q16', 'R17', 'Q17']) await clickPoint(page, p) // 3-3 invasion
-  await page.keyboard.press('ArrowLeft')
-  await page.keyboard.press('ArrowLeft')
-  await clickPoint(page, 'R14') // low approach instead
+  for (const p of ['Q16', 'R14', 'O17']) await clickPoint(page, p) // low approach line
+  const seen = page.url()
+  await page.keyboard.press('Home')
+  for (const p of ['Q16', 'R17']) await clickPoint(page, p) // the 3-3 invasion instead
+  const title = (t: RegExp) => page.locator('.tree-box .tree-node', { has: page.locator('title', { hasText: t }) })
+  await expect(title(/^White R14/)).toHaveCount(0) // Linear: only this line
+  await page.locator('.tree-toolbar').getByRole('button', { name: 'Proximity' }).click()
+  await expect(title(/^White R14/)).toHaveCount(0) // Proximity: this line and the moves from here, not other lines
+  // Back to the 4-4 stone from the tree, then End: the low approach line you saw before, not the main line.
+  await title(/^Black Q16/).click()
+  await expect(page).toHaveURL(/line=pd$/)
+  await page.keyboard.press('End')
+  await expect(page).toHaveURL(/line=pd\.qc$/) // where that line ended, not the end of the main line
+  void seen
+})
+
+test('a branch can be hidden', async ({ page }) => {
+  await page.locator('.tree-toolbar').getByRole('button', { name: 'Complete' }).click()
+  await clickPoint(page, 'Q16')
+  await clickPoint(page, 'R14')
   const nodes = page.locator('.tree-box .tree-node')
-  await expect(page.locator('.tree-box .tree-node[data-key]', { has: page.locator('title', { hasText: 'White R17' }) })).toHaveCount(1) // the line you left
   const before = await nodes.count()
-  await page.locator('.tree-box .tree-node', { has: page.locator('title', { hasText: 'White R17' }) }).click({ button: 'right' })
+  await page.locator('.tree-box .tree-node', { has: page.locator('title', { hasText: /^White R17/ }) }).first().click({ button: 'right' })
   await page.locator('.ctx-menu').getByRole('menuitem', { name: 'Hide this branch' }).click()
   await expect(page.locator('.tree-box .fold-badge')).toHaveCount(1)
   expect(await nodes.count()).toBeLessThan(before)
@@ -190,4 +205,16 @@ test('texts name the players with tokens, so Swap colors changes the words too',
   const after = await why.innerText()
   expect(after).not.toBe(before)
   expect(after.replace(/Black/g, '§').replace(/White/g, 'Black').replace(/§/g, 'White')).toBe(before)
+})
+
+test('a move played mirrored keeps its orientation when you move through the tree', async ({ page }) => {
+  for (const p of ['Q16', 'R17', 'R16']) await clickPoint(page, p) // R16 is Q17 mirrored on this position
+  await expect(page.locator('.status')).toContainText('Black R16')
+  const node = (t: RegExp) => page.locator('.tree-box .tree-node', { has: page.locator('title', { hasText: t }) }).first()
+  await node(/^White R17/).click()
+  await page.keyboard.press('ArrowRight')
+  await expect(page.locator('.status')).toContainText('Black R16')
+  await page.keyboard.press('ArrowLeft')
+  await node(/^Black (R16|Q17)/).click()
+  await expect(page.locator('.status')).toContainText('Black R16')
 })
