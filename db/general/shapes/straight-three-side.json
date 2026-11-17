@@ -44,7 +44,7 @@
           "move": "sf",
           "to": "life & death/Straight three · side · enclosed:1c",
           "status": "wrong",
-          "why": "White answers at {{CR:T15}} and Black has only one eye."
+          "why": "{{White}} answers at {{CR:T15}} and {{Black}} has only one eye."
         }
       ]
     },
@@ -82,7 +82,7 @@
           "move": "se",
           "to": "life & death/Straight three · side · enclosed:2",
           "status": "correct",
-          "why": "Takes the vital point. Black can make only one eye."
+          "why": "Takes the vital point. {{Black}} can make only one eye."
         }
       ]
     },

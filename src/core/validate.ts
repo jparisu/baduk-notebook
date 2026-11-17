@@ -1,6 +1,7 @@
 /** Database validator (SPEC §10.1 "Checks before export", §12.4). Used by the app and by CI. */
 import type { DbFile } from './model'
 import { buildGraph } from './graph'
+import { playerWords } from './refs'
 import { CATEGORIES } from './fields'
 import { parsePt, parseSgfPt, parseSgfPtList } from './geometry'
 
@@ -43,6 +44,7 @@ const KNOWN = new Set([
 const REF_TYPES = new Set(['TR', 'SQ', 'CR', 'MA', 'LB', 'AR', 'LN', 'WALL', 'INF', 'TB', 'TW', 'CUT'])
 
 function checkRefs(text: string, push: (m: string) => void) {
+  text = playerWords(text, false, 1) // {{Black}}, {{Player}}… are words, not board references
   for (const m of text.matchAll(/\{\{([A-Z]+):([^|}]*)(?:\|[^}]*)?\}\}/g)) {
     if (!REF_TYPES.has(m[1])) push(`Unknown visual reference type "${m[1]}" in "${m[0]}"`)
     const pts = m[2].split(/[,\-:]/).map((p) => p.split('=')[0]).filter(Boolean)

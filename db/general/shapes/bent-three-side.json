@@ -85,7 +85,7 @@
           "move": "se",
           "to": "life & death/Bent three · side · enclosed:2",
           "status": "correct",
-          "why": "Takes the vital point. Black can make only one eye."
+          "why": "Takes the vital point. {{Black}} can make only one eye."
         }
       ]
     },

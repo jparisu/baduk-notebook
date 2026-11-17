@@ -84,7 +84,7 @@
           "move": "re",
           "to": "life & death/Crossed five · side · enclosed:2",
           "status": "correct",
-          "why": "Takes the center. Black can make only one eye."
+          "why": "Takes the center. {{Black}} can make only one eye."
         }
       ]
     }

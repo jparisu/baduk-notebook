@@ -180,3 +180,14 @@ test('selecting another child does not move the tree: the node stays where it wa
     expect(await at(), m).toEqual(before)
   }
 })
+
+test('texts name the players with tokens, so Swap colors changes the words too', async ({ page }) => {
+  for (const p of ['Q16', 'R17']) await clickPoint(page, p) // 3-3 invasion: the why talks about White
+  const why = page.locator('.why-card .why-text').first()
+  await expect(why).not.toContainText('{{')
+  const before = await why.innerText()
+  await page.getByRole('button', { name: /Swap colors/ }).click()
+  const after = await why.innerText()
+  expect(after).not.toBe(before)
+  expect(after.replace(/Black/g, '§').replace(/White/g, 'Black').replace(/§/g, 'White')).toBe(before)
+})

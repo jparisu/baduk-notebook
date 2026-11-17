@@ -6,7 +6,8 @@ import * as sgf from '@sabaki/sgf'
 import type { SgfNode } from '@sabaki/sgf'
 import { parseSgfPt, parseSgfPtList, type Pt, type Sign } from '../core/geometry'
 import { MOVE_PROPS } from '../core/fields'
-import { candidates, displayBoard, moveFields, playFree, positionFields, startStep, toMove, type Ctx, type Step } from '../view'
+import { playerWords } from '../core/refs'
+import { candidates, displayBoard, frame, moveFields, playFree, positionFields, startStep, toMove, type Ctx, type Step } from '../view'
 import { newNode, sgfPoint, writeSgf } from './sgfio'
 import { locate, setProps } from './ops'
 import { buildGraph } from '../core/graph'
@@ -43,7 +44,7 @@ export function toSgf(ctx: Ctx, step: Step, maxNodes = 2000): string {
         if (v) d[k] = [v]
       }
       const why = mf.one('XMW')?.value
-      if (why) d.C = [why.replace(/\{\{[A-Z]+:[^|}]*\|([^}]*)\}\}/g, '$1').replace(/\{\{[A-Z]+:([^}]*)\}\}/g, '$1')]
+      if (why) d.C = [playerWords(why, frame(ctx, parent).swap, c.edge.sign).replace(/\{\{[A-Z]+:[^|}]*\|([^}]*)\}\}/g, '$1').replace(/\{\{[A-Z]+:([^}]*)\}\}/g, '$1')]
       walk(c.step, newNode(d, node))
     }
   }

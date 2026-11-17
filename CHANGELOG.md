@@ -3,7 +3,7 @@
 ## Unreleased
 
 ### Data model (docs/MODEL.md)
-- Texts can say `{{Player}}`, `{{Opponent}}`, `{{Black}}`, `{{White}}`; they follow who moved and the Swap colors option.
+- Texts can say `{{Player}}`, `{{Opponent}}`, `{{Black}}`, `{{White}}`; they follow who moved and the Swap colors option. Every stored text now uses `{{Black}}` / `{{White}}` (scripts/player-words.ts).
 - The databases are JSON files of **positions** with a unique **id** (`joseki/4-4 point/3-3 invasion:5`); each move points to the id it leads to. A script converted the SGF files.
 - "Joseki" and "shape" are no longer separate kinds: the id (`joseki/…`, `life & death/…`) and nested **tags** organise everything.
 - Colors are never swapped when matching positions; Black to play and White to play are different positions, joined by a tenuki (shapes now start with Black to play, and a tenuki leads to White playing first).

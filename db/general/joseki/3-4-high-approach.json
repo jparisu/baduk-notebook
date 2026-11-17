@@ -9,7 +9,7 @@
         "approach",
         "basic joseki"
       ],
-      "notes": "{{TR:P16|White's high approach}} to {{TR:R16|the 3-4 stone}}. High approach on the 5-4 point: faces the center more than the low approach and leaves the corner to Black.",
+      "notes": "{{TR:P16|{{White}}'s high approach}} to {{TR:R16|the 3-4 stone}}. High approach on the 5-4 point: faces the center more than the low approach and leaves the corner to {{Black}}.",
       "eval": {
         "difficulty": "20k"
       },
@@ -21,7 +21,7 @@
           "Attach-drawback",
           "Tsuke-hiki"
         ],
-        "XSUM": "White approaches the 3-4 stone high, on the 5-4 point. The usual answer is the inside attachment, hane and draw back (tsuke-hiki), one of the first joseki beginners learn. White then protects with a solid or a hanging connection. Sources: 34PointHighApproach, 34PointHighApproachInsideContact, 34PointHighApproachAttachDrawbackJoseki, 34PointHighApproachInsideContactHangingConnection.",
+        "XSUM": "{{White}} approaches the 3-4 stone high, on the 5-4 point. The usual answer is the inside attachment, hane and draw back (tsuke-hiki), one of the first joseki beginners learn. {{White}} then protects with a solid or a hanging connection. Sources: 34PointHighApproach, 34PointHighApproachInsideContact, 34PointHighApproachAttachDrawbackJoseki, 34PointHighApproachInsideContactHangingConnection.",
         "XSRC": "Sensei's Library (senseis.xmp.net), joseki pages listed in XSUM. Sequences copied from its diagrams and mirrored to the top-right corner.",
         "XERA": [
           "classic",
@@ -36,7 +36,7 @@
           "move": "oc",
           "to": "joseki/3-4 point/High approach/Attach-drawback",
           "status": "main",
-          "why": "Inside attachment underneath the approach stone: Black takes a large corner.",
+          "why": "Inside attachment underneath the approach stone: {{Black}} takes a large corner.",
           "extra": {
             "XSTY": "solid",
             "XPUR": "territory"
@@ -54,7 +54,7 @@
       },
       "extra": {
         "XALIAS": "Tsuke-hiki",
-        "XSUM": "Inside attachment, hane and draw back: Black takes the corner, White protects the cut and extends along the top.",
+        "XSUM": "Inside attachment, hane and draw back: {{Black}} takes the corner, {{White}} protects the cut and extends along the top.",
         "XST": "progress",
         "XEV": "="
       },
@@ -63,7 +63,7 @@
           "move": "nc",
           "to": "joseki/3-4 point/High approach/Attach-drawback:4",
           "status": "main",
-          "why": "Hane, stopping Black from moving along the top.",
+          "why": "Hane, stopping {{Black}} from moving along the top.",
           "extra": {
             "XSTY": "balanced",
             "XPUR": "influence"
@@ -84,7 +84,7 @@
           "move": "pc",
           "to": "joseki/3-4 point/High approach/Attach-drawback:5",
           "status": "main",
-          "why": "Draws back, leaving White a cutting point at {{CUT:O16}}.",
+          "why": "Draws back, leaving {{White}} a cutting point at {{CUT:O16}}.",
           "extra": {
             "XSTY": "solid",
             "XPUR": [
@@ -99,7 +99,7 @@
       "id": "joseki/3-4 point/High approach/Attach-drawback:5",
       "stones": "B:oc,pc,qd W:nc,od",
       "toPlay": "W",
-      "notes": "White must protect the cutting point: a solid connection or a hanging connection.",
+      "notes": "{{White}} must protect the cutting point: a solid connection or a hanging connection.",
       "extra": {
         "XST": "progress",
         "XEV": "="
@@ -119,7 +119,7 @@
           "move": "md",
           "to": "joseki/3-4 point/High approach/Attach-drawback:6b",
           "status": "alt",
-          "why": "Hanging connection (tiger's mouth): lets White extend one space further, but leaves more weaknesses.",
+          "why": "Hanging connection (tiger's mouth): lets {{White}} extend one space further, but leaves more weaknesses.",
           "extra": {
             "XSTY": "balanced",
             "XPUR": "connect"
@@ -177,7 +177,7 @@
         "XST": "end",
         "XEV": "=",
         "XSEN": "B",
-        "XRES": "Black has the corner and left side; White has a base on the top."
+        "XRES": "{{Black}} has the corner and left side; {{White}} has a base on the top."
       },
       "moves": []
     },
@@ -231,8 +231,8 @@
         "XST": "end",
         "XEV": "=",
         "XSEN": "B",
-        "XRES": "As after the solid connection, but White's side is wider and thinner.",
-        "XAJI": "Black can later invade the top side, for example at {{CR:M17}}."
+        "XRES": "As after the solid connection, but {{White}}'s side is wider and thinner.",
+        "XAJI": "{{Black}} can later invade the top side, for example at {{CR:M17}}."
       },
       "moves": []
     }

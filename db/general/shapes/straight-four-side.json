@@ -9,12 +9,12 @@
       "tags": [
         "eye shape"
       ],
-      "notes": "{{SQ:T13,T14,T15,T16|The 4-point eye space}} has {{CR:T14,T15|two middle points}}. White can take only one of them.",
+      "notes": "{{SQ:T13,T14,T15,T16|The 4-point eye space}} has {{CR:T14,T15|two middle points}}. {{White}} can take only one of them.",
       "eval": {
         "difficulty": "25k"
       },
       "extra": {
-        "XSUM": "Four points in a row. Alive even if White plays first: Black always answers on the other middle point.",
+        "XSUM": "Four points in a row. Alive even if {{White}} plays first: {{Black}} always answers on the other middle point.",
         "XSB": "alive",
         "XSW": "alive",
         "XRESB": "alive",

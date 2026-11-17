@@ -84,7 +84,7 @@
           "move": "se",
           "to": "life & death/Pyramid four · side · enclosed:2",
           "status": "correct",
-          "why": "Takes the vital point. Black can make only one eye."
+          "why": "Takes the vital point. {{Black}} can make only one eye."
         },
         {
           "move": "re",
@@ -108,7 +108,7 @@
           "move": "se",
           "to": "life & death/Pyramid four · side · enclosed:1",
           "status": "correct",
-          "why": "Black takes it and lives."
+          "why": "{{Black}} takes it and lives."
         }
       ]
     }
