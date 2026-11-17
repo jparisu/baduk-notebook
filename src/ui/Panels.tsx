@@ -138,9 +138,9 @@ export function JosekiInfo(p: Common & { onOpenLabel: (id: string) => void; onCo
         <Row label="Sequence">{entry.id.replace(/\//g, ' › ')}</Row>
         {one('XDIFF') && <Row label="Difficulty"><span class="chip">{one('XDIFF')}</span></Row>}
         {ef.list('XTAG').length > 0 && <Row label="Tags"><span class="chips">{ef.list('XTAG').map((t) => <span key={t} class="chip">{t}</span>)}</span></Row>}
-        {entry.type === 'shape' && res('XRESB') && <Row label="Black first"><IconLabel map={SHAPE_ICONS} value={res('XRESB')!} show={icons} /></Row>}
-        {entry.type === 'shape' && res('XRESW') && <Row label="White first"><IconLabel map={SHAPE_ICONS} value={res('XRESW')!} show={icons} /></Row>}
-        {entry.type === 'shape' && ef.points('XVITAL').length > 0 && <Row label="Vital point">{ef.points('XVITAL').map(ptName).join(', ')}</Row>}
+        {res('XRESB') && <Row label="Black first"><IconLabel map={SHAPE_ICONS} value={res('XRESB')!} show={icons} /></Row>}
+        {res('XRESW') && <Row label="White first"><IconLabel map={SHAPE_ICONS} value={res('XRESW')!} show={icons} /></Row>}
+        {ef.points('XVITAL').length > 0 && <Row label="Vital point">{ef.points('XVITAL').map(ptName).join(', ')}</Row>}
       </div>
       {ef.text('XSUM').length > 0 && (
         <Fold id="joseki-description" title="Description">
@@ -335,7 +335,7 @@ export function NextMoves(p: Common & {
         </div>
       )}
       {list.length === 0 && <p class="hint">{inBook(ctx, step) ? 'No stored continuation.' : 'Not in your databases.'}</p>}
-      {joseki.length > 0 && (<><div class="group">Joseki</div>{joseki.map(row)}</>)}
+      {joseki.length > 0 && (<><div class="group">Good moves</div>{joseki.map(row)}</>)}
       {variations.length > 0 && (<><div class="group">Variations</div>{variations.map(row)}</>)}
       {bad.length > 0 && (<><div class="group">Mistakes and traps</div>{bad.map(row)}</>)}
     </div>

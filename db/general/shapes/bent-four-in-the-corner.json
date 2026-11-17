@@ -1,7 +1,7 @@
 {
   "positions": [
     {
-      "id": "life & death/Bent four in the corner",
+      "id": "life & death/Bent four/Corner",
       "stones": "B:pa,pb,qb,rb,rc,sc W:oa,ob,oc,pc,qc,qd,rd,sd",
       "toPlay": "B",
       "name": "Bent four in the corner",
@@ -42,18 +42,18 @@
       "moves": [
         {
           "move": "ra",
-          "to": "life & death/Bent four in the corner:1",
-          "status": "correct",
+          "to": "life & death/Bent four/Corner:1",
+          "status": "main",
           "why": "Takes the vital point: {{SQ:R19}} and {{SQ:T19,T18}} become two eyes."
         },
         {
           "move": "tenuki",
-          "to": "life & death/Bent four in the corner:1b"
+          "to": "life & death/Bent four/Corner:1b"
         }
       ]
     },
     {
-      "id": "life & death/Bent four in the corner:1",
+      "id": "life & death/Bent four/Corner:1",
       "stones": "B:pa,pb,qb,ra,rb,rc,sc W:oa,ob,oc,pc,qc,qd,rd,sd",
       "toPlay": "W",
       "extra": {
@@ -64,7 +64,7 @@
       "moves": []
     },
     {
-      "id": "life & death/Bent four in the corner:2",
+      "id": "life & death/Bent four/Corner:2",
       "stones": "B:pa,pb,qb,rb,rc,sc W:oa,ob,oc,pc,qc,qd,ra,rd,sd",
       "toPlay": "B",
       "extra": {
@@ -74,33 +74,33 @@
       "moves": [
         {
           "move": "sa",
-          "to": "life & death/Bent four in the corner:3",
-          "status": "ko",
+          "to": "life & death/Bent four/Corner:3",
+          "status": "situational",
           "why": "{{Black}}'s best: it puts {{TR:S19|the {{white}} stone}} in atari."
         }
       ]
     },
     {
-      "id": "life & death/Bent four in the corner:1b",
+      "id": "life & death/Bent four/Corner:1b",
       "stones": "B:pa,pb,qb,rb,rc,sc W:oa,ob,oc,pc,qc,qd,rd,sd",
       "toPlay": "W",
       "moves": [
         {
           "move": "ra",
-          "to": "life & death/Bent four in the corner:2",
-          "status": "correct",
+          "to": "life & death/Bent four/Corner:2",
+          "status": "main",
           "why": "Takes the vital point. {{Black}} cannot make two eyes without a ko."
         },
         {
           "move": "sa",
-          "to": "life & death/Bent four in the corner:2b",
-          "status": "wrong",
+          "to": "life & death/Bent four/Corner:2b",
+          "status": "mistake",
           "why": "The 1-1 point is not the vital point."
         }
       ]
     },
     {
-      "id": "life & death/Bent four in the corner:3",
+      "id": "life & death/Bent four/Corner:3",
       "stones": "B:pa,pb,qb,rb,rc,sa,sc W:oa,ob,oc,pc,qc,qd,ra,rd,sd",
       "toPlay": "W",
       "extra": {
@@ -110,14 +110,14 @@
       "moves": [
         {
           "move": "sb",
-          "to": "life & death/Bent four in the corner:4",
-          "status": "ko",
+          "to": "life & death/Bent four/Corner:4",
+          "status": "situational",
           "why": "Captures {{TR:T19}} and takes the ko first. {{Black}} needs a ko threat."
         }
       ]
     },
     {
-      "id": "life & death/Bent four in the corner:4",
+      "id": "life & death/Bent four/Corner:4",
       "stones": "B:pa,pb,qb,rb,rc,sc W:oa,ob,oc,pc,qc,qd,ra,rd,sb,sd",
       "toPlay": "B",
       "notes": "Ko: {{White}} has taken first. If {{Black}} wins the ko, {{Black}} lives.",
@@ -128,7 +128,7 @@
       "moves": []
     },
     {
-      "id": "life & death/Bent four in the corner:2b",
+      "id": "life & death/Bent four/Corner:2b",
       "stones": "B:pa,pb,qb,rb,rc,sc W:oa,ob,oc,pc,qc,qd,rd,sa,sd",
       "toPlay": "B",
       "extra": {
@@ -138,14 +138,14 @@
       "moves": [
         {
           "move": "ra",
-          "to": "life & death/Bent four in the corner:3b",
-          "status": "correct",
+          "to": "life & death/Bent four/Corner:3b",
+          "status": "main",
           "why": "{{Black}} lives: {{White}} cannot approach from either side."
         }
       ]
     },
     {
-      "id": "life & death/Bent four in the corner:3b",
+      "id": "life & death/Bent four/Corner:3b",
       "stones": "B:pa,pb,qb,ra,rb,rc,sc W:oa,ob,oc,pc,qc,qd,rd,sa,sd",
       "toPlay": "W",
       "extra": {

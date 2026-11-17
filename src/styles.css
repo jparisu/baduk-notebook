@@ -840,3 +840,14 @@ button.link.small { font-size: 12px; display: inline-flex; align-items: center; 
 .tree-box.fixed { height: 220px; max-height: none; overflow: auto; }
 .layout:not(.phone) .side.right .tree-box.fixed { height: 230px; }
 .hint.inherited { color: var(--accent); }
+/* Search card: the controls never shrink; only the result list scrolls. */
+.left .library { max-height: none; overflow: visible; }
+.library > * { flex-shrink: 0; }
+.library .lib-tree { max-height: 260px; overflow: auto; border-top: 1px solid var(--line); padding-top: 4px; }
+.tag-bar { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag-bar .chip { cursor: pointer; display: inline-flex; align-items: center; gap: 3px; }
+.tag-bar .chip.on { background: var(--accent); color: var(--accent-fg); }
+.tag-bar .chip svg { color: #e0b000; fill: #e0b000; }
+.tag-bar .chip.on svg { color: currentColor; fill: none; }
+.tag-bar .chip.more { background: none; border: 1px dashed var(--line); color: var(--muted); }
+.tag-chips.all-tags { max-height: 120px; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: var(--radius-sm); }

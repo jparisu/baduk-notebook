@@ -192,37 +192,20 @@ export function Library(props: {
           </button>
         ))}
       </div>
-      <div class="lib-filters">
-        <select class="filter" value={maxRank} onChange={(e) => setMaxRank((e.target as HTMLSelectElement).value)} aria-label="Difficulty">
-          <option value="any">Any difficulty</option>
-          <option value="20k">Up to 20k</option>
-          <option value="15k">Up to 15k</option>
-          <option value="10k">Up to 10k</option>
-          <option value="5k">Up to 5k</option>
-          <option value="1k">Up to 1k</option>
-        </select>
-        <button class={`tags-toggle ${showTags || tags.length ? 'on' : ''}`} onClick={() => setShowTags(!showTags)} aria-expanded={showTags}>
-          Tags{tags.length ? ` (${tags.length})` : ''}
-        </button>
-      </div>
-      {tags.length > 0 && (
-        <div class="tag-chips selected">
-          {tags.map((t) => (
-            <button key={t} class="chip on" onClick={() => setTags(tags.filter((x) => x !== t))} aria-label={`Remove tag ${t}`}>{t} <X size={12} /></button>
-          ))}
-        </div>
-      )}
-      {favourites.length > 0 && (
-        <div class="tag-chips fav" role="group" aria-label="Favourite tags">
-          {favourites.map((t) => (
-            <button key={t} class="chip" onClick={() => setTags([...tags, t])} title={stars.includes(t) ? 'Starred tag' : 'Common tag'}>
-              {stars.includes(t) && <Star size={11} aria-hidden />} {t}
+      {/* One row of tags: the selected ones (on) and the favourites; click to select or deselect. */}
+      <div class="tag-bar" role="group" aria-label="Tags">
+        {[...tags, ...favourites].map((t) => {
+          const on = tags.includes(t)
+          return (
+            <button key={t} class={`chip ${on ? 'on' : ''}`} aria-pressed={on} onClick={() => setTags(on ? tags.filter((x) => x !== t) : [...tags, t])} title={on ? `Remove ${t}` : stars.includes(t) ? 'Starred tag' : 'Common tag'}>
+              {!on && stars.includes(t) && <Star size={11} aria-hidden />} {t} {on && <X size={12} aria-hidden />}
             </button>
-          ))}
-        </div>
-      )}
+          )
+        })}
+        <button class={`chip more ${showTags ? 'open' : ''}`} onClick={() => setShowTags(!showTags)} aria-expanded={showTags}>{showTags ? 'Fewer tags' : 'All tags…'}</button>
+      </div>
       {showTags && (
-        <div class="tag-chips" role="group" aria-label="Filter by tag">
+        <div class="tag-chips all-tags" role="group" aria-label="All tags">
           {allTags.filter((t) => !tags.includes(t)).map((t) => (
             <span key={t} class="chip-star">
               <button class="chip" onClick={() => setTags([...tags, t])}>{t}</button>
@@ -232,6 +215,17 @@ export function Library(props: {
           {allTags.length === 0 && <span class="hint">No tags yet.</span>}
         </div>
       )}
+      <div class="lib-filters">
+        <select class="filter" value={maxRank} onChange={(e) => setMaxRank((e.target as HTMLSelectElement).value)} aria-label="Difficulty">
+          <option value="any">Any difficulty</option>
+          <option value="20k">Up to 20k</option>
+          <option value="15k">Up to 15k</option>
+          <option value="10k">Up to 10k</option>
+          <option value="5k">Up to 5k</option>
+          <option value="1k">Up to 1k</option>
+        </select>
+        {(tags.length > 0 || q || maxRank !== 'any') && <button class="link small" onClick={() => { setTags([]); setQuery(''); setMaxRank('any') }}>Clear</button>}
+      </div>
       <ul class="lib-tree">{tree.map((n) => render(n, 0))}</ul>
       {items.length === 0 && <p class="hint">No entries match.</p>}
       {props.extra}

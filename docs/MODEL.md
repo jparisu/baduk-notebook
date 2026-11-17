@@ -47,7 +47,7 @@ lead to. The app checks that playing the move really gives that position.
 |---|---|
 | `move` | A point (`qc`) or `tenuki` (play elsewhere: same stones, the other player to move). |
 | `to` | Id of the position it leads to. |
-| `status` | `main`, `alternative`, `situational`, `slack`, `mistake`, `overplay`, `trick`, `punishment`. |
+| `status` | One set for every position: `main`, `alt`, `situational`, `slack`, `mistake`, `overplay`, `trick`, `punish`. |
 | `why` | Why the move is good or bad. |
 | `notes` | Free text with board marks. |
 | `extra` | Other details: style (`XSTY`), purpose (`XPUR`), conditions, board marks. |

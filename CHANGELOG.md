@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Data model (docs/MODEL.md)
+- One set of move categories for everything: Main move, Alternative, Situational, Slack, Mistake, Overplay, Trick play, Punishment (shape moves: correct → main, wrong → mistake, ko → situational). The editor shows the same fields for every position.
+- Each shape is one family with its variations: `life & death/Bent four/Corner`, `life & death/Bent four/Side, enclosed`.
 - Position fields (points, evaluation, explanation, notes, tags, difficulty…) are inherited from the earlier positions of the line until a position sets its own; the editor shows where they come from. Move fields are never inherited.
 - Texts can say `{{Player}}`, `{{Opponent}}`, `{{Black}}`, `{{White}}`; they follow who moved and the Swap colors option. Every stored text now uses `{{Black}}` / `{{White}}` (scripts/player-words.ts).
 - The databases are JSON files of **positions** with a unique **id** (`joseki/4-4 point/3-3 invasion:5`); each move points to the id it leads to. A script converted the SGF files.
@@ -12,6 +14,9 @@
 - Naming a position starts a new sequence; the following positions move into it.
 - Library: one tree of ids, tags matched with their deeper tags, **favourite tags** (common tags from `index.json` and your own stars).
 - **SGF**: load an SGF file into a database, download any position with what follows.
+
+### Library
+- Tags sit in one row of chips (selected ones and favourites): click to select or deselect; *All tags…* opens the full list. The results scroll in their own box, so the tags never disappear.
 
 ### Tree
 - The tree never moves when you move through it: it is always laid out like the complete tree, in a fixed order, and Linear / Proximity only hide parts of it. It sits at the top of the right panel with a fixed size.

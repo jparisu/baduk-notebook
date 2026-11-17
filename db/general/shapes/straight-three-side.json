@@ -1,7 +1,7 @@
 {
   "positions": [
     {
-      "id": "life & death/Straight three · side · enclosed",
+      "id": "life & death/Straight three/Side, enclosed",
       "stones": "B:rc,rd,re,rf,rg,sc,sg W:qb,qc,qd,qe,qf,qg,qh,rb,rh,sb,sh",
       "toPlay": "B",
       "free": "horizontal",
@@ -32,24 +32,24 @@
       "moves": [
         {
           "move": "se",
-          "to": "life & death/Straight three · side · enclosed:1",
-          "status": "correct",
+          "to": "life & death/Straight three/Side, enclosed:1",
+          "status": "main",
           "why": "Takes the vital point and splits the space into two eyes."
         },
         {
           "move": "tenuki",
-          "to": "life & death/Straight three · side · enclosed:1b"
+          "to": "life & death/Straight three/Side, enclosed:1b"
         },
         {
           "move": "sf",
-          "to": "life & death/Straight three · side · enclosed:1c",
-          "status": "wrong",
+          "to": "life & death/Straight three/Side, enclosed:1c",
+          "status": "mistake",
           "why": "{{White}} answers at {{CR:T15}} and {{Black}} has only one eye."
         }
       ]
     },
     {
-      "id": "life & death/Straight three · side · enclosed:1",
+      "id": "life & death/Straight three/Side, enclosed:1",
       "stones": "B:rc,rd,re,rf,rg,sc,se,sg W:qb,qc,qd,qe,qf,qg,qh,rb,rh,sb,sh",
       "toPlay": "W",
       "free": "horizontal",
@@ -61,7 +61,7 @@
       "moves": []
     },
     {
-      "id": "life & death/Straight three · side · enclosed:2",
+      "id": "life & death/Straight three/Side, enclosed:2",
       "stones": "B:rc,rd,re,rf,rg,sc,sg W:qb,qc,qd,qe,qf,qg,qh,rb,rh,sb,se,sh",
       "toPlay": "B",
       "free": "horizontal",
@@ -73,21 +73,21 @@
       "moves": []
     },
     {
-      "id": "life & death/Straight three · side · enclosed:1b",
+      "id": "life & death/Straight three/Side, enclosed:1b",
       "stones": "B:rc,rd,re,rf,rg,sc,sg W:qb,qc,qd,qe,qf,qg,qh,rb,rh,sb,sh",
       "toPlay": "W",
       "free": "horizontal",
       "moves": [
         {
           "move": "se",
-          "to": "life & death/Straight three · side · enclosed:2",
-          "status": "correct",
+          "to": "life & death/Straight three/Side, enclosed:2",
+          "status": "main",
           "why": "Takes the vital point. {{Black}} can make only one eye."
         }
       ]
     },
     {
-      "id": "life & death/Straight three · side · enclosed:1c",
+      "id": "life & death/Straight three/Side, enclosed:1c",
       "stones": "B:rc,rd,re,rf,rg,sc,sf,sg W:qb,qc,qd,qe,qf,qg,qh,rb,rh,sb,sh",
       "toPlay": "W",
       "free": "horizontal",

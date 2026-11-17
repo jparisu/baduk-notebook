@@ -37,7 +37,7 @@ test('names a position, and the moves after it carry the name', async ({ page })
   await page.getByRole('button', { name: 'Name this position' }).click()
   await expect(page.locator('.status')).toContainText('Low approach')
   await clickPoint(page, 'O17')
-  await page.locator('.cat-btn', { hasText: 'Main joseki' }).click()
+  await page.locator('.cat-btn', { hasText: 'Main move' }).click()
   await expect(page.locator('.status')).toContainText('Low approach')
 })
 

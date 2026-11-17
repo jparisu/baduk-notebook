@@ -3,7 +3,7 @@
  * Writing anything on a move played freely saves the line up to it.
  */
 import { useState } from 'preact/hooks'
-import { CATEGORIES, JOSEKI_CATEGORIES, SHAPE_CATEGORIES, flipValue, type Category } from '../core/fields'
+import { CATEGORIES, MOVE_CATEGORIES, flipValue, type Category } from '../core/fields'
 import { apply, compose, inverse, parsePt, parseSgfPtList, ptName, type Pt } from '../core/geometry'
 import { sgfPoint } from '../edit/sgfio'
 import { locate, nameSequence, setProps, type Location } from '../edit/ops'
@@ -16,8 +16,8 @@ const SWAP_PAIRS: Record<string, string> = { XSB: 'XSW', XSW: 'XSB', XRESB: 'XRE
 const POINT_PROPS = new Set(['XVITAL'])
 const LIST_PROPS = new Set(['XALIAS', 'XTAG', 'XSRC', 'XCOND'])
 const STD_MARKS = (c: string | undefined) => ({
-  TE: c && ['main', 'alt', 'punish', 'correct'].includes(c) ? ['1'] : null,
-  BM: c && ['mistake', 'overplay', 'wrong'].includes(c) ? ['1'] : null,
+  TE: c && ['main', 'alt', 'punish'].includes(c) ? ['1'] : null,
+  BM: c && ['mistake', 'overplay'].includes(c) ? ['1'] : null,
   DO: c === 'slack' ? [''] : null,
   IT: c && ['situational', 'trick'].includes(c) ? [''] : null,
 })
@@ -27,7 +27,6 @@ export interface EditApi {
   ctx: Ctx
   path: Step[]
   target: string
-  shapes: boolean
   commit: (msg?: string) => void
   onFocusText: (el: HTMLTextAreaElement) => void
   onDeleteMove: () => void
@@ -142,14 +141,14 @@ export function EditPanel(p: EditApi) {
   }
 
   const status: [string, string][] = [['alive', 'Alive'], ['dead', 'Dead'], ['ko', 'Ko'], ['seki', 'Seki'], ['unsettled', 'Unsettled']]
-  const cats: Category[] = p.shapes ? SHAPE_CATEGORIES : JOSEKI_CATEGORIES
+  const cats: Category[] = MOVE_CATEGORIES
   const hasMove = path.length > 1
   const step = path[path.length - 1]
   const targetOwnsMove = step.edge?.contribs.some((c) => c.db === p.target)
   const curCat = read('XCAT')
   const here = where(false)
   const definesHere = !!here && isStartId(here.pos.id)
-  const curSeq = here ? seqOf(here.pos.id) : label ?? (p.shapes ? 'life & death' : 'joseki')
+  const curSeq = here ? seqOf(here.pos.id) : label ?? 'joseki'
   const rename = (seq: string) => {
     const err = nameSequence(p.ws, ctx, path, p.target, seq, null)
     if (err) return p.commit(err)
@@ -181,9 +180,9 @@ export function EditPanel(p: EditApi) {
           {field('XMW', 'Why', { area: true, id: 'f-node-XMW', placeholder: 'Why this move is good or bad. {{Player}} = who played it, {{Opponent}} = the other.' })}
           {p.only === 'move' && (
             <>
-              {!p.shapes && select('XSTY', 'Style', [['aggressive', 'Aggressive'], ['balanced', 'Balanced'], ['solid', 'Solid']])}
-              {!p.shapes && chips('XPUR', 'Purpose', ['territory', 'influence', 'sente', 'attack', 'defend', 'sabaki', 'probe', 'reduce', 'connect', 'cut', 'eye', 'kill'])}
-              {!p.shapes && field('XCOND', 'Conditions', { placeholder: 'ladder, needs-support…' })}
+              {select('XSTY', 'Style', [['aggressive', 'Aggressive'], ['balanced', 'Balanced'], ['solid', 'Solid']])}
+              {chips('XPUR', 'Purpose', ['territory', 'influence', 'sente', 'attack', 'defend', 'sabaki', 'probe', 'reduce', 'connect', 'cut', 'eye', 'kill'])}
+              {field('XCOND', 'Conditions', { placeholder: 'ladder, needs-support…' })}
               {field('XMN', 'Note on the move', { area: true })}
             </>
           )}
@@ -192,29 +191,22 @@ export function EditPanel(p: EditApi) {
 
       {show('pos') && <section>
         <h2>Result of this position</h2>
-        {p.shapes ? (
-          <>
-            {select('XSB', 'Black next', status)}
-            {select('XSW', 'White next', status)}
-          </>
-        ) : (
-          <>
-            {field('XPB', 'Points', { placeholder: '+3 = Black ahead by 3, -2 = White ahead by 2' })}
-            {select('XEV', 'Evaluation', [['B++', 'Black clearly better'], ['B+', 'Black slightly better'], ['=', 'Even'], ['W+', 'White slightly better'], ['W++', 'White clearly better']])}
-            {select('XST', 'Status', [['progress', 'In progress'], ['end', 'Joseki end'], ['end-mistake', 'End after a mistake']])}
-          </>
-        )}
+        {field('XPB', 'Points', { placeholder: '+3 = Black ahead by 3, -2 = White ahead by 2' })}
+        {select('XEV', 'Evaluation', [['B++', 'Black clearly better'], ['B+', 'Black slightly better'], ['=', 'Even'], ['W+', 'White slightly better'], ['W++', 'White clearly better']])}
+        {select('XST', 'Status', [['progress', 'In progress'], ['end', 'Joseki end'], ['end-mistake', 'End after a mistake']])}
+        {select('XSB', 'If Black plays next', status)}
+        {select('XSW', 'If White plays next', status)}
         {field('XPW', 'Explanation', { area: true, placeholder: '{{Player}} = who plays next, {{Opponent}} = the other; {{Black}} / {{White}} follow Swap colors.' })}
         {p.only === 'pos' && (
           <>
-            {!p.shapes && field('XPBS', 'Points source', { placeholder: 'katago / book / estimate' })}
-            {!p.shapes && select('XSEN', 'Sente', [['B', 'Black'], ['W', 'White'], ['none', 'None']])}
-            {!p.shapes && field('XRES', 'Outcome', { area: true, placeholder: 'Who got what' })}
-            {!p.shapes && field('XTEN', 'Tenuki here', { area: true })}
+            {field('XPBS', 'Points source', { placeholder: 'katago / book / estimate' })}
+            {select('XSEN', 'Sente', [['B', 'Black'], ['W', 'White'], ['none', 'None']])}
+            {field('XRES', 'Outcome', { area: true, placeholder: 'Who got what' })}
+            {field('XTEN', 'Tenuki here', { area: true })}
             {field('XAJI', 'Watch out (aji)', { area: true })}
             {field('XPN', 'Note', { area: true })}
-            {p.shapes && field('XEYE', 'Eyes')}
-            {p.shapes && field('XLIB', 'Liberties')}
+            {field('XEYE', 'Eyes')}
+            {field('XLIB', 'Liberties')}
           </>
         )}
       </section>}
@@ -239,9 +231,9 @@ export function EditPanel(p: EditApi) {
                 {field('XALIAS', 'Also called', { placeholder: 'comma separated' })}
                 {field('XTAG', 'Tags', { placeholder: 'comma separated' })}
                 {field('XSRC', 'Sources', { placeholder: 'comma separated' })}
-                {p.shapes && select('XRESB', 'Black first', status)}
-                {p.shapes && select('XRESW', 'White first', status)}
-                {p.shapes && field('XVITAL', 'Vital points', { placeholder: 'e.g. T15' })}
+                {select('XRESB', 'Black first', status)}
+                {select('XRESW', 'White first', status)}
+                {field('XVITAL', 'Vital points', { placeholder: 'e.g. T15' })}
               </>
             )}
           </>
@@ -267,27 +259,27 @@ export function EditPanel(p: EditApi) {
       {!p.only && <button class="more-toggle" aria-expanded={more} onClick={() => setMore(!more)}>{more ? '▾' : '▸'} More fields</button>}
       {!p.only && more && (
         <section class="more">
-          {hasMove && !p.shapes && select('XSTY', 'Style', [['aggressive', 'Aggressive'], ['balanced', 'Balanced'], ['solid', 'Solid']])}
-          {hasMove && !p.shapes && chips('XPUR', 'Purpose', ['territory', 'influence', 'sente', 'attack', 'defend', 'sabaki', 'probe', 'reduce', 'connect', 'cut', 'eye', 'kill'])}
-          {hasMove && !p.shapes && field('XCOND', 'Conditions', { placeholder: 'ladder, needs-support…' })}
+          {hasMove && select('XSTY', 'Style', [['aggressive', 'Aggressive'], ['balanced', 'Balanced'], ['solid', 'Solid']])}
+          {hasMove && chips('XPUR', 'Purpose', ['territory', 'influence', 'sente', 'attack', 'defend', 'sabaki', 'probe', 'reduce', 'connect', 'cut', 'eye', 'kill'])}
+          {hasMove && field('XCOND', 'Conditions', { placeholder: 'ladder, needs-support…' })}
           {hasMove && field('XMN', 'Note on the move', { area: true })}
-          {!p.shapes && field('XPBS', 'Points source', { placeholder: 'katago / book / estimate' })}
-          {!p.shapes && select('XSEN', 'Sente', [['B', 'Black'], ['W', 'White'], ['none', 'None']])}
-          {!p.shapes && field('XRES', 'Outcome', { area: true, placeholder: 'Who got what' })}
-          {!p.shapes && field('XTEN', 'Tenuki here', { area: true })}
+          {field('XPBS', 'Points source', { placeholder: 'katago / book / estimate' })}
+          {select('XSEN', 'Sente', [['B', 'Black'], ['W', 'White'], ['none', 'None']])}
+          {field('XRES', 'Outcome', { area: true, placeholder: 'Who got what' })}
+          {field('XTEN', 'Tenuki here', { area: true })}
           {field('XAJI', 'Watch out (aji)', { area: true })}
           {field('XPN', 'Note', { area: true })}
-          {p.shapes && field('XEYE', 'Eyes')}
-          {p.shapes && field('XLIB', 'Liberties')}
+          {field('XEYE', 'Eyes')}
+          {field('XLIB', 'Liberties')}
           {definesHere && (
             <>
               {field('XALIAS', 'Also called', { placeholder: 'comma separated' })}
               {field('XTAG', 'Tags', { placeholder: 'comma separated' })}
               {field('XSRC', 'Sources', { placeholder: 'comma separated' })}
-              {!p.shapes && chips('XERA', 'Era', ['classic', 'modern', 'ai'])}
-              {p.shapes && select('XRESB', 'Black first', status)}
-              {p.shapes && select('XRESW', 'White first', status)}
-              {p.shapes && field('XVITAL', 'Vital points', { placeholder: 'e.g. T15' })}
+              {chips('XERA', 'Era', ['classic', 'modern', 'ai'])}
+              {select('XRESB', 'Black first', status)}
+              {select('XRESW', 'White first', status)}
+              {field('XVITAL', 'Vital points', { placeholder: 'e.g. T15' })}
             </>
           )}
         </section>

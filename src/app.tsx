@@ -6,7 +6,7 @@ import {
 } from 'lucide-preact'
 import { loadDatabases, type DatabaseInfo } from './data/load'
 import { buildGraph, type Graph } from './core/graph'
-import { CATEGORIES, JOSEKI_CATEGORIES, SHAPE_CATEGORIES } from './core/fields'
+import { CATEGORIES, MOVE_CATEGORIES } from './core/fields'
 import { apply, applySign, compose, cornerWindow, inverse, parseSgfPtList, ptName, userTransform, type Corner, type Pt, type Sign } from './core/geometry'
 import type { Mark } from './core/refs'
 import { applyTheme, loadSettings, saveSettings, type Settings } from './settings'
@@ -323,7 +323,7 @@ export function App() {
         return
       }
       if (!edit || e.ctrlKey || e.metaKey || e.altKey) return
-      const cats = isShape ? SHAPE_CATEGORIES : JOSEKI_CATEGORIES
+      const cats = MOVE_CATEGORIES
       const k = e.key.toLowerCase()
       const styles: Record<string, string> = { a: 'aggressive', b: 'balanced', s: 'solid' }
       if (/^[1-8]$/.test(k) && path.length > 1 && cats[Number(k) - 1]) {
@@ -351,7 +351,6 @@ export function App() {
   const board = displayBoard(ctx, step)
   const toPlay = toMove(ctx, step)
   const label = primaryLabel(ctx, path, start.kind === 'label' ? start.id : null)
-  const isShape = !!label && ctx.graph.entries.get(label)?.type === 'shape'
   const win: [number, number, number, number] = settings.view === 'full' ? [0, 18, 0, 18] : cornerWindow(settings.display.corner)
   const offBook = !inBook(ctx, step)
   const firstFree = path.findIndex((s) => !inBook(ctx, s))
@@ -389,8 +388,8 @@ export function App() {
     if (values.XCAT) {
       const c = values.XCAT[0]
       Object.assign(values, {
-        TE: ['main', 'alt', 'punish', 'correct'].includes(c) ? ['1'] : null,
-        BM: ['mistake', 'overplay', 'wrong'].includes(c) ? ['1'] : null,
+        TE: ['main', 'alt', 'punish'].includes(c) ? ['1'] : null,
+        BM: ['mistake', 'overplay'].includes(c) ? ['1'] : null,
         DO: c === 'slack' ? [''] : null,
         IT: ['situational', 'trick'].includes(c) ? [''] : null,
       })
@@ -787,7 +786,7 @@ export function App() {
   const treeView = treeFor({ root: 0, zoom: ZOOMS[zoomIdx] })
   const treeLegend = (
     <div class="legend">
-      <span><MoveMark cat="main" />joseki</span>
+      <span><MoveMark cat="main" />main move</span>
       <span><MoveMark cat="mistake" />mistake</span>
       <span>⚑ name starts</span>
       <span class="unsaved">◌ dashed: not stored yet</span>
@@ -800,7 +799,6 @@ export function App() {
       ctx={ctx}
       path={path}
       target={target}
-      shapes={isShape}
       commit={commit}
       onFocusText={(el) => (lastText.current = el)}
       onDeleteMove={() => {
@@ -828,7 +826,7 @@ export function App() {
         <button class="hide-btn" onClick={() => setSettings({ ...settings, hideLeft: true })} aria-label="Hide left panel"><PanelLeftClose size={16} /></button>
       </div>
       <Card id="search" title="Search positions" icon={<Search size={15} />}>{library}</Card>
-      <Card id="joseki" title={isShape ? 'This shape' : 'This joseki'} icon={<BookOpen size={15} />}>
+      <Card id="joseki" title="This joseki" icon={<BookOpen size={15} />}>
         <JosekiInfo {...common} onOpenLabel={onOpenLabel} onCopyLink={(id) => copyLink(linkFor(ctx, { kind: 'label', id }, [startStep(ctx, { kind: 'label', id })], { corner: 'tr', mirror: false, swap: false }), entryName(id))} />
       </Card>
       {!edit && <Card id="eval" title="Position evaluation" icon={<Grid3x3 size={15} />}><PositionEval {...common} /></Card>}
@@ -941,7 +939,7 @@ export function App() {
     } else setConfirmDelete(l)
   }
   const unsavedCount = unsaved.reduce((n, u) => n + u.steps.filter((x) => x.free && !x.edge).length, 0)
-  const cats = isShape ? SHAPE_CATEGORIES : JOSEKI_CATEGORIES
+  const cats = MOVE_CATEGORIES
   const ctxLast = ctxMenu ? ctxMenu.line[ctxMenu.line.length - 1] : null
   const ctxIsFree = !!ctxLast?.free && !ctxLast.edge
   const hideItems = ctxMenu && ctxLast && ctxMenu.line.length > 1 && (
@@ -1072,7 +1070,7 @@ export function App() {
         )}
         <div class="dtree-canvas">{designTree}</div>
         <div class="legend">
-          <span><MoveMark cat="main" />joseki</span>
+          <span><MoveMark cat="main" />main move</span>
           <span><MoveMark cat="mistake" />mistake</span>
           <span><MoveMark cat="punish" />punishment</span>
           <span>⚑ name starts</span>
@@ -1106,8 +1104,7 @@ export function App() {
               ctx={ctx}
               path={path}
               target={target}
-              shapes={isShape}
-              commit={commit}
+                      commit={commit}
               only={designTab}
               onFocusText={(el) => (lastText.current = el)}
               onDeleteMove={() => deleteAt(path)}

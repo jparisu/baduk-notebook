@@ -91,7 +91,7 @@ export function QuizMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
     <div class="quiz-deck">
       <h2>Quiz deck</h2>
       <div class="seg">
-        {(['both', 'joseki', 'shape'] as const).map((t) => <button key={t} class={type === t ? 'on' : ''} onClick={() => setType(t)}>{{ both: 'Both', joseki: 'Joseki', shape: 'Shapes' }[t]}</button>)}
+        {(['both', 'joseki', 'shape'] as const).map((t) => <button key={t} class={type === t ? 'on' : ''} onClick={() => setType(t)}>{{ both: 'All', joseki: 'Joseki', shape: 'Life & death' }[t]}</button>)}
       </div>
       <select value={maxRank} onChange={(e) => setMaxRank((e.target as HTMLSelectElement).value)} aria-label="Difficulty">
         <option value="any">Any difficulty</option>

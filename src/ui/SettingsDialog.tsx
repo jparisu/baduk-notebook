@@ -1,5 +1,5 @@
 /** Settings dialog (SPEC §8.8). */
-import { CATEGORIES, JOSEKI_CATEGORIES, SHAPE_CATEGORIES, type Category } from '../core/fields'
+import { CATEGORIES, MOVE_CATEGORIES, type Category } from '../core/fields'
 import { DEFAULT_SETTINGS, type Settings, type Theme } from '../settings'
 import type { DatabaseInfo } from '../data/load'
 
@@ -60,7 +60,7 @@ export function SettingsDialog({ s, set, close, databases, active, toggleDb }: {
         ))}
         <h3>Next-move categories</h3>
         <div class="cat-grid">
-          {[...JOSEKI_CATEGORIES, ...SHAPE_CATEGORIES].map((c) => (
+          {MOVE_CATEGORIES.map((c) => (
             <label key={c} class="cat-row">
               <input type="checkbox" checked={!s.hiddenCategories.includes(c)} onChange={() => toggleCat(c)} />
               <span class={`dot ${CATEGORIES[c].ring ? 'ring' : ''}`} style={{ background: CATEGORIES[c].color, borderColor: CATEGORIES[c].color }} />

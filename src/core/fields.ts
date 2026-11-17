@@ -14,9 +14,8 @@ export const TEXT_PROPS = new Set(['XMW', 'XMN', 'XPW', 'XPN', 'XAJI', 'XTEN', '
 /** List fields: values from all databases are joined. */
 export const LIST_PROPS = new Set(['XALIAS', 'XTAG', 'XSRC', 'XPUR', 'XCOND', 'XERA', 'XVITAL'])
 
-export type Category =
-  | 'main' | 'alt' | 'situational' | 'slack' | 'mistake' | 'overplay' | 'trick' | 'punish'
-  | 'correct' | 'ko' | 'wrong'
+/** One set of move categories for every position (joseki and life & death alike). */
+export type Category = 'main' | 'alt' | 'situational' | 'slack' | 'mistake' | 'overplay' | 'trick' | 'punish'
 
 export interface CategoryInfo {
   label: string
@@ -29,7 +28,7 @@ export interface CategoryInfo {
 }
 
 export const CATEGORIES: Record<Category, CategoryInfo> = {
-  main: { label: 'Main joseki', color: '#1e9e4a', symbol: '●', ink: '#fff', good: true },
+  main: { label: 'Main move', color: '#1e9e4a', symbol: '●', ink: '#fff', good: true },
   alt: { label: 'Alternative', color: '#138f8c', symbol: '●', ink: '#fff', good: true },
   situational: { label: 'Situational', color: '#e0b000', symbol: '◆', ink: '#222', good: true },
   slack: { label: 'Slack / passive', color: '#7d858f', symbol: '▼', ink: '#fff', good: false },
@@ -37,19 +36,18 @@ export const CATEGORIES: Record<Category, CategoryInfo> = {
   overplay: { label: 'Overplay', color: '#e8741c', symbol: '!', ink: '#fff', good: false },
   trick: { label: 'Trick play', color: '#8b47d6', symbol: '?', ink: '#fff', good: false },
   punish: { label: 'Punishment', color: '#2563eb', symbol: '', ink: '#2563eb', ring: true, good: true },
-  correct: { label: 'Correct', color: '#1e9e4a', symbol: '●', ink: '#fff', good: true },
-  ko: { label: 'Leads to ko', color: '#0891b2', symbol: 'K', ink: '#fff', good: false },
-  wrong: { label: 'Wrong', color: '#d33232', symbol: '✕', ink: '#fff', good: false },
 }
-export const JOSEKI_CATEGORIES: Category[] = ['main', 'alt', 'situational', 'slack', 'mistake', 'overplay', 'trick', 'punish']
-export const SHAPE_CATEGORIES: Category[] = ['correct', 'ko', 'wrong']
+export const MOVE_CATEGORIES: Category[] = ['main', 'alt', 'situational', 'slack', 'mistake', 'overplay', 'trick', 'punish']
+/** Older values (from the former shape categories or imported files). */
+const LEGACY: Record<string, Category> = { correct: 'main', wrong: 'mistake', ko: 'situational' }
 /** Order of next moves: best first. */
-export const CATEGORY_ORDER: Category[] = ['main', 'correct', 'alt', 'punish', 'situational', 'ko', 'slack', 'trick', 'overplay', 'mistake', 'wrong']
+export const CATEGORY_ORDER: Category[] = ['main', 'alt', 'punish', 'situational', 'slack', 'trick', 'overplay', 'mistake']
 
 /** Category from XCAT, falling back to standard SGF marks. */
 export function categoryOf(p: Props): Category | null {
-  const c = p.XCAT?.[0] as Category | undefined
-  if (c && c in CATEGORIES) return c
+  const c = p.XCAT?.[0]
+  if (c && c in CATEGORIES) return c as Category
+  if (c && LEGACY[c]) return LEGACY[c]
   if (p.TE) return 'main'
   if (p.BM) return 'mistake'
   if (p.DO) return 'slack'

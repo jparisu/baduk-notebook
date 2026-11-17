@@ -39,6 +39,13 @@ const index = JSON.parse(readFileSync(join(ROOT, 'index.json'), 'utf8')) as { da
 const order = index.databases.map((d) => d.id)
 const files = list(ROOT).sort((a, b) => order.indexOf(a.split('/')[0]) - order.indexOf(b.split('/')[0]) || a.localeCompare(b))
 
+/** "Bent four · side · enclosed" → "life & death/Bent four/Side, enclosed" (one family per shape). */
+function shapeSeq(name: string): string {
+  if (name === 'Bent four in the corner') return 'life & death/Bent four/Corner'
+  const m = name.match(/^(.+?) · (side|corner|center) · (.+)$/)
+  return m ? `life & death/${m[1]}/${m[2][0].toUpperCase()}${m[2].slice(1)}, ${m[3]}` : `life & death/${name}`
+}
+
 // Sequence of each label (XID), from its defining node.
 const seqOfLabel = new Map<string, string>()
 const freeOfLabel = new Map<string, Free>()
@@ -51,7 +58,7 @@ for (const path of files) {
       if (!fileOfLabel.has(k)) fileOfLabel.set(k, path)
       const shape = d.XTYPE?.[0] === 'shape'
       const fam = d.XFAM?.[0]
-      const seq = shape ? `life & death/${d.XNAME[0]}` : !fam || fam === 'Empty corner' ? (fam ? 'joseki' : `joseki/${d.XNAME[0]}`) : `joseki/${fam}`
+      const seq = shape ? shapeSeq(d.XNAME[0]) : !fam || fam === 'Empty corner' ? (fam ? 'joseki' : `joseki/${d.XNAME[0]}`) : `joseki/${fam}`
       if (!seqOfLabel.has(d.XID[0])) seqOfLabel.set(d.XID[0], seq)
       if (shape) freeOfLabel.set(d.XID[0], d.XLOC?.[0] === 'side' ? 'horizontal' : d.XLOC?.[0] === 'center' ? 'anywhere' : 'corner')
     }

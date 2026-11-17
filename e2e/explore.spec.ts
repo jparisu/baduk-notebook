@@ -65,7 +65,7 @@ test('theme and dark mode can be chosen in settings', async ({ page }) => {
 })
 
 test('shapes: Black plays first; a tenuki leads to White playing first', async ({ page }) => {
-  await openEntry(page, 'Straight three')
+  await openEntry(page, 'Straight three', 'Side, enclosed')
   await expect(page.locator('.status')).toContainText('Black to play')
   await expect(page.locator('.next-moves .mv')).toHaveCount(3) // Black: correct, wrong, and tenuki
   await page.locator('.next-moves .mv', { hasText: 'Tenuki' }).click()
@@ -95,9 +95,15 @@ test('the library folds by family and filters by tag', async ({ page }) => {
   await page.getByRole('button', { name: 'Open joseki' }).click()
   await page.getByRole('button', { name: 'Open 3-4 point' }).click()
   await expect(page.locator('.library .lib-name', { hasText: 'Low approach' })).toHaveCount(1)
-  await page.getByRole('button', { name: /^Tags/ }).click()
-  await page.locator('.tag-chips .chip', { hasText: 'invasion' }).click()
+  await page.getByRole('button', { name: 'All tags…' }).click()
+  await page.locator('.all-tags .chip', { hasText: 'invasion' }).click()
   await expect(page.locator('.library .lib-name:not(.fam-only)')).toContainText(['3-3 invasion'])
+  // The selected tag stays in the tag row and is removed with one click; favourites stay reachable.
+  const chip = page.locator('.tag-bar .chip.on', { hasText: 'invasion' })
+  await expect(chip).toBeVisible()
+  await expect(page.locator('.tag-bar .chip', { hasText: 'life & death' })).toBeVisible()
+  await chip.click()
+  await expect(page.locator('.tag-bar .chip.on')).toHaveCount(0)
 })
 
 test('the tree has linear, proximity and complete modes, and a zoom', async ({ page }) => {
