@@ -2,13 +2,27 @@
 
 ## Unreleased
 
+### Position first
+- The board is the starting point: play or set up a position and the app tells you what it is, how to continue, and the usual mistakes. It reopens on your last position, with buttons for the empty corner and the start of the current joseki.
+- Joseki and shapes are **labels on positions**: a name can be given to any move of a big tree, and the moves after it carry it until another label starts. Next moves show "→ name" when they enter another label.
+- Every line you play outside the databases stays in the session (dashed in the tree). "Save lines…" stores the ones you choose; "Erase variation" removes one.
+- New layout: start buttons, library, tree and position info on the left; last move and next moves on the right; phone tabs Next · Why · Info · Tree.
+- Edit mode: category buttons for the last move (marking a free move saves its line), "why", result in points, "Name this position", other fields under "More fields". Draw tools show their meaning on hover.
+- Shapes: Black and White moves are shown separately, with a switch above the board.
+- Find: one result per label; an exact match hides the other positions of the same joseki.
+- Removed hint lines that repeated the obvious.
+
+### Joseki and shapes
+- **New joseki** in `general`, checked against Sensei's Library: 4-4 low approach (small knight and one-space extensions with the slide, one-space low pincer with the 3-3 invasion, kick, attach-extend, attach-block, tenuki), 3-4 low approach (diagonal, small knight, kick, one-space low pincer), 3-4 high approach (attach-drawback with solid or hanging connection), 3-3 shoulder hit and 3-3 high approach. Named variations are labels on their first move (slide joseki, kick, attach-extend, attach-block, 3-3 invasion hane / double hane / extend / knight's move, 3-4 diagonal, attach-drawback…), so the status line and "→ name" follow them as you play.
+- **3-3 invasion** rewritten from the example: the standard hane-extend line, the old continuation, the double hane, and the extension for sente. The earlier direct-hane line and its mistakes are kept as a side branch.
+- **New shapes**: bent three, bent four (side), bent four in the corner, square four, pyramid four, bulky five, crossed five, rabbity six. Each result and vital point is checked with a small life-and-death search.
+
+### Earlier in this release
+
 - **Free play**: click any empty point to play outside the databases. Back and forward also step through your own moves. Messages come back when the line reaches a known position, also by transposition. "Save this line" stores the moves in a database.
 - **Empty corner** entry: Black chooses the first move (4-4, 3-4, 3-3, 5-4, 5-3) and the line continues into the joseki that start there. The status line and info panel show the most specific entry.
 - **Visual aids**: on touch screens a tap shows the marks and a second tap hides them; with a mouse, hover shows them and a click keeps them. New setting "Click or tap only".
 - Punishment moves are now blue; ko moves (shapes) are cyan.
-- **New joseki** in `general`, checked against Sensei's Library: 4-4 low approach (small knight and one-space extensions with the slide, one-space low pincer with the 3-3 invasion, kick, attach-extend, attach-block, tenuki), 3-4 low approach (diagonal, small knight, kick, one-space low pincer), 3-4 high approach (attach-drawback with solid or hanging connection), 3-3 shoulder hit and 3-3 high approach.
-- **3-3 invasion** rewritten from the example: the standard hane-extend line, the old continuation, the double hane, and the extension for sente. The earlier direct-hane line and its mistakes are kept as a side branch.
-- **New shapes**: bent three, bent four (side), bent four in the corner, square four, pyramid four, bulky five, crossed five, rabbity six. Each result and vital point is checked with a small life-and-death search.
 
 ## v0.1.0
 

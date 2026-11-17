@@ -67,7 +67,8 @@ export function buildCards(g: Graph, active: Set<string>, order: string[]): Card
         return c && CATEGORIES[c].good
       })
       if (!good.length) continue
-      for (const o of owners) {
+      // One card per position: use the most specific label (shortest line from its first node).
+      for (const o of [...owners].sort((a, b) => a.keys.length - b.keys.length).slice(0, 1)) {
         // Was the move that led here a mistake? Then this card is about punishing it.
         const prev = o.keys.length > 1 ? g.nodes.get(o.keys[o.keys.length - 2])!.edges.find((e) => e.child === key) : undefined
         const prevCat = prev ? prev.contribs.map((c) => categoryOf(c.props)).find(Boolean) : null

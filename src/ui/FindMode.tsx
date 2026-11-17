@@ -152,7 +152,7 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
           <button key={i} class="result" onClick={() => openMatch(m)}>
             <span class="r-head">
               <span class={`pill pill-${m.kind}`}>{{ exact: 'Exact', contained: 'Contained', near: 'Near' }[m.kind]}</span>
-              <b>{props.entryName(m.entryId)}</b>
+              <b>{m.labels.map(props.entryName).join(' · ')}</b>
             </span>
             <span class="r-meta">
               {m.keys.length > 1 ? `Move ${m.keys.length - 1}` : 'Start position'} · {m.where}

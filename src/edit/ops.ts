@@ -35,7 +35,7 @@ const sameMove = (n: SgfNode, d: Record<string, string[]>) => {
  * The SGF node of the target database for the last position of `path`.
  * With `create`, missing nodes (and, if needed, a new file) are created.
  */
-export function locate(ws: Workspace, ctx: Ctx, path: Step[], target: string, entryId: string, create: boolean): Location | null {
+export function locate(ws: Workspace, ctx: Ctx, path: Step[], target: string, entryId: string | null, create: boolean): Location | null {
   const g = ctx.graph
   let start = -1
   let loc: Location | null = null
@@ -50,19 +50,22 @@ export function locate(ws: Workspace, ctx: Ctx, path: Step[], target: string, en
   if (!create) return null
 
   if (!loc) {
-    // No file of the target database touches this line yet: start a new one at the entry's root.
-    const entry = g.entries.get(entryId)!
-    const root = g.nodes.get(path[0].key)!
-    const D = path[0].D // canonical → stored frame of the entry
+    // No file of the target database touches this line yet: start a new one at the line's first position.
+    const entry = entryId ? g.entries.get(entryId) : undefined
+    const root = ctx.graph.nodes.get(path[0].key) ?? { board: path[0].board!, toMove: path[0].toMove ?? 0 }
+    const D = path[0].D // canonical → stored frame of the line's start
     const board = transformMap(D, root.board)
     const ab: string[] = [], aw: string[] = []
     board.forEach((row, y) => row.forEach((s, x) => s && (s === 1 ? ab : aw).push(sgfPoint([x, y]))))
     const toMove = applySign(D, root.toMove)
-    const own = entry.contribs.some((c) => c.db === target)
-    const dir = entry.type === 'shape' ? 'shapes' : 'joseki'
-    let name = `${target}/${dir}/${entryId}${own ? '' : '-notes'}.sgf`
-    for (let n = 2; ws.files.some((f) => f.path === name); n++) name = `${target}/${dir}/${entryId}-notes-${n}.sgf`
-    const data: Record<string, string[]> = { FF: ['4'], CA: ['UTF-8'], GM: ['1'], SZ: ['19'], XID: [entryId] }
+    const own = entry?.contribs.some((c) => c.db === target)
+    const dir = entry?.type === 'shape' ? 'shapes' : 'joseki'
+    const base = entryId && entry ? `${entryId}${own ? '' : '-notes'}` : ab.length + aw.length ? 'lines' : 'empty-corner-lines'
+    let name = `${target}/${dir}/${base}.sgf`
+    for (let n = 2; ws.files.some((f) => f.path === name); n++) name = `${target}/${dir}/${base}-${n}.sgf`
+    const data: Record<string, string[]> = { FF: ['4'], CA: ['UTF-8'], GM: ['1'], SZ: ['19'] }
+    // Keep the label of the start position, so the new moves inherit it.
+    if (entryId && entry && entry.root === path[0].key) data.XID = [entryId]
     if (ab.length) data.AB = ab
     if (aw.length) data.AW = aw
     if (toMove) data.PL = [toMove === 1 ? 'B' : 'W']
@@ -120,7 +123,7 @@ export function checkMove(ctx: Ctx, path: Step[], sign: Sign, pt: Pt | null): Mo
 }
 
 /** Adds a move (display coordinates; null = tenuki) after the current position. */
-export function addMove(ws: Workspace, ctx: Ctx, path: Step[], target: string, entryId: string, sign: Sign, pt: Pt | null) {
+export function addMove(ws: Workspace, ctx: Ctx, path: Step[], target: string, entryId: string | null, sign: Sign, pt: Pt | null) {
   const F = frame(ctx, path[path.length - 1])
   const toCanon = inverse(F)
   const loc = locate(ws, ctx, path, target, entryId, true)!

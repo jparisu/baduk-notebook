@@ -131,7 +131,11 @@ Values are SGF text unless stated otherwise. "List" means several values: `XTAG[
 | `TR`, `SQ`, `CR`, `MA`, `LB`, `AR`, `LN` | Visual aids that are always visible on that node |
 | `C` | Kept and shown as a plain "Comment". The app does not generate it. |
 
-### 4.2 Entry (root node)
+### 4.2 Labels (named positions)
+
+`XID` may appear on **any node**: it starts a label, and the nodes after it in the same file inherit it until another `XID`. The node that also has `XNAME` defines the label (name, family, difficulty, summary…), and is its first node. Several files and databases can use the same `XID`; their positions all carry the label. A file whose first node has an `XID` and no `XNAME` adds moves or notes to that label. Files written before this change keep working: their first node defines the label for the whole file.
+
+### 4.2.1 Label fields (on the defining node)
 
 **Common to joseki and shapes**
 
@@ -304,7 +308,7 @@ A shape on the side is the same shape wherever it sits along that side, and a ce
 2. **Contained**: all stones of a stored position are present in the user's corner, plus extra stones. Ranked by number of shared stones, then fewest extra stones.
 3. **Near**: the stored position differs by at most **2 stones**, added or missing. The result says which stones differ.
 
-Matching runs on all four corners and on every active database. Results show:
+Matching runs on all four corners and on every active database. Results are grouped by label: an exact match shows once (with every label of that position) and hides the other positions of those labels; otherwise each label shows only its best match. A label's positions stop where the next label starts. Results show:
 
 - the entry name and move number,
 - the match type (Exact / Contained / Near),
@@ -317,21 +321,29 @@ Clicking a result opens Explore at that position, **in the user's orientation** 
 
 ## 8. User interface
 
+### 8.0 Position first
+
+The main object is **the position on the board**, not a joseki entry.
+- The board is always live. It reopens on the last position. Buttons go to the **Empty corner** or to the **first move of the current label**; the library opens any label at its first move.
+- After every move, the position is looked up in all active databases (any order, corner, orientation or colors). The screen shows what the position is (its labels), how to continue (good moves, then mistakes and traps) and why.
+- **Labels**: a joseki or shape is a label on positions (§4.2). The label shown is the one whose first node is closest in the current line, so "Empty corner" gives way to "4-4 point · 3-3 invasion". A next move that enters another label shows "→ name".
+- **Session lines**: every line played outside the databases is kept in the browser (like OGS), shown dashed in the tree. "Save lines…" lists them, with the stored part in grey, to save some or all into a database; "Erase variation" removes the current one. Annotating a free move in Edit mode saves the line up to it.
+
 ### 8.1 Layout
 
-As in the mock-up:
-
 ```
-┌──────────────────────────── Top bar ─────────────────────────────┐
-│ Modes · Databases (on/off) · Edits go to · Edit · Patch · Settings│
-├──────────┬─────────────────────────────────────┬─────────────────┤
-│ Library  │ Status line                          │ Entry           │
-│ / tools  │ Board                                │ Last move       │
-│          │ Navigation · Tenuki · Transform      │ Position        │
-│          │ View toggles                         │ Next moves      │
-├──────────┴─────────────────────────────────────┴─────────────────┤
-│ Variation tree + legend                                           │
-└───────────────────────────────────────────────────────────────────┘
+┌───────────────┬───────────────────────────┬──────────────────────┐
+│ Empty corner  │ "3-3 invasion · Move 4 ·   │ Unsaved lines / save │
+│ Start of label│  Black to play"            │──────────────────────│
+│ Library search│                            │ Last move            │
+│───────────────│          BOARD             │  category, why       │
+│ Tree (moves)  │                            │  (Edit: category     │
+│───────────────│                            │   buttons, result,   │
+│ This position │  ⏮ ◀  Tenuki  ▶ ⏭           │   name, more fields) │
+│  label info,  │  edit tools (Edit mode)    │──────────────────────│
+│  result, notes│  view options              │ Next moves           │
+│               │                            │  [Black | White]     │
+└───────────────┴───────────────────────────┴──────────────────────┘
 ```
 
 Responsive behavior: under 1100 px wide the info panel moves below the board.
@@ -341,6 +353,7 @@ Responsive behavior: under 1100 px wide the info panel moves below the board.
 - The menu button (or tapping the entry name above the board) opens a **drawer** with the modes, the library and the database switches.
 - The board fills the width. Orientation and view options are folded behind a "View" button.
 - A **bottom bar** holds the navigation (start, back, tenuki, forward, end) with 44 px touch targets, above the phone's safe area.
+- Below the board, tabs: **Next · Why (Edit) · Info · Tree**.
 - **Swipe** on the board: left = forward, right = back.
 - Settings open as a bottom sheet.
 
@@ -348,8 +361,8 @@ Responsive behavior: under 1100 px wide the info panel moves below the board.
 
 | Mode | Left pane | Center | Right pane |
 |---|---|---|---|
-| Explore | Library: Joseki / Shapes tabs, search, filters (kyu, style, result) | Board with next moves | Entry, last move, position, next moves |
-| Edit (a switch within Explore) | Same | Clicking the board adds a move | All fields become inputs |
+| Explore | Start buttons, library search, tree, position info | Live board | Session box, last move, next moves |
+| Edit (a switch within Explore) | Same | Board plays freely; draw tools | Category buttons, why, result, name, more fields; next moves |
 | Find position | Set-up tools | Board editor, with matched corners outlined | Results (§7) |
 | Quiz | Deck and statistics | Board, next moves hidden | Question and feedback |
 
@@ -360,7 +373,7 @@ Responsive behavior: under 1100 px wide the info panel moves below the board.
 - **Tenuki button** next to the board, in the color of the tenuki move's category. It is disabled when the database has no tenuki move at that position.
 - Buttons: start, back, forward along the main line, end of the main line. Keys: ← → Home End.
 - Last move marker, and a "move numbers" switch.
-- **Free play** (outside Edit mode): clicking any empty point plays a legal move, in or out of the databases.
+- **Free play** (always): clicking any empty point plays a legal move, in or out of the databases.
   - Out of the databases, the board keeps working (captures, ko) but messages and next moves stop; a "Free play" label and an "Out of the database" box appear.
   - If the line reaches a known position again (also by transposition), messages and next moves come back.
   - Back and forward step through your own moves too: going back keeps the moves after it, and forward replays them until you play something else.

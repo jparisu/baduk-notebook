@@ -32,7 +32,7 @@ function forStep(ctx: Ctx, path: Step[], i: number, current: boolean, settings: 
   const name = moveName(ctx, path, i)
   if (step.edge) {
     const mf = moveFields(ctx, path[i - 1], step.edge)
-    const place = current ? (settings.moveMessage === 'board' ? 'callout' : 'move') : 'history'
+    const place = current ? 'move' : 'history'
     for (const t of mf.text('XMW')) out.push({ kind: 'move', title: `${name} · why`, db: t.db, segments: t.segments, step: i, place })
     if (current) for (const t of mf.text('XMN')) out.push({ kind: 'note', title: 'Note on the move', db: t.db, segments: t.segments, step: i, place: 'move' })
   }
