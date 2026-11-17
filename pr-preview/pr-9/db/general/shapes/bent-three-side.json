@@ -1,7 +1,7 @@
 {
   "positions": [
     {
-      "id": "life & death/Bent three · side · enclosed",
+      "id": "life & death/Bent three/Side, enclosed",
       "stones": "B:qd,qe,qf,rc,rd,rf,sc,sf W:pc,pd,pe,pf,pg,qb,qc,qg,rb,rg,sb,sg",
       "toPlay": "B",
       "free": "horizontal",
@@ -35,24 +35,24 @@
       "moves": [
         {
           "move": "se",
-          "to": "life & death/Bent three · side · enclosed:1",
-          "status": "correct",
+          "to": "life & death/Bent three/Side, enclosed:1",
+          "status": "main",
           "why": "Takes the vital point. {{SQ:T16}} and {{SQ:S15}} become two separate eyes."
         },
         {
           "move": "tenuki",
-          "to": "life & death/Bent three · side · enclosed:1b"
+          "to": "life & death/Bent three/Side, enclosed:1b"
         },
         {
           "move": "re",
-          "to": "life & death/Bent three · side · enclosed:1c",
-          "status": "wrong",
+          "to": "life & death/Bent three/Side, enclosed:1c",
+          "status": "mistake",
           "why": "Leaves {{SQ:T16,T15|a two-point space}}, which is only one eye."
         }
       ]
     },
     {
-      "id": "life & death/Bent three · side · enclosed:1",
+      "id": "life & death/Bent three/Side, enclosed:1",
       "stones": "B:qd,qe,qf,rc,rd,rf,sc,se,sf W:pc,pd,pe,pf,pg,qb,qc,qg,rb,rg,sb,sg",
       "toPlay": "W",
       "free": "horizontal",
@@ -64,7 +64,7 @@
       "moves": []
     },
     {
-      "id": "life & death/Bent three · side · enclosed:2",
+      "id": "life & death/Bent three/Side, enclosed:2",
       "stones": "B:qd,qe,qf,rc,rd,rf,sc,sf W:pc,pd,pe,pf,pg,qb,qc,qg,rb,rg,sb,se,sg",
       "toPlay": "B",
       "free": "horizontal",
@@ -76,21 +76,21 @@
       "moves": []
     },
     {
-      "id": "life & death/Bent three · side · enclosed:1b",
+      "id": "life & death/Bent three/Side, enclosed:1b",
       "stones": "B:qd,qe,qf,rc,rd,rf,sc,sf W:pc,pd,pe,pf,pg,qb,qc,qg,rb,rg,sb,sg",
       "toPlay": "W",
       "free": "horizontal",
       "moves": [
         {
           "move": "se",
-          "to": "life & death/Bent three · side · enclosed:2",
-          "status": "correct",
+          "to": "life & death/Bent three/Side, enclosed:2",
+          "status": "main",
           "why": "Takes the vital point. {{Black}} can make only one eye."
         }
       ]
     },
     {
-      "id": "life & death/Bent three · side · enclosed:1c",
+      "id": "life & death/Bent three/Side, enclosed:1c",
       "stones": "B:qd,qe,qf,rc,rd,re,rf,sc,sf W:pc,pd,pe,pf,pg,qb,qc,qg,rb,rg,sb,sg",
       "toPlay": "W",
       "free": "horizontal",

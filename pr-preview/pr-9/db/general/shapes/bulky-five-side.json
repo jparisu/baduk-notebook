@@ -1,7 +1,7 @@
 {
   "positions": [
     {
-      "id": "life & death/Bulky five · side · enclosed",
+      "id": "life & death/Bulky five/Side, enclosed",
       "stones": "B:qc,qd,qe,qf,qg,rc,rg,sc,sf,sg W:pb,pc,pd,pe,pf,pg,ph,qb,qh,rb,rh,sb,sh",
       "toPlay": "B",
       "free": "horizontal",
@@ -35,24 +35,24 @@
       "moves": [
         {
           "move": "re",
-          "to": "life & death/Bulky five · side · enclosed:1",
-          "status": "correct",
+          "to": "life & death/Bulky five/Side, enclosed:1",
+          "status": "main",
           "why": "Takes the vital point and splits the space into two eyes."
         },
         {
           "move": "tenuki",
-          "to": "life & death/Bulky five · side · enclosed:1b"
+          "to": "life & death/Bulky five/Side, enclosed:1b"
         },
         {
           "move": "rf",
-          "to": "life & death/Bulky five · side · enclosed:1c",
-          "status": "wrong",
+          "to": "life & death/Bulky five/Side, enclosed:1c",
+          "status": "mistake",
           "why": "Fills the extra point and leaves {{SQ:T15,T16,S15,S16|a square four}}, which is dead."
         }
       ]
     },
     {
-      "id": "life & death/Bulky five · side · enclosed:1",
+      "id": "life & death/Bulky five/Side, enclosed:1",
       "stones": "B:qc,qd,qe,qf,qg,rc,re,rg,sc,sf,sg W:pb,pc,pd,pe,pf,pg,ph,qb,qh,rb,rh,sb,sh",
       "toPlay": "W",
       "free": "horizontal",
@@ -64,7 +64,7 @@
       "moves": []
     },
     {
-      "id": "life & death/Bulky five · side · enclosed:2",
+      "id": "life & death/Bulky five/Side, enclosed:2",
       "stones": "B:qc,qd,qe,qf,qg,rc,rg,sc,sf,sg W:pb,pc,pd,pe,pf,pg,ph,qb,qh,rb,re,rh,sb,sh",
       "toPlay": "B",
       "free": "horizontal",
@@ -76,21 +76,21 @@
       "moves": []
     },
     {
-      "id": "life & death/Bulky five · side · enclosed:1b",
+      "id": "life & death/Bulky five/Side, enclosed:1b",
       "stones": "B:qc,qd,qe,qf,qg,rc,rg,sc,sf,sg W:pb,pc,pd,pe,pf,pg,ph,qb,qh,rb,rh,sb,sh",
       "toPlay": "W",
       "free": "horizontal",
       "moves": [
         {
           "move": "re",
-          "to": "life & death/Bulky five · side · enclosed:2",
-          "status": "correct",
+          "to": "life & death/Bulky five/Side, enclosed:2",
+          "status": "main",
           "why": "Takes the vital point. {{Black}} can make only one eye."
         }
       ]
     },
     {
-      "id": "life & death/Bulky five · side · enclosed:1c",
+      "id": "life & death/Bulky five/Side, enclosed:1c",
       "stones": "B:qc,qd,qe,qf,qg,rc,rf,rg,sc,sf,sg W:pb,pc,pd,pe,pf,pg,ph,qb,qh,rb,rh,sb,sh",
       "toPlay": "W",
       "free": "horizontal",

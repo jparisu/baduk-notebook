@@ -1,7 +1,7 @@
 {
   "positions": [
     {
-      "id": "life & death/Straight four · side · enclosed",
+      "id": "life & death/Straight four/Side, enclosed",
       "stones": "B:rc,rd,re,rf,rg,rh,sc,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,si",
       "toPlay": "B",
       "free": "horizontal",
@@ -31,12 +31,12 @@
       "moves": [
         {
           "move": "tenuki",
-          "to": "life & death/Straight four · side · enclosed:1"
+          "to": "life & death/Straight four/Side, enclosed:1"
         }
       ]
     },
     {
-      "id": "life & death/Straight four · side · enclosed:2",
+      "id": "life & death/Straight four/Side, enclosed:2",
       "stones": "B:rc,rd,re,rf,rg,rh,sc,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,sf,si",
       "toPlay": "B",
       "free": "horizontal",
@@ -47,34 +47,34 @@
       "moves": [
         {
           "move": "se",
-          "to": "life & death/Straight four · side · enclosed:3",
-          "status": "correct",
+          "to": "life & death/Straight four/Side, enclosed:3",
+          "status": "main",
           "why": "Takes the other middle point. Two eyes."
         }
       ]
     },
     {
-      "id": "life & death/Straight four · side · enclosed:1",
+      "id": "life & death/Straight four/Side, enclosed:1",
       "stones": "B:rc,rd,re,rf,rg,rh,sc,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,si",
       "toPlay": "W",
       "free": "horizontal",
       "moves": [
         {
           "move": "sf",
-          "to": "life & death/Straight four · side · enclosed:2",
-          "status": "wrong",
+          "to": "life & death/Straight four/Side, enclosed:2",
+          "status": "mistake",
           "why": "Takes one middle point."
         },
         {
           "move": "se",
-          "to": "life & death/Straight four · side · enclosed:2b",
-          "status": "wrong",
+          "to": "life & death/Straight four/Side, enclosed:2b",
+          "status": "mistake",
           "why": "Takes the other middle point."
         }
       ]
     },
     {
-      "id": "life & death/Straight four · side · enclosed:3",
+      "id": "life & death/Straight four/Side, enclosed:3",
       "stones": "B:rc,rd,re,rf,rg,rh,sc,se,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,sf,si",
       "toPlay": "W",
       "free": "horizontal",
@@ -86,7 +86,7 @@
       "moves": []
     },
     {
-      "id": "life & death/Straight four · side · enclosed:2b",
+      "id": "life & death/Straight four/Side, enclosed:2b",
       "stones": "B:rc,rd,re,rf,rg,rh,sc,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,se,si",
       "toPlay": "B",
       "free": "horizontal",
@@ -97,14 +97,14 @@
       "moves": [
         {
           "move": "sf",
-          "to": "life & death/Straight four · side · enclosed:3b",
-          "status": "correct",
+          "to": "life & death/Straight four/Side, enclosed:3b",
+          "status": "main",
           "why": "Takes the remaining middle point. Two eyes."
         }
       ]
     },
     {
-      "id": "life & death/Straight four · side · enclosed:3b",
+      "id": "life & death/Straight four/Side, enclosed:3b",
       "stones": "B:rc,rd,re,rf,rg,rh,sc,sf,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,se,si",
       "toPlay": "W",
       "free": "horizontal",

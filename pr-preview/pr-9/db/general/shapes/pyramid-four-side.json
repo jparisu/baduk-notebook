@@ -1,7 +1,7 @@
 {
   "positions": [
     {
-      "id": "life & death/Pyramid four · side · enclosed",
+      "id": "life & death/Pyramid four/Side, enclosed",
       "stones": "B:qd,qe,qf,rc,rd,rf,rg,sc,sg W:pc,pd,pe,pf,pg,qb,qc,qg,qh,rb,rh,sb,sh",
       "toPlay": "B",
       "free": "horizontal",
@@ -40,18 +40,18 @@
       "moves": [
         {
           "move": "se",
-          "to": "life & death/Pyramid four · side · enclosed:1",
-          "status": "correct",
+          "to": "life & death/Pyramid four/Side, enclosed:1",
+          "status": "main",
           "why": "Takes the vital point: three separate single-point eyes."
         },
         {
           "move": "tenuki",
-          "to": "life & death/Pyramid four · side · enclosed:1b"
+          "to": "life & death/Pyramid four/Side, enclosed:1b"
         }
       ]
     },
     {
-      "id": "life & death/Pyramid four · side · enclosed:1",
+      "id": "life & death/Pyramid four/Side, enclosed:1",
       "stones": "B:qd,qe,qf,rc,rd,rf,rg,sc,se,sg W:pc,pd,pe,pf,pg,qb,qc,qg,qh,rb,rh,sb,sh",
       "toPlay": "W",
       "free": "horizontal",
@@ -63,7 +63,7 @@
       "moves": []
     },
     {
-      "id": "life & death/Pyramid four · side · enclosed:2",
+      "id": "life & death/Pyramid four/Side, enclosed:2",
       "stones": "B:qd,qe,qf,rc,rd,rf,rg,sc,sg W:pc,pd,pe,pf,pg,qb,qc,qg,qh,rb,rh,sb,se,sh",
       "toPlay": "B",
       "free": "horizontal",
@@ -75,27 +75,27 @@
       "moves": []
     },
     {
-      "id": "life & death/Pyramid four · side · enclosed:1b",
+      "id": "life & death/Pyramid four/Side, enclosed:1b",
       "stones": "B:qd,qe,qf,rc,rd,rf,rg,sc,sg W:pc,pd,pe,pf,pg,qb,qc,qg,qh,rb,rh,sb,sh",
       "toPlay": "W",
       "free": "horizontal",
       "moves": [
         {
           "move": "se",
-          "to": "life & death/Pyramid four · side · enclosed:2",
-          "status": "correct",
+          "to": "life & death/Pyramid four/Side, enclosed:2",
+          "status": "main",
           "why": "Takes the vital point. {{Black}} can make only one eye."
         },
         {
           "move": "re",
-          "to": "life & death/Pyramid four · side · enclosed:2b",
-          "status": "wrong",
+          "to": "life & death/Pyramid four/Side, enclosed:2b",
+          "status": "mistake",
           "why": "Misses the vital point."
         }
       ]
     },
     {
-      "id": "life & death/Pyramid four · side · enclosed:2b",
+      "id": "life & death/Pyramid four/Side, enclosed:2b",
       "stones": "B:qd,qe,qf,rc,rd,rf,rg,sc,sg W:pc,pd,pe,pf,pg,qb,qc,qg,qh,rb,re,rh,sb,sh",
       "toPlay": "B",
       "free": "horizontal",
@@ -106,8 +106,8 @@
       "moves": [
         {
           "move": "se",
-          "to": "life & death/Pyramid four · side · enclosed:1",
-          "status": "correct",
+          "to": "life & death/Pyramid four/Side, enclosed:1",
+          "status": "main",
           "why": "{{Black}} takes it and lives."
         }
       ]

@@ -1,7 +1,7 @@
 {
   "positions": [
     {
-      "id": "life & death/Rabbity six · side · enclosed",
+      "id": "life & death/Rabbity six/Side, enclosed",
       "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,rg,sc,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,rh,sb,sh",
       "toPlay": "B",
       "free": "horizontal",
@@ -40,18 +40,18 @@
       "moves": [
         {
           "move": "re",
-          "to": "life & death/Rabbity six · side · enclosed:1",
-          "status": "correct",
+          "to": "life & death/Rabbity six/Side, enclosed:1",
+          "status": "main",
           "why": "Takes the vital point and splits the space into several eyes."
         },
         {
           "move": "tenuki",
-          "to": "life & death/Rabbity six · side · enclosed:1b"
+          "to": "life & death/Rabbity six/Side, enclosed:1b"
         }
       ]
     },
     {
-      "id": "life & death/Rabbity six · side · enclosed:1",
+      "id": "life & death/Rabbity six/Side, enclosed:1",
       "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,re,rg,sc,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,rh,sb,sh",
       "toPlay": "W",
       "free": "horizontal",
@@ -63,7 +63,7 @@
       "moves": []
     },
     {
-      "id": "life & death/Rabbity six · side · enclosed:2",
+      "id": "life & death/Rabbity six/Side, enclosed:2",
       "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,rg,sc,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,re,rh,sb,sh",
       "toPlay": "B",
       "free": "horizontal",
@@ -75,15 +75,15 @@
       "moves": []
     },
     {
-      "id": "life & death/Rabbity six · side · enclosed:1b",
+      "id": "life & death/Rabbity six/Side, enclosed:1b",
       "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,rg,sc,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,rh,sb,sh",
       "toPlay": "W",
       "free": "horizontal",
       "moves": [
         {
           "move": "re",
-          "to": "life & death/Rabbity six · side · enclosed:2",
-          "status": "correct",
+          "to": "life & death/Rabbity six/Side, enclosed:2",
+          "status": "main",
           "why": "Takes the vital point. {{Black}} can make only one eye."
         }
       ]

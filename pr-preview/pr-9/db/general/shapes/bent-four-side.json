@@ -1,7 +1,7 @@
 {
   "positions": [
     {
-      "id": "life & death/Bent four · side · enclosed",
+      "id": "life & death/Bent four/Side, enclosed",
       "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,sh",
       "toPlay": "B",
       "free": "horizontal",
@@ -38,12 +38,12 @@
       "moves": [
         {
           "move": "tenuki",
-          "to": "life & death/Bent four · side · enclosed:1"
+          "to": "life & death/Bent four/Side, enclosed:1"
         }
       ]
     },
     {
-      "id": "life & death/Bent four · side · enclosed:2",
+      "id": "life & death/Bent four/Side, enclosed:2",
       "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,se,sh",
       "toPlay": "B",
       "free": "horizontal",
@@ -54,34 +54,34 @@
       "moves": [
         {
           "move": "sf",
-          "to": "life & death/Bent four · side · enclosed:3",
-          "status": "correct",
+          "to": "life & death/Bent four/Side, enclosed:3",
+          "status": "main",
           "why": "Takes the other one. {{SQ:T16}} and {{SQ:S14}} are two eyes."
         }
       ]
     },
     {
-      "id": "life & death/Bent four · side · enclosed:1",
+      "id": "life & death/Bent four/Side, enclosed:1",
       "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,sh",
       "toPlay": "W",
       "free": "horizontal",
       "moves": [
         {
           "move": "se",
-          "to": "life & death/Bent four · side · enclosed:2",
-          "status": "wrong",
+          "to": "life & death/Bent four/Side, enclosed:2",
+          "status": "mistake",
           "why": "Takes one middle point."
         },
         {
           "move": "sf",
-          "to": "life & death/Bent four · side · enclosed:2b",
-          "status": "wrong",
+          "to": "life & death/Bent four/Side, enclosed:2b",
+          "status": "mistake",
           "why": "Takes the other middle point."
         }
       ]
     },
     {
-      "id": "life & death/Bent four · side · enclosed:3",
+      "id": "life & death/Bent four/Side, enclosed:3",
       "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,sf,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,se,sh",
       "toPlay": "W",
       "free": "horizontal",
@@ -93,7 +93,7 @@
       "moves": []
     },
     {
-      "id": "life & death/Bent four · side · enclosed:2b",
+      "id": "life & death/Bent four/Side, enclosed:2b",
       "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,sf,sh",
       "toPlay": "B",
       "free": "horizontal",
@@ -104,14 +104,14 @@
       "moves": [
         {
           "move": "se",
-          "to": "life & death/Bent four · side · enclosed:3b",
-          "status": "correct",
+          "to": "life & death/Bent four/Side, enclosed:3b",
+          "status": "main",
           "why": "Takes the remaining middle point. {{TR:T14|The {{white}} stone}} is in atari, and {{SQ:T16}} is already an eye."
         }
       ]
     },
     {
-      "id": "life & death/Bent four · side · enclosed:3b",
+      "id": "life & death/Bent four/Side, enclosed:3b",
       "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,se,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,sf,sh",
       "toPlay": "W",
       "free": "horizontal",
