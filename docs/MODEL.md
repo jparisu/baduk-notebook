@@ -1,7 +1,7 @@
 # Data model (draft for review)
 
 Baduk Notebook stores one kind of thing: a **graph of positions joined by moves**.
-"Joseki", "shape" and "life & death" are not separate kinds of data. They are parts of a
+"Joseki", "shape" and "life & death" are not separate kinds of data. They are part of a
 position's `id` or of its `tags`.
 
 ## 1. Position (node)
@@ -10,12 +10,12 @@ A position is the stones on a local area of the board plus **who plays next**.
 
 | Field | Meaning |
 |---|---|
+| `id` | **Unique identifier** of the position, used by the moves to build the graph (§3). Example: `joseki/4-4 point/3-3 invasion` for the start of a sequence, `joseki/4-4 point/3-3 invasion:4` for a later position. |
 | `stones` | Black and white stones, in the upper-right corner frame (`B:pd,qf W:qc`). |
 | `toPlay` | `B` or `W`. The same stones with the other player to move is a **different** position. |
-| `id` | The **sequence** the position belongs to, nested with `/`: `joseki`, `joseki/4-4 point`, `joseki/4-4 point/3-3 invasion`. Many positions share one id. It decides the hierarchy, the order and what the tree shows (§3). |
 | `tags` | Free nested tags for searching: `3-3`, `life & death/corner`, `ko`, `beginner`… |
 | `free` | Placement: `corner` (default), `horizontal`, `vertical` or `anywhere` (§4). |
-| `name` | Optional display name. Defaults to the last part of the id ("3-3 invasion"). |
+| `name` | Optional display name. Defaults to the last part of the sequence ("3-3 invasion"). |
 | `eval` | Optional: `balance` (points, from Black's view, local), `difficulty` (kyu/dan), `status` for life & death (`alive`, `dead`, `ko`, `seki`, `unsettled`). |
 | `notes` | Free text, with board marks (triangles, arrows, influence…). |
 | `moves` | The moves from this position (§2). |
@@ -27,12 +27,13 @@ joins them.
 
 ## 2. Move (edge)
 
-Moves are stored inside the position they start from. The app finds the position they lead to by
-playing them.
+Moves are stored inside the position they start from and point to the **id** of the position they
+lead to. The app checks that playing the move really gives that position.
 
 | Field | Meaning |
 |---|---|
 | `move` | A point (`qc`) or `tenuki` (play elsewhere: same stones, the other player to move). |
+| `to` | Id of the position it leads to. |
 | `status` | `main`, `alternative`, `situational`, `slack`, `mistake`, `overplay`, `trick`, `punishment`. |
 | `why` | Why the move is good or bad. |
 | `notes` | Free text with board marks. |
@@ -41,24 +42,39 @@ Rules:
 - A move always adds exactly one move to the line: a stone (possibly capturing) or a tenuki.
 - No two tenukis in a row. No move may return to a position already on the line (no loops).
 
-## 3. Sequences (`id`) and tags
+## 3. Ids, sequences and tags
 
 ### `id`
-- **Joseki use `joseki` as the root.** The empty corner is the start of `joseki`. The 4-4 stone
-  starts `joseki/4-4 point`. The 2-2 invasion of the 3-3 point starts
-  `joseki/3-3 point/2-2 invasion`, and its first move has status `mistake`.
-- A new position **copies the id** of the position it comes from. When a line becomes its own
-  variation, you give it a deeper id, such as `…/3-3 invasion/aggressive`. The moves after it copy that id.
-- An id includes every shorter id. `joseki/4-4 point/3-3 invasion` is inside `joseki/4-4 point`, which is inside `joseki`.
+Every position is stored with a unique id. The id has two parts: `<sequence>:<N>`.
+
+- **Sequence:** nested with `/`. Joseki use `joseki` as the root: `joseki`,
+  `joseki/4-4 point`, `joseki/4-4 point/3-3 invasion`.
+  - A sequence includes every shorter one: `joseki/4-4 point/3-3 invasion` is inside
+    `joseki/4-4 point`, which is inside `joseki`.
+- **N:** the move number where the position is, counted from the starting position of the graph
+  (the empty corner is N = 0). Tenuki counts as a move. It is not a stone count, because captures
+  remove stones.
+- **The start of a sequence has no `:N`.** Its id is just the sequence name, e.g.
+  `joseki/4-4 point/3-3 invasion`.
+  - The empty corner is `joseki`.
+  - The 4-4 stone is `joseki/4-4 point`.
+  - The 2-2 invasion of the 3-3 point starts `joseki/3-3 point/2-2 invasion`; the move into it has status `mistake`.
+- **Branches at the same N** get a letter: `…/3-3 invasion:4`, `…/3-3 invasion:4b`, `…/3-3 invasion:4c`.
+- **New positions** take the sequence of the position they come from, with the next N; the app
+  writes the id for you. When a line becomes its own variation, you name it: it gets a new
+  sequence such as `…/3-3 invasion/aggressive`, and the moves after it take that sequence.
+- **Ids are identifiers, not live data.** If a shorter line to a position is added later, its id
+  keeps the old N. Renaming a sequence rewrites the ids and every move pointing to them.
+- **Transpositions:** a position reached from two sequences is stored once, with the id it got
+  first. Moves from both sequences point to it.
 
 ### Order inside a sequence
-- **N** of a position: the number of moves on the shortest path from a starting position. A
-  starting position has no move leading to it; examples are the empty corner and a life & death
-  setup. Tenuki counts as a move. N is **computed on load, never stored**, so it stays right
-  when lines are added. It is not a stone count, because captures remove stones.
-- **Start of an id:** its position with the lowest N.
-- **Ends:** positions with that id and no move to another position with the same id.
-- **Main path:** from the start, follow the `main` moves while the id stays the same.
+- **Start:** the position whose id has no `:N`.
+- **Order:** by N, then by letter.
+- **Ends:** positions of the sequence with no move to another position of the same sequence.
+- **Main path:** from the start, follow the `main` moves while the sequence stays the same.
+- The loader also computes the real shortest distance from the start, to warn when an id's N is
+  out of date. It never changes ids on its own.
 
 ### Tags
 - Free and nested, all in one list (`life & death/corner`, `3-3`, `ko`).
@@ -130,18 +146,22 @@ Each database is a folder under `db/` with JSON files; any file may hold any pos
 ```json
 {
   "positions": [
-    { "stones": "", "toPlay": "B", "id": "joseki", "name": "Empty corner",
-      "moves": [{ "move": "pd", "status": "main" }, { "move": "qc", "status": "main" }] },
-    { "stones": "B:pd", "toPlay": "W", "id": "joseki/4-4 point",
-      "moves": [{ "move": "qc", "status": "main", "why": "Takes the corner." }] },
-    { "stones": "B:pd W:qc", "toPlay": "B", "id": "joseki/4-4 point/3-3 invasion",
-      "eval": { "balance": 0, "difficulty": "20k" }, "moves": [] }
+    { "id": "joseki", "stones": "", "toPlay": "B", "name": "Empty corner",
+      "moves": [{ "move": "pd", "to": "joseki/4-4 point", "status": "main" }] },
+    { "id": "joseki/4-4 point", "stones": "B:pd", "toPlay": "W",
+      "moves": [{ "move": "qc", "to": "joseki/4-4 point/3-3 invasion", "status": "main", "why": "Takes the corner." }] },
+    { "id": "joseki/4-4 point/3-3 invasion", "stones": "B:pd W:qc", "toPlay": "B",
+      "eval": { "balance": 0, "difficulty": "20k" },
+      "moves": [{ "move": "pc", "to": "joseki/4-4 point/3-3 invasion:3", "status": "main" }] },
+    { "id": "joseki/4-4 point/3-3 invasion:3", "stones": "B:pd,pc W:qc", "toPlay": "W", "moves": [] }
   ]
 }
 ```
 
-- Positions are matched across files and databases by their stones, using the 8 symmetries, so
-  when two databases describe the same position, the app merges them.
+- Inside a database, moves link positions by id; ids are unique per database.
+- Across databases, positions are matched by their stones (8 symmetries). When two databases
+  describe the same position with different ids, the app merges them. The first active database's
+  id is shown, and moves pointing to either id lead to the merged position.
 - When databases disagree on a field, the first active database in the list wins.
 - **SGF:**
   - loading an SGF makes each node a position and each move a move;
@@ -151,7 +171,7 @@ Each database is a folder under `db/` with JSON files; any file may hold any pos
 
   | SGF property | New field |
   |---|---|
-  | XFAM | `id`, under `joseki/` |
+  | XFAM | the sequence part of `id`, under `joseki/` |
   | XNAME | `name` |
   | XTAG | `tags` |
   | category | `status` |
