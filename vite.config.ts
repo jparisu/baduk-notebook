@@ -5,14 +5,14 @@ import { join, normalize, relative, sep } from 'node:path'
 
 // Serves the repository's /db folder in development and copies it into the build,
 // so the databases stay at the repository root (SPEC §3.1).
-// It also generates db/files.json, the list of every SGF file, so nobody has to maintain it by hand.
+// It also generates db/files.json, the list of every database file, so nobody has to maintain it by hand.
 function listFiles(root: string): string[] {
   const out: string[] = []
   const walk = (dir: string) => {
     for (const name of readdirSync(dir).sort()) {
       const full = join(dir, name)
       if (statSync(full).isDirectory()) walk(full)
-      else if (name.endsWith('.sgf')) out.push(relative(root, full).split(sep).join('/'))
+      else if (name.endsWith('.json') && dir !== root) out.push(relative(root, full).split(sep).join('/'))
     }
   }
   walk(root)

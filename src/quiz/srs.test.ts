@@ -1,6 +1,5 @@
-import { readFileSync } from 'node:fs'
+import { loadDb } from '../testdb'
 import { describe, expect, it } from 'vitest'
-import * as sgf from '@sabaki/sgf'
 import { buildGraph } from '../core/graph'
 import { buildCards, queue, review, streak } from './srs'
 
@@ -25,11 +24,10 @@ describe('spaced repetition', () => {
   })
 
   it('builds cards from the example databases', () => {
-    const files = ['general/joseki/4-4-3-3-invasion.sgf', 'general/shapes/straight-three-side.sgf'].map((p) => ({ db: 'general', path: p, roots: sgf.parse(readFileSync(`db/${p}`, 'utf8')) }))
-    const g = buildGraph(files)
+    const g = buildGraph(loadDb((p) => p.startsWith('general/')))
     const cards = buildCards(g, new Set(['general']), ['general'])
     expect(cards.some((c) => c.kind === 'punish')).toBe(true)
-    expect(cards.some((c) => c.entryId === 'straight-three-side')).toBe(true)
+    expect(cards.some((c) => c.entryId.startsWith('life & death/Straight three'))).toBe(true)
     const q = queue(cards, { cards: {}, days: [] }, 0, 5)
     expect(q.fresh.length).toBe(5)
   })

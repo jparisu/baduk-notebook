@@ -1,0 +1,158 @@
+{
+  "positions": [
+    {
+      "id": "life & death/Bent four in the corner",
+      "stones": "B:pa,pb,qb,rb,rc,sc W:oa,ob,oc,pc,qc,qd,rd,sd",
+      "toPlay": "B",
+      "name": "Bent four in the corner",
+      "tags": [
+        "eye shape",
+        "ko",
+        "rules"
+      ],
+      "notes": "{{SQ:R19,S19,T19,T18|The 4-point eye space}}, with {{TR:T19|the bend on the 1-1 point}}. {{CR:S19|The 1-2 point on the long side}} is the vital point.",
+      "eval": {
+        "difficulty": "10k"
+      },
+      "extra": {
+        "XALIAS": [
+          "Sumi no magari yonmoku",
+          "隅の曲り四目",
+          "盘角曲四",
+          "귀곡사"
+        ],
+        "XSUM": "Bent four with the bend on the 1-1 point. Normally bent four is alive, but in the corner it is unsettled: Black lives by playing first, and if White plays first it becomes a ko.",
+        "XSRC": "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search.",
+        "XSB": "alive",
+        "XSW": "ko",
+        "XRESB": "alive",
+        "XRESW": "ko",
+        "XEYE": "One eye space of 4 points",
+        "XLIB": "0 outside liberties",
+        "XSIZE": "4",
+        "XSURR": "full",
+        "XOLIB": "0",
+        "XINSIDE": "0",
+        "XARR": "connected",
+        "XVITAL": "ra",
+        "XKOT": "direct",
+        "XRULE": "Under Japanese rules a group that cannot stop this shape from being reached is dead: the attacker removes all ko threats first and only then starts the ko, so it does not have to be played out. Under Chinese and AGA rules it has to be played out as a ko.",
+        "XREG": "oa:sd"
+      },
+      "moves": [
+        {
+          "move": "ra",
+          "to": "life & death/Bent four in the corner:1",
+          "status": "correct",
+          "why": "Takes the vital point: {{SQ:R19}} and {{SQ:T19,T18}} become two eyes."
+        },
+        {
+          "move": "tenuki",
+          "to": "life & death/Bent four in the corner:1b"
+        }
+      ]
+    },
+    {
+      "id": "life & death/Bent four in the corner:1",
+      "stones": "B:pa,pb,qb,ra,rb,rc,sc W:oa,ob,oc,pc,qc,qd,rd,sd",
+      "toPlay": "W",
+      "extra": {
+        "XSB": "alive",
+        "XSW": "alive",
+        "XEYE": "Two eyes"
+      },
+      "moves": []
+    },
+    {
+      "id": "life & death/Bent four in the corner:2",
+      "stones": "B:pa,pb,qb,rb,rc,sc W:oa,ob,oc,pc,qc,qd,ra,rd,sd",
+      "toPlay": "B",
+      "extra": {
+        "XSB": "ko",
+        "XSW": "dead"
+      },
+      "moves": [
+        {
+          "move": "sa",
+          "to": "life & death/Bent four in the corner:3",
+          "status": "ko",
+          "why": "Black's best: it puts {{TR:S19|the white stone}} in atari."
+        }
+      ]
+    },
+    {
+      "id": "life & death/Bent four in the corner:1b",
+      "stones": "B:pa,pb,qb,rb,rc,sc W:oa,ob,oc,pc,qc,qd,rd,sd",
+      "toPlay": "W",
+      "moves": [
+        {
+          "move": "ra",
+          "to": "life & death/Bent four in the corner:2",
+          "status": "correct",
+          "why": "Takes the vital point. Black cannot make two eyes without a ko."
+        },
+        {
+          "move": "sa",
+          "to": "life & death/Bent four in the corner:2b",
+          "status": "wrong",
+          "why": "The 1-1 point is not the vital point."
+        }
+      ]
+    },
+    {
+      "id": "life & death/Bent four in the corner:3",
+      "stones": "B:pa,pb,qb,rb,rc,sa,sc W:oa,ob,oc,pc,qc,qd,ra,rd,sd",
+      "toPlay": "W",
+      "extra": {
+        "XSB": "alive",
+        "XSW": "ko"
+      },
+      "moves": [
+        {
+          "move": "sb",
+          "to": "life & death/Bent four in the corner:4",
+          "status": "ko",
+          "why": "Captures {{TR:T19}} and takes the ko first. Black needs a ko threat."
+        }
+      ]
+    },
+    {
+      "id": "life & death/Bent four in the corner:4",
+      "stones": "B:pa,pb,qb,rb,rc,sc W:oa,ob,oc,pc,qc,qd,ra,rd,sb,sd",
+      "toPlay": "B",
+      "notes": "Ko: White has taken first. If Black wins the ko, Black lives.",
+      "extra": {
+        "XSB": "ko",
+        "XSW": "dead"
+      },
+      "moves": []
+    },
+    {
+      "id": "life & death/Bent four in the corner:2b",
+      "stones": "B:pa,pb,qb,rb,rc,sc W:oa,ob,oc,pc,qc,qd,rd,sa,sd",
+      "toPlay": "B",
+      "extra": {
+        "XSB": "alive",
+        "XSW": "dead"
+      },
+      "moves": [
+        {
+          "move": "ra",
+          "to": "life & death/Bent four in the corner:3b",
+          "status": "correct",
+          "why": "Black lives: White cannot approach from either side."
+        }
+      ]
+    },
+    {
+      "id": "life & death/Bent four in the corner:3b",
+      "stones": "B:pa,pb,qb,ra,rb,rc,sc W:oa,ob,oc,pc,qc,qd,rd,sa,sd",
+      "toPlay": "W",
+      "extra": {
+        "XSB": "alive",
+        "XSW": "alive"
+      },
+      "moves": []
+    }
+  ]
+}

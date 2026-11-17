@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { listDb, readDb } from './testdb'
 import { describe, expect, it } from 'vitest'
 import { buildGraph } from './core/graph'
 import { IDENTITY, parsePt } from './core/geometry'
@@ -6,11 +6,10 @@ import { candidates, inBook, movesOf, playFree, replay, startStep, type Ctx, typ
 import { createWorkspace } from './edit/workspace'
 import { locate } from './edit/ops'
 
-const read = (p: string) => ({ db: p.split('/')[0], path: p, text: readFileSync(`db/${p}`, 'utf8') })
 const DBS = [{ id: 'general', name: 'General', description: '', color: '#000', activeByDefault: true }]
 
 function setup() {
-  const ws = createWorkspace(DBS, [read('general/joseki/4-4-3-3-invasion.sgf')])
+  const ws = createWorkspace(DBS, listDb().filter((p) => p.startsWith('general/')).map(readDb))
   const ctx = (): Ctx => ({ graph: buildGraph(ws.files), active: new Set(['general']), order: ['general'], U: IDENTITY })
   return { ws, ctx }
 }
@@ -48,7 +47,7 @@ describe('free play', () => {
     const root = startStep(ctx, { kind: 'setup', B: [parsePt('Q16')!], W: [], toMove: -1 })
     const s1 = playFree(ctx, root, -1, parsePt('R14')!)
     const s2 = playFree(ctx, s1, 1, parsePt('O17')!)
-    locate(ws, ctx, [root, s1, s2], 'general', '4-4-3-3-invasion', true)
+    locate(ws, ctx, [root, s1, s2], 'general', null, true)
     const ctx2 = mk()
     const start: Start = { kind: 'setup', B: [parsePt('Q16')!], W: [], toMove: -1 }
     const line = replay(ctx2, start, movesOf([root, s1, s2]))

@@ -1,5 +1,5 @@
 /** Zobrist hashing and canonical position keys (SPEC §6.2). */
-import { SIZE, SYMMETRIES, apply, withSwap, type Sign, type SignMap, type Transform } from './geometry'
+import { SIZE, SYMMETRIES, apply, type Sign, type SignMap, type Transform } from './geometry'
 
 // Deterministic 32-bit PRNG so keys are stable between builds and browsers.
 function mulberry32(seed: number) {
@@ -42,16 +42,15 @@ function hashOf(map: SignMap, toMove: Sign, t: Transform): string {
 }
 
 /**
- * Canonical key of a position: the smallest hash over the 8 symmetries × color swap.
+ * Canonical key of a position: the smallest hash over the 8 symmetries (colors are never swapped:
+ * Black to play and White to play are different positions, docs/MODEL.md §1).
  * `toCanon` maps the given board's frame to the canonical frame.
  */
 export function canonical(map: SignMap, toMove: Sign): { key: string; toCanon: Transform } {
   let best: { key: string; toCanon: Transform } | null = null
-  for (const sym of SYMMETRIES)
-    for (const swap of [false, true]) {
-      const t = withSwap(sym, swap)
-      const key = hashOf(map, toMove, t)
-      if (!best || key < best.key) best = { key, toCanon: t }
-    }
+  for (const t of SYMMETRIES) {
+    const key = hashOf(map, toMove, t)
+    if (!best || key < best.key) best = { key, toCanon: t }
+  }
   return best!
 }

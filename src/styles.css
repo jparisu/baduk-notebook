@@ -828,3 +828,9 @@ button.link.small { font-size: 12px; display: inline-flex; align-items: center; 
 .tree-start b { color: var(--fg); }
 .ahead { display: inline-flex; align-items: center; gap: 4px; }
 .ahead select { font-size: 12px; padding: 3px 6px; }
+.tag-chips.fav { margin-top: 2px; }
+.chip-star { display: inline-flex; align-items: center; gap: 1px; }
+.chip-star .star { border: 0; background: none; padding: 2px; color: var(--muted); cursor: pointer; }
+.chip-star .star.on { color: #e0b000; }
+.chip-star .star.on svg { fill: currentColor; }
+.tag-chips.fav svg { fill: #e0b000; color: #e0b000; vertical-align: -1px; }

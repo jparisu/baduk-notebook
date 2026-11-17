@@ -1,67 +1,57 @@
-import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import * as sgf from '@sabaki/sgf'
-import { buildGraph } from './graph'
 import { parsePt, apply, compose, userTransform, type SignMap } from './geometry'
 import { search, userViewFor } from './search'
-import { rootStep, candidates, type Ctx } from '../view'
+import { rootStep, type Ctx } from '../view'
+import { ctxOf, loadDb } from '../testdb'
 
-const load = (p: string) => ({ db: p.split('/')[0], path: p, roots: sgf.parse(readFileSync(`db/${p}`, 'utf8')) })
-const g = buildGraph([load('general/joseki/4-4-3-3-invasion.sgf'), load('general/shapes/straight-three-side.sgf')])
-const active = new Set(['general'])
+const base = ctxOf(loadDb((p) => p.startsWith('general/')), ['general'])
+const g = base.graph
+const active = base.active
 const empty = (): SignMap => Array.from({ length: 19 }, () => Array(19).fill(0))
 const put = (m: SignMap, s: 1 | -1, ...pts: string[]) => pts.forEach((p) => { const [x, y] = parsePt(p)!; m[y][x] = s })
+const INV = 'joseki/4-4 point/3-3 invasion'
 
 describe('find position', () => {
-  it('finds a joseki position in another corner with swapped colors, plus a distant stone', () => {
+  it('finds a joseki position in another corner, ignoring a distant stone', () => {
     const m = empty()
-    // 3-3 invasion after 4 moves, rotated to the bottom-left with colors swapped.
-    put(m, -1, 'D4', 'D3', 'E2')
-    put(m, 1, 'C3', 'C4')
-    put(m, 1, 'K10') // far away: ignored
-    // Original: B Q16, W R17, B Q17, W R16, B R15 → 180° rotation: D4, C3, D3, C4, C5... adjust to a contained case
+    // B Q16, W R17 (the 3-3 invasion) rotated to the bottom-left: D4, C3.
+    put(m, 1, 'D4')
+    put(m, -1, 'C3')
+    put(m, 1, 'Q10') // outside the bottom-left corner
     const res = search(g, active, m)
-    expect(res.length).toBeGreaterThan(0)
-    expect(res.every((r) => r.where === 'bottom-left corner' || r.where === 'shape')).toBe(true)
+    expect(res.find((r) => r.kind === 'exact')?.entryId).toBe(INV)
+    expect(res.every((r) => r.where !== 'top-right corner')).toBe(true)
   })
 
-  it('returns an exact match and the display options that show it like the input', () => {
-    const ctx: Ctx = { graph: g, active, order: ['general'], U: userTransform({ corner: 'tr', mirror: false, swap: false }) }
-    let p = [rootStep(ctx, '4-4-3-3-invasion')]
-    for (let i = 0; i < 1; i++) p = [...p, candidates(ctx, p[p.length - 1])[0].step] // the label starts after W R17
-    // Same position (B Q16, W R17, B Q17) placed in the bottom-right corner.
+  it('does not match the same stones with colors swapped', () => {
     const m = empty()
-    put(m, 1, 'Q4', 'Q3')
+    put(m, -1, 'D4')
+    put(m, 1, 'C3')
+    expect(search(g, active, m).some((r) => r.kind === 'exact' && r.entryId === INV)).toBe(false)
+  })
+
+  it('returns the display options that show the match like the input', () => {
+    const ctx: Ctx = { ...base, U: userTransform({ corner: 'tr', mirror: false, swap: false }) }
+    const p = rootStep(ctx, INV)
+    const m = empty()
+    put(m, 1, 'Q4')
     put(m, -1, 'R3')
-    const res = search(g, active, m)
-    const exact = res.find((r) => r.kind === 'exact')!
-    expect(exact.entryId).toBe('4-4-3-3-invasion')
-    expect(exact.keys.length).toBe(2)
-    const view = userViewFor(exact.toCanon, p[1].D)
-    // Showing the stored line with that view puts the stones where the user placed them.
-    const U = userTransform(view)
-    const shown = apply(compose(U, p[1].D), apply(exact.toCanon, parsePt('Q4')!))
-    expect(shown).toEqual(parsePt('Q4'))
+    const exact = search(g, active, m).find((r) => r.kind === 'exact')!
+    expect(exact.entryId).toBe(INV)
+    const U = userTransform(userViewFor(exact.toCanon, p.D))
+    expect(apply(compose(U, p.D), apply(exact.toCanon, parsePt('Q4')!))).toEqual(parsePt('Q4'))
   })
 
-  it('finds a shape moved along the side', () => {
+  it('finds a side shape moved along the edge it may slide on', () => {
+    const shape = [...g.entries.values()].find((e) => e.id.startsWith('life & death/Straight three'))!
+    const n = g.nodes.get(shape.root)!
+    // Stored on the top edge; shift it 3 lines to the left.
+    const stored = n.contribs[0].pos.stones
     const m = empty()
-    // Straight three on the right side, shifted 5 lines down (eye space T9–T11).
-    put(m, 1, 'T8', 'T12', 'S8', 'S9', 'S10', 'S11', 'S12')
-    put(m, -1, 'R7', 'R8', 'R9', 'R10', 'R11', 'R12', 'R13', 'S7', 'T7', 'S13', 'T13')
-    const res = search(g, active, m)
-    expect(res.some((r) => r.entryId === 'straight-three-side' && r.kind === 'exact')).toBe(true)
-  })
-})
-
-describe('find position: one result per label', () => {
-  it('an exact match hides the other positions of the same label', () => {
-    const m = empty()
-    put(m, 1, 'Q4', 'Q3')
-    put(m, -1, 'R3')
-    const res = search(g, active, m)
-    const inv = res.filter((r) => r.labels.includes('4-4-3-3-invasion') || r.entryId === '4-4-3-3-invasion')
-    expect(inv.length).toBe(1)
-    expect(inv[0].kind).toBe('exact')
+    for (const part of stored.split(' ')) {
+      const [c, list] = part.split(':')
+      for (const v of list.split(',')) m[v.charCodeAt(1) - 97][v.charCodeAt(0) - 97 - 3] = c === 'B' ? 1 : -1
+    }
+    expect(search(g, active, m).some((r) => r.entryId === shape.id && r.kind === 'exact')).toBe(true)
   })
 })

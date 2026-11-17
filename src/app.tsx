@@ -29,6 +29,7 @@ import { QuizMode } from './ui/QuizMode'
 import { changeCount, createWorkspace, discardDrafts, restoreDrafts, saveDrafts, type Workspace } from './edit/workspace'
 import { checkMove, createDatabase, createEntry, deleteMove, locate, promote, setProps } from './edit/ops'
 import { sgfPoint } from './edit/sgfio'
+import { boardOf, seqName, stonesOf } from './core/model'
 import { previewName, storageKey } from './storage'
 import { decodeLine, linkFor, readUrl } from './share'
 import { erase, loadPosition, loadSession, record, remove, savePosition, saveSession, sameStart, type Line } from './session'
@@ -231,7 +232,7 @@ export function App() {
 
   const dbColor = (id: string) => databases.find((d) => d.id === id)?.color ?? '#888'
   const entries = graph ? [...graph.entries.values()].filter((e) => e.defined && e.contribs.some((c) => shown.has(c.db))) : []
-  const entryName = (id: string) => (ctx && ctx.graph.entries.has(id) ? entryFields(ctx, id, rootStep(ctx, id)).one('XNAME')?.value ?? id : id)
+  const entryName = (id: string) => (ctx && ctx.graph.entries.has(id) ? entryFields(ctx, id, rootStep(ctx, id)).one('XNAME')?.value ?? seqName(id) : seqName(id))
 
   const toggleDb = (id: string) => {
     const next = new Set(active)
@@ -396,11 +397,13 @@ export function App() {
     const sp = sgfPoint(apply(inverse(toDisplay), pt))
     const d = loc.node.data
     if (setup) {
-      const strip = (k: string) => (d[k] ?? []).flatMap(parseSgfPtList).map(sgfPoint).filter((x) => x !== sp)
-      const update: Record<string, string[] | null> = { AB: strip('AB'), AW: strip('AW'), AE: strip('AE') }
-      const real = tool === 'AE' ? 'AE' : (tool === 'AB') !== toDisplay.swap ? 'AB' : 'AW'
-      update[real] = [...(update[real] ?? []), sp]
-      setProps(w, loc, update)
+      // Set-up stones change the start position itself, so only while it has no moves yet.
+      if (loc.pos.moves.length) return flash('Set-up stones can only change while the start position has no moves.')
+      const b = boardOf(loc.pos.stones)
+      const [x, y] = apply(inverse(toDisplay), pt)
+      b[y][x] = tool === 'AE' ? 0 : (tool === 'AB') !== toDisplay.swap ? 1 : -1
+      loc.pos.stones = stonesOf(b)
+      setProps(w, loc, {})
       return commit()
     }
     if (PAIR_TOOLS.has(tool)) {
@@ -572,8 +575,7 @@ export function App() {
       ctx={ctx}
       entries={entries}
       current={startLabel}
-      lib={lib}
-      setLib={setLib}
+      commonTags={[...new Set(databases.filter((d) => active.has(d.id)).flatMap((d) => d.commonTags ?? []))]}
       onOpen={(id) => openStart({ kind: 'label', id })}
       extra={edit && <button class="new-entry" onClick={() => setDialog('new-start')}><Plus size={15} /> New start position</button>}
     />
@@ -838,7 +840,7 @@ export function App() {
   const anchorIdx = anchorKey ? path.findIndex((x) => x.key === anchorKey) : -1
   // The tree stays put while its first move is still on the line, so moving into a named
   // variation (or back) does not redraw a different tree; before it, it follows the joseki again.
-  const famOf = (id: string) => entryFields(ctx, id, rootStep(ctx, id)).one('XFAM')?.value ?? ''
+  const famOf = (id: string) => id
   const labelIdx = treeLabel ? labelStart(ctx, path, treeLabel) : 0
   const labelFam = treeLabel ? famOf(treeLabel) : ''
   const sticky = autoRoot.current

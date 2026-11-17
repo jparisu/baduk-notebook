@@ -2,18 +2,13 @@
  * Editing workspace (SPEC §10): the working copy of every database file, which files changed,
  * drafts saved in IndexedDB, and export as a patch or zip.
  */
-import * as sgf from '@sabaki/sgf'
-import type { SgfNode } from '@sabaki/sgf'
 import { get, set, del } from 'idb-keyval'
 import { structuredPatch } from 'diff'
 import type { DatabaseInfo } from '../data/load'
-import { writeSgf } from './sgfio'
+import { parseDbFile, writeDbFile, type DbFile } from '../core/model'
 import { storageKey } from '../storage'
 
-export interface WorkFile {
-  db: string
-  path: string // relative to db/, e.g. "general/joseki/x.sgf"
-  roots: SgfNode[]
+export interface WorkFile extends DbFile {
   /** Text as loaded from the site, or null for a file created in the app. */
   original: string | null
 }
@@ -27,7 +22,7 @@ export interface Workspace {
   version: number
 }
 
-const DRAFT_KEY = storageKey('baduk-notebook.drafts.v1')
+const DRAFT_KEY = storageKey('baduk-notebook.drafts.v2')
 
 interface Draft {
   databases: DatabaseInfo[] | null
@@ -36,7 +31,7 @@ interface Draft {
 
 export function createWorkspace(databases: DatabaseInfo[], loaded: { db: string; path: string; text: string }[]): Workspace {
   return {
-    files: loaded.map((f) => ({ db: f.db, path: f.path, roots: sgf.parse(f.text), original: f.text })),
+    files: loaded.map((f) => ({ ...parseDbFile(f.db, f.path, f.text), original: f.text })),
     databases,
     originalIndex: indexText(databases),
     dirty: new Set(),
@@ -61,10 +56,10 @@ export async function restoreDrafts(ws: Workspace): Promise<number> {
     ws.indexDirty = true
   }
   for (const f of draft.files) {
-    const roots = sgf.parse(f.text)
+    const positions = parseDbFile(f.db, f.path, f.text).positions
     const existing = ws.files.find((x) => x.path === f.path)
-    if (existing) existing.roots = roots
-    else ws.files.push({ db: f.db, path: f.path, roots, original: null })
+    if (existing) existing.positions = positions
+    else ws.files.push({ db: f.db, path: f.path, positions, original: null })
     ws.dirty.add(f.path)
   }
   ws.version++
@@ -76,7 +71,7 @@ export async function saveDrafts(ws: Workspace) {
     databases: ws.indexDirty ? ws.databases : null,
     files: ws.files
       .filter((f) => ws.dirty.has(f.path))
-      .map((f) => ({ db: f.db, path: f.path, text: writeSgf(f.roots), isNew: f.original === null })),
+      .map((f) => ({ db: f.db, path: f.path, text: writeDbFile(f), isNew: f.original === null })),
   }
   try {
     if (!draft.files.length && !draft.databases) await del(DRAFT_KEY)
@@ -93,7 +88,7 @@ export async function discardDrafts(ws: Workspace) {
     /* ignore */
   }
   ws.files = ws.files.filter((f) => f.original !== null)
-  for (const f of ws.files) if (ws.dirty.has(f.path)) f.roots = sgf.parse(f.original!)
+  for (const f of ws.files) if (ws.dirty.has(f.path)) f.positions = parseDbFile(f.db, f.path, f.original!).positions
   ws.dirty.clear()
   ws.databases = JSON.parse(ws.originalIndex).databases
   ws.indexDirty = false
@@ -107,7 +102,7 @@ export function changeCount(ws: Workspace) {
 /* ---- Export ---- */
 
 export interface Change {
-  path: string // repository path, e.g. "db/general/joseki/x.sgf"
+  path: string // repository path, e.g. "db/general/joseki/x.json"
   before: string | null
   after: string
 }
@@ -117,7 +112,7 @@ export function changes(ws: Workspace, onlyDbs?: Set<string>): Change[] {
   if (ws.indexDirty) out.push({ path: 'db/index.json', before: ws.originalIndex, after: indexText(ws.databases) })
   for (const f of ws.files) {
     if (!ws.dirty.has(f.path) || (onlyDbs && !onlyDbs.has(f.db))) continue
-    const after = writeSgf(f.roots)
+    const after = writeDbFile(f)
     if (after !== f.original) out.push({ path: `db/${f.path}`, before: f.original, after })
   }
   return out

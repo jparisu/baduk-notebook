@@ -1,13 +1,13 @@
 /**
- * Library (SPEC §8.1): joseki and shapes as a tree of families that folds open and closed,
- * with search by name, a list of tags to filter by, and a difficulty filter.
+ * Library (docs/MODEL.md §5): every sequence as a tree that follows the ids (joseki › 4-4 point ›
+ * 3-3 invasion), with search by name, nested tags (favourites first) and a difficulty filter.
  */
 import { useMemo, useState } from 'preact/hooks'
 import type { ComponentChildren } from 'preact'
-import { ChevronRight, X } from 'lucide-preact'
+import { ChevronRight, Star, X } from 'lucide-preact'
 import type { Entry } from '../core/graph'
 import { entryFields, rootStep, type Ctx } from '../view'
-import { CATEGORIES, categoryOf } from '../core/fields'
+import { seqName } from '../core/model'
 import { storageKey } from '../storage'
 
 const RANK = (r: string) => {
@@ -25,10 +25,19 @@ interface Item {
   mistake: boolean
 }
 
-/** True when the move that starts the label is not a good move. */
-export function isMistakeEntry(e: Entry): boolean {
-  const c = categoryOf(e.contribs[0]?.node.data ?? {})
-  return !!c && !CATEGORIES[c].good
+/** True when the move into the start of the sequence is not a good move. */
+export const isMistakeEntry = (e: Entry) => e.mistake
+
+/** A tag matches itself and every deeper tag: "life & death" matches "life & death/corner". */
+export const tagMatches = (have: string[], want: string) => have.some((t) => t === want || t.startsWith(want + '/'))
+
+const STAR_KEY = storageKey('baduk-notebook.tags.starred')
+function loadStars(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(STAR_KEY) ?? '[]')
+  } catch {
+    return []
+  }
 }
 
 interface Node {
@@ -65,9 +74,11 @@ export function Library(props: {
   ctx: Ctx
   entries: Entry[]
   current: string | null
-  lib: 'joseki' | 'shape'
-  setLib: (l: 'joseki' | 'shape') => void
+  lib?: 'joseki' | 'shape'
+  setLib?: (l: 'joseki' | 'shape') => void
   onOpen: (id: string) => void
+  /** Tags the databases list as common (index.json). */
+  commonTags?: string[]
   extra?: ComponentChildren
 }) {
   const { ctx } = props
@@ -75,6 +86,16 @@ export function Library(props: {
   const [maxRank, setMaxRank] = useState('any')
   const [tags, setTags] = useState<string[]>([])
   const [showTags, setShowTags] = useState(false)
+  const [stars, setStars] = useState<string[]>(loadStars)
+  const toggleStar = (t: string) => {
+    const n = stars.includes(t) ? stars.filter((x) => x !== t) : [...stars, t]
+    setStars(n)
+    try {
+      localStorage.setItem(STAR_KEY, JSON.stringify(n))
+    } catch {
+      /* ignore */
+    }
+  }
   const [open, setOpen] = useState<Set<string>>(new Set())
   const [kind, setKind] = useState<'good' | 'all' | 'mistakes'>(() => {
     try {
@@ -95,23 +116,23 @@ export function Library(props: {
   const all = useMemo<Item[]>(
     () =>
       props.entries
-        .filter((e) => e.type === props.lib)
+        .filter((e) => e.contribs.some((c) => ctx.active.has(c.db)))
         .map((e) => {
           const f = entryFields(ctx, e.id, rootStep(ctx, e.id))
-          const name = f.one('XNAME')?.value ?? e.id
-          const famRaw = f.one('XFAM')?.value ?? (props.lib === 'shape' ? f.one('XLOC')?.value : null)
-          const fam = famRaw ? famRaw.split('/').map((s) => s.trim()).filter(Boolean) : ['Other']
-          if (props.lib === 'shape') fam.push(name)
+          const name = f.one('XNAME')?.value ?? seqName(e.id)
+          const fam = e.id.split('/').map((s) => s.trim()).filter(Boolean)
           return { e, name, diff: f.one('XDIFF')?.value ?? '', fam, tags: f.list('XTAG'), mistake: isMistakeEntry(e) }
         }),
-    [props.entries, props.lib, ctx.graph, ctx.active],
+    [props.entries, ctx.graph, ctx.active],
   )
-  const allTags = useMemo(() => [...new Set(all.flatMap((i) => i.tags))].sort(), [all])
+  // Every tag and every shorter tag it contains ("a/b" also offers "a").
+  const allTags = useMemo(() => [...new Set(all.flatMap((i) => i.tags.flatMap((t) => t.split('/').map((_, k, a) => a.slice(0, k + 1).join('/')))))].sort(), [all])
+  const favourites = [...new Set([...stars, ...(props.commonTags ?? [])])].filter((t) => !tags.includes(t))
   const q = query.trim().toLowerCase()
   const filtering = !!q || tags.length > 0 || maxRank !== 'any' || kind === 'mistakes'
   const items = all
     .filter((i) => !q || i.name.toLowerCase().includes(q) || i.fam.join(' ').toLowerCase().includes(q))
-    .filter((i) => tags.every((t) => i.tags.includes(t)))
+    .filter((i) => tags.every((t) => tagMatches([...i.tags, i.e.id], t))) // the id counts as a tag: "joseki" finds every joseki
     .filter((i) => maxRank === 'any' || !i.diff || RANK(i.diff) <= RANK(maxRank))
     .filter((i) => kind === 'all' || (kind === 'good' ? !i.mistake : i.mistake) || i.e.id === props.current)
   const tree = buildTree(items)
@@ -163,14 +184,10 @@ export function Library(props: {
 
   return (
     <div class="library">
-      <div class="seg" role="tablist">
-        <button role="tab" aria-selected={props.lib === 'joseki'} class={props.lib === 'joseki' ? 'on' : ''} onClick={() => props.setLib('joseki')}>Joseki</button>
-        <button role="tab" aria-selected={props.lib === 'shape'} class={props.lib === 'shape' ? 'on' : ''} onClick={() => props.setLib('shape')}>Shapes</button>
-      </div>
       <input class="search" type="search" placeholder="Search by name" value={query} onInput={(e) => setQuery((e.target as HTMLInputElement).value)} aria-label="Search by name" />
-      <div class="seg kind-filter" role="group" aria-label="Which joseki">
+      <div class="seg kind-filter" role="group" aria-label="Which sequences">
         {(['good', 'all', 'mistakes'] as const).map((k) => (
-          <button key={k} class={kind === k ? 'on' : ''} aria-pressed={kind === k} onClick={() => pickKind(k)} title={{ good: 'Only joseki that start with a good move', all: 'Also joseki that start with a mistake (shown in red)', mistakes: 'Only joseki that start with a mistake, overplay or trick' }[k]}>
+          <button key={k} class={kind === k ? 'on' : ''} aria-pressed={kind === k} onClick={() => pickKind(k)} title={{ good: 'Only sequences that start with a good move', all: 'Also sequences that start with a mistake (shown in red)', mistakes: 'Only sequences that start with a mistake, overplay or trick' }[k]}>
             {{ good: 'Good only', all: 'All', mistakes: 'Mistakes' }[k]}
           </button>
         ))}
@@ -195,10 +212,22 @@ export function Library(props: {
           ))}
         </div>
       )}
+      {favourites.length > 0 && (
+        <div class="tag-chips fav" role="group" aria-label="Favourite tags">
+          {favourites.map((t) => (
+            <button key={t} class="chip" onClick={() => setTags([...tags, t])} title={stars.includes(t) ? 'Starred tag' : 'Common tag'}>
+              {stars.includes(t) && <Star size={11} aria-hidden />} {t}
+            </button>
+          ))}
+        </div>
+      )}
       {showTags && (
         <div class="tag-chips" role="group" aria-label="Filter by tag">
           {allTags.filter((t) => !tags.includes(t)).map((t) => (
-            <button key={t} class="chip" onClick={() => setTags([...tags, t])}>{t}</button>
+            <span key={t} class="chip-star">
+              <button class="chip" onClick={() => setTags([...tags, t])}>{t}</button>
+              <button class={`star ${stars.includes(t) ? 'on' : ''}`} aria-pressed={stars.includes(t)} aria-label={`${stars.includes(t) ? 'Unstar' : 'Star'} ${t}`} onClick={() => toggleStar(t)}><Star size={11} /></button>
+            </span>
           ))}
           {allTags.length === 0 && <span class="hint">No tags yet.</span>}
         </div>

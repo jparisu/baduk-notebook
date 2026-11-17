@@ -1,12 +1,11 @@
-import { readFileSync, readdirSync } from 'node:fs'
+import { loadDb } from './testdb'
 import { describe, expect, it } from 'vitest'
-import * as sgf from '@sabaki/sgf'
 import { buildGraph } from './core/graph'
 import { IDENTITY, parsePt } from './core/geometry'
 import { candidates, playFree, startStep, type Ctx, type Start } from './view'
 import { decodeLine, decodeView, encodeLine, encodeView, readUrl } from './share'
 
-const files = readdirSync('db/general/joseki').map((f) => ({ db: 'general', path: `general/joseki/${f}`, roots: sgf.parse(readFileSync(`db/general/joseki/${f}`, 'utf8')) }))
+const files = loadDb((p) => p.startsWith('general/joseki/'))
 const ctx: Ctx = { graph: buildGraph(files), active: new Set(['general']), order: ['general'], U: IDENTITY }
 
 describe('shareable links', () => {

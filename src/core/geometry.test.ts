@@ -31,14 +31,14 @@ describe('geometry', () => {
 })
 
 describe('canonical hash', () => {
-  it('gives the same key for all orientations and for swapped colors', () => {
+  it('gives the same key for all orientations, but not for swapped colors', () => {
     const a = empty(), b = empty(), c = empty()
     a[3][15] = 1; a[2][16] = -1 // Q16 black, R17 white (top-right)
     b[15][3] = 1; b[16][2] = -1 // same shape in the bottom-left
     c[3][15] = -1; c[2][16] = 1 // colors swapped
     const ka = canonical(a, 1).key
     expect(canonical(b, 1).key).toBe(ka)
-    expect(canonical(c, -1).key).toBe(ka)
+    expect(canonical(c, -1).key).not.toBe(ka) // colors are never swapped
     expect(canonical(a, -1).key).not.toBe(ka) // the player to move matters
   })
 })

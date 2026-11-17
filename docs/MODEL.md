@@ -162,7 +162,8 @@ Each database is a folder under `db/` with JSON files; any file may hold any pos
 - Across databases, positions are matched by their stones (8 symmetries). When two databases
   describe the same position with different ids, the app merges them. The first active database's
   id is shown, and moves pointing to either id lead to the merged position.
-- When databases disagree on a field, the first active database in the list wins.
+- When databases disagree on a field, the database listed **last** wins, so a personal database
+  (listed after `general`) can override it. Text fields (notes, why) show every database's text.
 - **SGF:**
   - loading an SGF makes each node a position and each move a move;
   - comments become notes;

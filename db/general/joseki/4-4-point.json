@@ -1,0 +1,45 @@
+{
+  "positions": [
+    {
+      "id": "joseki/4-4 point",
+      "stones": "B:pd",
+      "toPlay": "W",
+      "name": "4-4 point",
+      "tags": [
+        "corner start"
+      ],
+      "notes": "A lone {{TR:Q16|4-4 stone}}. The {{CR:R17|3-3 point}} is still empty, so White can take the corner directly.",
+      "eval": {
+        "difficulty": "25k"
+      },
+      "extra": {
+        "XALIAS": [
+          "Star point",
+          "Hoshi",
+          "星"
+        ],
+        "XSUM": "A lone 4-4 stone. White can approach from the outside or invade at the 3-3 point; each answer opens its own joseki.",
+        "XST": "start",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "qc",
+          "to": "joseki/4-4 point/3-3 invasion",
+          "status": "main",
+          "why": "Takes the corner and Black's base. White lives small; Black gets outside thickness.",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": "territory",
+            "XCOND": "Best when Black's wall would face White's strength"
+          }
+        },
+        {
+          "move": "nc",
+          "to": "joseki/4-4 point/Low approach",
+          "status": "main"
+        }
+      ]
+    }
+  ]
+}

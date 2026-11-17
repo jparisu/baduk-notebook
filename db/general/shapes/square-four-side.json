@@ -1,0 +1,79 @@
+{
+  "positions": [
+    {
+      "id": "life & death/Square four · side · enclosed",
+      "stones": "B:qc,qd,qe,qf,rc,rf,sc,sf W:pb,pc,pd,pe,pf,pg,qb,qg,rb,rg,sb,sg",
+      "toPlay": "B",
+      "free": "horizontal",
+      "name": "Square four · side · enclosed",
+      "tags": [
+        "eye shape",
+        "dead shape"
+      ],
+      "notes": "{{SQ:T15,T16,S15,S16|The square}} is a single eye. Black has no move that splits it.",
+      "eval": {
+        "difficulty": "25k"
+      },
+      "extra": {
+        "XALIAS": [
+          "Bulky four",
+          "Shuushi",
+          "集四",
+          "方四"
+        ],
+        "XSUM": "Four points in a 2×2 block. Dead even if Black plays first: any move inside leaves a bent three, and White kills it at the bend.",
+        "XSRC": "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search.",
+        "XSB": "dead",
+        "XSW": "dead",
+        "XRESB": "dead",
+        "XRESW": "dead",
+        "XEYE": "One eye space of 4 points",
+        "XLIB": "0 outside liberties",
+        "XSIZE": "4",
+        "XSURR": "full",
+        "XOLIB": "0",
+        "XINSIDE": "0",
+        "XARR": "connected",
+        "XREG": "pb:sg"
+      },
+      "moves": [
+        {
+          "move": "rd",
+          "to": "life & death/Square four · side · enclosed:1",
+          "status": "wrong",
+          "why": "Any Black move inside leaves a bent three."
+        }
+      ]
+    },
+    {
+      "id": "life & death/Square four · side · enclosed:1",
+      "stones": "B:qc,qd,qe,qf,rc,rd,rf,sc,sf W:pb,pc,pd,pe,pf,pg,qb,qg,rb,rg,sb,sg",
+      "toPlay": "W",
+      "free": "horizontal",
+      "extra": {
+        "XSB": "alive",
+        "XSW": "dead"
+      },
+      "moves": [
+        {
+          "move": "se",
+          "to": "life & death/Square four · side · enclosed:2",
+          "status": "correct",
+          "why": "Takes the vital point of the bent three."
+        }
+      ]
+    },
+    {
+      "id": "life & death/Square four · side · enclosed:2",
+      "stones": "B:qc,qd,qe,qf,rc,rd,rf,sc,sf W:pb,pc,pd,pe,pf,pg,qb,qg,rb,rg,sb,se,sg",
+      "toPlay": "B",
+      "free": "horizontal",
+      "extra": {
+        "XSB": "dead",
+        "XSW": "dead",
+        "XEYE": "One eye"
+      },
+      "moves": []
+    }
+  ]
+}

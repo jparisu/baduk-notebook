@@ -1,0 +1,38 @@
+{
+  "positions": [
+    {
+      "id": "joseki/3-3 point",
+      "stones": "B:qc",
+      "toPlay": "W",
+      "name": "3-3 point",
+      "tags": [
+        "corner start"
+      ],
+      "notes": "{{TR:R17|The 3-3 stone}} is already alive in the corner but low toward the center.",
+      "eval": {
+        "difficulty": "25k"
+      },
+      "extra": {
+        "XALIAS": [
+          "San-san",
+          "三々"
+        ],
+        "XSUM": "A lone 3-3 stone. The corner is secure, so White plays on the outside: a shoulder hit or a high approach.",
+        "XST": "start",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "od",
+          "to": "joseki/3-3 point/High approach",
+          "status": "main"
+        },
+        {
+          "move": "pd",
+          "to": "joseki/3-3 point/Shoulder hit",
+          "status": "main"
+        }
+      ]
+    }
+  ]
+}

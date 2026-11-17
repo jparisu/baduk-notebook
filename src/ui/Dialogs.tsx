@@ -4,6 +4,7 @@ import type { ComponentChildren } from 'preact'
 import { validateAll } from '../core/validate'
 import { changes, download, makePatch, makeZip, type Workspace } from '../edit/workspace'
 import { parsePt, type Pt, type Sign } from '../core/geometry'
+import type { Free } from '../core/model'
 import type { NewEntry } from '../edit/ops'
 import type { DatabaseInfo } from '../data/load'
 import { BRANCH, REPO } from '../config'
@@ -125,7 +126,6 @@ export function ExportDialog({ ws, close, onDiscard }: { ws: Workspace; close: (
   )
 }
 
-const slug = (s: string) => s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
 const PRESETS: Record<string, { label: string; B: string[] }> = {
   empty: { label: 'Empty corner', B: [] },
@@ -139,17 +139,18 @@ const PRESETS: Record<string, { label: string; B: string[] }> = {
 export function NewEntryDialog({ type, target, close, create }: { type: 'joseki' | 'shape'; target: string; close: () => void; create: (e: NewEntry) => string | null }) {
   const [name, setName] = useState('')
   const [id, setId] = useState('')
+  const [free, setFree] = useState<Free>(type === 'joseki' ? 'corner' : 'horizontal')
   const [diff, setDiff] = useState(type === 'shape' ? '25k' : '15k')
   const [preset, setPreset] = useState(type === 'joseki' ? '44' : 'empty')
   const [toMove, setToMove] = useState<Sign>(type === 'joseki' ? -1 : 0)
   const [error, setError] = useState<string | null>(null)
-  const finalId = id || slug(name)
+  const finalId = id || (type === 'joseki' ? `joseki/${name.trim()}` : `life & death/${name.trim()}`)
   const submit = (e: Event) => {
     e.preventDefault()
     if (!name.trim()) return setError('Give the entry a name.')
-    if (!/^[a-z0-9-]+$/.test(finalId)) return setError('The id may only use lowercase letters, digits and hyphens.')
+    if (finalId.includes(':')) return setError('The id is a sequence such as joseki/4-4 point/my line, without ":".')
     const stones = { B: PRESETS[preset].B.map(parsePt).filter((p): p is Pt => !!p), W: [] as Pt[] }
-    const err = create({ type, id: finalId, name: name.trim(), difficulty: diff, stones, toMove })
+    const err = create({ id: finalId, name: name.trim(), difficulty: diff, stones, toMove: toMove || 1, free })
     if (err) setError(err)
     else close()
   }
@@ -157,7 +158,16 @@ export function NewEntryDialog({ type, target, close, create }: { type: 'joseki'
     <Shell title={type === 'joseki' ? 'New joseki' : 'New shape'} close={close}>
       <form onSubmit={submit} class="form">
         <label class="f"><span class="fl">Name</span><input id="new-name" type="text" value={name} onInput={(e) => setName((e.target as HTMLInputElement).value)} placeholder={type === 'joseki' ? '3-4 point · small knight approach' : 'Bent four · corner'} /></label>
-        <label class="f"><span class="fl">Id</span><input id="new-id" type="text" value={finalId} onInput={(e) => setId((e.target as HTMLInputElement).value)} /></label>
+        <label class="f"><span class="fl">Sequence id</span><input id="new-id" type="text" value={finalId} onInput={(e) => setId((e.target as HTMLInputElement).value)} /></label>
+        <label class="f">
+          <span class="fl">Placement</span>
+          <select id="new-free" value={free} onChange={(e) => setFree((e.target as HTMLSelectElement).value as Free)}>
+            <option value="corner">Fixed in the corner</option>
+            <option value="horizontal">Slides along the top edge</option>
+            <option value="vertical">Slides along the right edge</option>
+            <option value="anywhere">Anywhere</option>
+          </select>
+        </label>
         <label class="f"><span class="fl">Difficulty</span><input id="new-diff" type="text" value={diff} onInput={(e) => setDiff((e.target as HTMLInputElement).value)} /></label>
         <label class="f">
           <span class="fl">Start from</span>
@@ -170,10 +180,9 @@ export function NewEntryDialog({ type, target, close, create }: { type: 'joseki'
           <select id="new-tomove" value={String(toMove)} onChange={(e) => setToMove(Number((e.target as HTMLSelectElement).value) as Sign)}>
             <option value="1">Black</option>
             <option value="-1">White</option>
-            <option value="0">Either (shapes)</option>
           </select>
         </label>
-        <p class="hint">Saved in <b>{target}</b> as <code>{target}/{type === 'shape' ? 'shapes' : 'joseki'}/{finalId || 'id'}.sgf</code>. Add or remove set-up stones afterwards with the stone tools under the board.</p>
+        <p class="hint">Saved in <b>{target}</b> as a new file of <code>{target}/</code>. Add or remove set-up stones afterwards with the stone tools under the board.</p>
         {error && <p class="error">{error}</p>}
         <div class="actions"><button type="button" onClick={close}>Cancel</button><button class="on" type="submit">Create</button></div>
       </form>
@@ -181,6 +190,7 @@ export function NewEntryDialog({ type, target, close, create }: { type: 'joseki'
   )
 }
 
+const slug = (s: string) => s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 const COLORS = ['#3c7fbb', '#9d4fc7', '#1e9e4a', '#e8741c', '#d33232', '#138f8c', '#6d4c41', '#3949ab']
 
 export function NewDatabaseDialog({ close, create, count }: { close: () => void; create: (d: DatabaseInfo) => string | null; count: number }) {

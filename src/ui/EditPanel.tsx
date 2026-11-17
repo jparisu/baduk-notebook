@@ -6,7 +6,8 @@ import { useState } from 'preact/hooks'
 import { CATEGORIES, JOSEKI_CATEGORIES, SHAPE_CATEGORIES, flipValue, type Category } from '../core/fields'
 import { apply, compose, inverse, parsePt, parseSgfPtList, ptName, type Pt } from '../core/geometry'
 import { sgfPoint } from '../edit/sgfio'
-import { locate, setProps, type Location } from '../edit/ops'
+import { locate, nameSequence, setProps, type Location } from '../edit/ops'
+import { isStartId, seqOf } from '../core/model'
 import type { Workspace } from '../edit/workspace'
 import { frame, primaryLabel, type Ctx, type Step } from '../view'
 
@@ -20,7 +21,6 @@ const STD_MARKS = (c: string | undefined) => ({
   DO: c === 'slack' ? [''] : null,
   IT: c && ['situational', 'trick'].includes(c) ? [''] : null,
 })
-const slug = (s: string) => s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
 export interface EditApi {
   ws: Workspace
@@ -134,7 +134,14 @@ export function EditPanel(p: EditApi) {
   const step = path[path.length - 1]
   const targetOwnsMove = step.edge?.contribs.some((c) => c.db === p.target)
   const curCat = read('XCAT')
-  const definesHere = !!read('XID') && !!read('XNAME')
+  const here = where(false)
+  const definesHere = !!here && isStartId(here.pos.id)
+  const curSeq = here ? seqOf(here.pos.id) : label ?? (p.shapes ? 'life & death' : 'joseki')
+  const rename = (seq: string) => {
+    const err = nameSequence(p.ws, ctx, path, p.target, seq, null)
+    if (err) return p.commit(err)
+    p.commit(`This sequence is now ${seq}`)
+  }
   const show = (g: 'move' | 'pos' | 'name') => !p.only || p.only === g
 
   return (
@@ -204,7 +211,14 @@ export function EditPanel(p: EditApi) {
         {definesHere ? (
           <>
             {field('XNAME', 'Name')}
-            {field('XFAM', 'Family', { placeholder: '4-4 point/3-3 invasion' })}
+            <label class="f edit-f" key={'seq' + here!.pos.id}>
+              <span class="fl">Sequence id</span>
+              <span class="fv">
+                <input id="f-seq" type="text" defaultValue={here!.pos.id} onBlur={(e) => e.currentTarget.value.trim() !== here!.pos.id && rename(e.currentTarget.value)} onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()} />
+                <small class="hint">Nested with "/". Moves after this position that are in the same sequence move with it.</small>
+              </span>
+            </label>
+            {select('XFREE', 'Placement', [['corner', 'Fixed in the corner'], ['horizontal', 'Slides along the top edge'], ['vertical', 'Slides along the right edge'], ['anywhere', 'Anywhere']])}
             {field('XDIFF', 'Difficulty', { placeholder: '15k' })}
             {field('XSUM', 'Summary', { area: true })}
             {p.only === 'name' && (
@@ -212,7 +226,6 @@ export function EditPanel(p: EditApi) {
                 {field('XALIAS', 'Also called', { placeholder: 'comma separated' })}
                 {field('XTAG', 'Tags', { placeholder: 'comma separated' })}
                 {field('XSRC', 'Sources', { placeholder: 'comma separated' })}
-                {p.shapes && select('XLOC', 'Location', [['corner', 'Corner'], ['side', 'Side'], ['center', 'Center']])}
                 {p.shapes && select('XRESB', 'Black first', status)}
                 {p.shapes && select('XRESW', 'White first', status)}
                 {p.shapes && field('XVITAL', 'Vital points', { placeholder: 'e.g. T15' })}
@@ -224,14 +237,12 @@ export function EditPanel(p: EditApi) {
             e.preventDefault()
             const name = naming.trim()
             if (!name) return
-            const loc = where(true)!
-            const update: Record<string, string[] | null> = { XID: [slug(name)], XNAME: [name] }
-            if (p.shapes) update.XTYPE = ['shape']
-            setProps(p.ws, loc, update)
+            const seq = name.includes('/') ? name : `${curSeq}/${name.split('/').pop()}`
+            const err = nameSequence(p.ws, ctx, path, p.target, seq, name.split('/').pop()!.trim())
             setNaming('')
-            p.commit(`Named this position "${name}"`)
+            p.commit(err ?? `Named this position "${name}"`)
           }}>
-            <p class="hint">{label ? `Part of ${label}. Give it its own name if a new joseki or variation starts here.` : 'Give this position a name to find it later and to label the moves that follow.'}</p>
+            <p class="hint">Part of <b>{curSeq}</b>. Name it to start <b>{curSeq}/name</b> here: the moves after it move to the new sequence.</p>
             <div class="grp">
               <input id="f-name-new" type="text" value={naming} placeholder="e.g. 3-3 invasion, hane variation" onInput={(e) => setNaming((e.target as HTMLInputElement).value)} />
               <button class="on" type="submit" disabled={!naming.trim()}>Name this position</button>
@@ -261,7 +272,6 @@ export function EditPanel(p: EditApi) {
               {field('XTAG', 'Tags', { placeholder: 'comma separated' })}
               {field('XSRC', 'Sources', { placeholder: 'comma separated' })}
               {!p.shapes && chips('XERA', 'Era', ['classic', 'modern', 'ai'])}
-              {p.shapes && select('XLOC', 'Location', [['corner', 'Corner'], ['side', 'Side'], ['center', 'Center']])}
               {p.shapes && select('XRESB', 'Black first', status)}
               {p.shapes && select('XRESW', 'White first', status)}
               {p.shapes && field('XVITAL', 'Vital points', { placeholder: 'e.g. T15' })}

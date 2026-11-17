@@ -1,0 +1,222 @@
+{
+  "positions": [
+    {
+      "id": "joseki/3-3 point/Shoulder hit",
+      "stones": "B:qc W:pd",
+      "toPlay": "B",
+      "name": "3-3 point · shoulder hit",
+      "tags": [
+        "influence",
+        "basic joseki"
+      ],
+      "notes": "{{TR:Q16|White's shoulder hit}} on {{TR:R17|the 3-3 stone}}. The corner is already secure, so White plays on the outside. Shoulder hit: keeps Black low and builds influence.",
+      "eval": {
+        "difficulty": "15k"
+      },
+      "extra": {
+        "XALIAS": [
+          "San-san katatsuki",
+          "三々肩ツキ"
+        ],
+        "XSUM": "White presses on the 3-3 stone from the outside. Black pushes and slides along the side for territory; White builds influence and then jumps out or blocks. Source: 33PointShoulderHit.",
+        "XSRC": "Sensei's Library (senseis.xmp.net), joseki pages listed in XSUM. Sequences copied from its diagrams and mirrored to the top-right corner.",
+        "XERA": "classic",
+        "XST": "start",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "qd",
+          "to": "joseki/3-3 point/Shoulder hit:3",
+          "status": "main",
+          "why": "Pushes along the side. Push on the side where White's wall would work worse.",
+          "extra": {
+            "XSTY": "solid",
+            "XPUR": "territory"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/3-3 point/Shoulder hit:3",
+      "stones": "B:qc,qd W:pd",
+      "toPlay": "W",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "pe",
+          "to": "joseki/3-3 point/Shoulder hit:4",
+          "status": "main",
+          "why": "Stretches.",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": "influence"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/3-3 point/Shoulder hit:4",
+      "stones": "B:qc,qd W:pd,pe",
+      "toPlay": "B",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "ob",
+          "to": "joseki/3-3 point/Shoulder hit:5",
+          "status": "main",
+          "why": "Keima slide: the most common move, taking territory along the top.",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": "territory"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/3-3 point/Shoulder hit:5",
+      "stones": "B:ob,qc,qd W:pd,pe",
+      "toPlay": "W",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "md",
+          "to": "joseki/3-3 point/Shoulder hit:6",
+          "status": "main",
+          "why": "Jumps, keeping the emphasis on the outside.",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": "influence"
+          }
+        },
+        {
+          "move": "qe",
+          "to": "joseki/3-3 point/Shoulder hit:6b",
+          "status": "alt",
+          "why": "Blocks, taking the left side instead of the center.",
+          "extra": {
+            "XSTY": "solid",
+            "XPUR": "territory"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/3-3 point/Shoulder hit:6",
+      "stones": "B:ob,qc,qd W:md,pd,pe",
+      "toPlay": "B",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "rf",
+          "to": "joseki/3-3 point/Shoulder hit:7",
+          "status": "main",
+          "why": "Correct shape on the left side.",
+          "extra": {
+            "XSTY": "solid",
+            "XPUR": "territory"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/3-3 point/Shoulder hit:7",
+      "stones": "B:ob,qc,qd,rf W:md,pd,pe",
+      "toPlay": "W",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "ph",
+          "to": "joseki/3-3 point/Shoulder hit:8",
+          "status": "main",
+          "why": "Nice shape, but slow: White often plays elsewhere instead.",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": "influence"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/3-3 point/Shoulder hit:8",
+      "stones": "B:ob,qc,qd,rf W:md,pd,pe,ph",
+      "toPlay": "B",
+      "extra": {
+        "XST": "end",
+        "XEV": "=",
+        "XSEN": "B",
+        "XRES": "Black has the corner and some side territory; White has influence toward the center."
+      },
+      "moves": []
+    },
+    {
+      "id": "joseki/3-3 point/Shoulder hit:6b",
+      "stones": "B:ob,qc,qd W:pd,pe,qe",
+      "toPlay": "B",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "nd",
+          "to": "joseki/3-3 point/Shoulder hit:7b",
+          "status": "main",
+          "why": "Plays in the direction White neglected.",
+          "extra": {
+            "XSTY": "aggressive",
+            "XPUR": "attack"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/3-3 point/Shoulder hit:7b",
+      "stones": "B:nd,ob,qc,qd W:pd,pe,qe",
+      "toPlay": "W",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "qi",
+          "to": "joseki/3-3 point/Shoulder hit:8b",
+          "status": "main",
+          "why": "Extends to stabilize.",
+          "extra": {
+            "XSTY": "solid",
+            "XPUR": "eye"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/3-3 point/Shoulder hit:8b",
+      "stones": "B:nd,ob,qc,qd W:pd,pe,qe,qi",
+      "toPlay": "B",
+      "extra": {
+        "XST": "end",
+        "XEV": "=",
+        "XSEN": "B",
+        "XRES": "White takes the left side; Black presses along the top."
+      },
+      "moves": []
+    }
+  ]
+}

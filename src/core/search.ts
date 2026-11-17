@@ -1,9 +1,10 @@
 /**
- * Find position (SPEC §7): exact, contained and near matches for each corner (joseki)
- * and for shapes anywhere on the board (with translation, SPEC §6.3).
+ * Find position (docs/MODEL.md §4–5): exact, contained and near matches. Positions fixed in the corner
+ * are compared corner by corner; the others slide along the directions their placement (`free`) allows.
+ * Colors are never swapped.
  */
-import { SIZE, SYMMETRIES, compose, cornerWindow, inverse, transformMap, userTransform, withSwap, type Corner, type DisplayOptions, type Sign, type SignMap, type Transform } from './geometry'
-import { labelsAt, type Graph } from './graph'
+import { SIZE, SYMMETRIES, compose, cornerWindow, inverse, transformMap, userTransform, type Corner, type DisplayOptions, type Sign, type SignMap, type Transform } from './geometry'
+import { freeOf, labelsAt, type Graph } from './graph'
 
 export type MatchKind = 'exact' | 'contained' | 'near'
 
@@ -23,7 +24,7 @@ export interface Match {
 }
 
 const CORNERS: [Corner, string][] = [['tl', 'top-left'], ['tr', 'top-right'], ['bl', 'bottom-left'], ['br', 'bottom-right']]
-const ALL: Transform[] = SYMMETRIES.flatMap((s) => [s, withSwap(s, true)])
+const ALL: Transform[] = SYMMETRIES
 
 function cropCorner(map: SignMap, c: Corner): SignMap {
   const [x0, x1, y0, y1] = cornerWindow(c)
@@ -91,7 +92,7 @@ export function search(g: Graph, active: Set<string>, user: SignMap, maxNear = 2
       for (const [key, owners] of lines) {
         const node = g.nodes.get(key)!
         for (const o of owners) {
-          if (g.entries.get(o.entryId)!.type !== 'joseki') continue
+          if (freeOf(node) !== 'corner') continue
           const { missing, extra, stones } = compare(node.board, u)
           if (!stones) continue
           const kind: MatchKind | null = !missing && !extra ? 'exact' : !missing ? 'contained' : missing + extra <= maxNear && stones >= 3 ? 'near' : null
@@ -106,17 +107,23 @@ export function search(g: Graph, active: Set<string>, user: SignMap, maxNear = 2
   if (userStones.length)
     for (const [key, owners] of lines)
       for (const o of owners) {
-        if (g.entries.get(o.entryId)!.type !== 'shape') continue
         const node = g.nodes.get(key)!
+        const free = freeOf(node)
+        if (free === 'corner') continue
+        // The free direction is given in the stored frame; find it in the canonical frame.
+        const T = node.contribs[0].toCanon
+        const storedX = T.a !== 0 // the stored x axis stays the x axis
+        const freeX = free === 'anywhere' || (free === 'horizontal' ? storedX : !storedX)
+        const freeY = free === 'anywhere' || (free === 'horizontal' ? !storedX : storedX)
         const st = stonesOf(node.board)
         if (!st.length) continue
         const xs = st.map((s) => s[0]), ys = st.map((s) => s[1])
         const [minx, maxx, miny, maxy] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]
-        const range = (lo: number, hi: number) => (lo === 0 || hi === SIZE - 1 ? [0] : Array.from({ length: SIZE - 2 - (hi - lo) }, (_, i) => i + 1 - lo))
+        const range = (lo: number, hi: number, free: boolean) => (free ? Array.from({ length: SIZE - (hi - lo) }, (_, i) => i - lo) : [0])
         for (const t of ALL) {
           const u = transformMap(t, user)
-          for (const dx of range(minx, maxx))
-            for (const dy of range(miny, maxy)) {
+          for (const dx of range(minx, maxx, freeX))
+            for (const dy of range(miny, maxy, freeY)) {
               // Shift the shape instead of the board: compare node stones moved by (dx, dy).
               let missing = 0, extra = 0
               for (const [x, y, s] of st) if (u[y + dy]?.[x + dx] !== s) missing++

@@ -135,7 +135,7 @@ export function JosekiInfo(p: Common & { onOpenLabel: (id: string) => void; onCo
         {p.onCopyLink && <button class="link" onClick={() => p.onCopyLink!(label)} title="Copy a link that opens this joseki at its first move">🔗 Copy link</button>}
       </div>
       <div class="kvs">
-        {one('XFAM') && <Row label="Family">{one('XFAM')!.replace(/\//g, ' › ')}</Row>}
+        <Row label="Sequence">{entry.id.replace(/\//g, ' › ')}</Row>
         {one('XDIFF') && <Row label="Difficulty"><span class="chip">{one('XDIFF')}</span></Row>}
         {ef.list('XTAG').length > 0 && <Row label="Tags"><span class="chips">{ef.list('XTAG').map((t) => <span key={t} class="chip">{t}</span>)}</span></Row>}
         {entry.type === 'shape' && res('XRESB') && <Row label="Black first"><IconLabel map={SHAPE_ICONS} value={res('XRESB')!} show={icons} /></Row>}

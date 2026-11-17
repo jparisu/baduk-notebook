@@ -36,7 +36,7 @@ export interface Ctx {
 
 export const frame = (ctx: Ctx, step: Step) => compose(ctx.U, step.D)
 export const node = (ctx: Ctx, step: Step): PosNode =>
-  ctx.graph.nodes.get(step.key) ?? { key: step.key, board: step.board!, toMove: step.toMove ?? 0, contribs: [], edges: [] }
+  ctx.graph.nodes.get(step.key) ?? { key: step.key, board: step.board!, toMove: step.toMove ?? 0, contribs: [], edges: [], parents: [] }
 
 /**
  * Plays a move freely after `parent` (canonical frame of the parent). If the result is a known position
