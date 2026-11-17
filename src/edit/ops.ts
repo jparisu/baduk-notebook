@@ -40,7 +40,7 @@ export function locate(ws: Workspace, ctx: Ctx, path: Step[], target: string, en
   let start = -1
   let loc: Location | null = null
   for (let i = path.length - 1; i >= 0 && !loc; i--) {
-    const c = g.nodes.get(path[i].key)!.contribs.find((c) => c.db === target)
+    const c = g.nodes.get(path[i].key)?.contribs.find((c) => c.db === target)
     if (c) {
       loc = { file: fileOf(ws, c.file), node: c.node, T: c.toCanon }
       start = i
@@ -77,12 +77,13 @@ export function locate(ws: Workspace, ctx: Ctx, path: Step[], target: string, en
   // Walk down the line, creating the moves that are missing in this file.
   let { node, T } = loc
   for (let j = start + 1; j < path.length; j++) {
-    const e = path[j].edge!
+    const e = path[j].edge ?? path[j].free!
     const pt = e.pt ? apply(inverse(T), e.pt) : null
     const sign = applySign(inverse(T), e.sign)
     const d = moveData(sign, pt)
     node = node.children.find((c) => sameMove(c, d)) ?? newNode(d, node)
-    T = compose(e.rel, T)
+    // parent canonical → child canonical, also for freely played moves
+    T = compose(compose(inverse(path[j].D), path[j - 1].D), T)
   }
   touch(ws, loc.file)
   return { file: loc.file, node, T }

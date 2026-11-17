@@ -504,3 +504,10 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 }
 .tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 .tool-grid button { padding: 6px 8px; }
+
+/* ---------- Free play ---------- */
+.offbook-pill { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--markup); color: #fff; margin-left: 4px; }
+.offbook { border: 2px dashed var(--markup); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 12px; }
+.offbook h3 { border: 0; padding: 0; margin: 0 0 4px; }
+.offbook .text { font-size: 13px; margin: 0 0 8px; }
+.offbook .target { display: inline-flex; align-items: center; gap: 6px; }

@@ -2,15 +2,30 @@
 import type { Graph, Contribution, Edge, PosNode } from './core/graph'
 import { edgeCategory, visibleEdges } from './core/graph'
 import { CATEGORY_ORDER, COLOR_PROPS, LIST_PROPS, TEXT_PROPS, flipValue, type Category } from './core/fields'
+import GoBoard from '@sabaki/go-board'
+import { canonical } from './core/hash'
 import { apply, applySign, compose, inverse, parseSgfPtList, transformMap, type Pt, type Sign, type SignMap, type Transform } from './core/geometry'
 import { parseText, propMarks, transformMarks, type Mark, type Segment } from './core/refs'
 
-/** One step of the current line. `D` maps the node's canonical frame to the entry's stored frame. */
+/**
+ * One step of the current line. `D` maps the node's canonical frame to the entry's stored frame.
+ * A step reached by a database move has `edge`; a move played freely (SPEC §8.3 free play) has `free`.
+ * A free position that is not in any database also carries its own canonical board.
+ */
 export interface Step {
   key: string
   D: Transform
   edge?: Edge
+  free?: { sign: Sign; pt: Pt | null } // in the parent's canonical frame
+  board?: SignMap
+  toMove?: Sign
 }
+
+/** The move that led to a step, in the parent's canonical frame. */
+export const moveOf = (s: Step): { sign: Sign; pt: Pt | null } | null => s.edge ?? s.free ?? null
+
+/** True when the position is in an active database. */
+export const inBook = (ctx: Ctx, s: Step) => ctx.graph.nodes.has(s.key)
 
 export interface Ctx {
   graph: Graph
@@ -20,7 +35,56 @@ export interface Ctx {
 }
 
 export const frame = (ctx: Ctx, step: Step) => compose(ctx.U, step.D)
-export const node = (ctx: Ctx, step: Step): PosNode => ctx.graph.nodes.get(step.key)!
+export const node = (ctx: Ctx, step: Step): PosNode =>
+  ctx.graph.nodes.get(step.key) ?? { key: step.key, board: step.board!, toMove: step.toMove ?? 0, contribs: [], edges: [] }
+
+/**
+ * Plays a move freely after `parent` (canonical frame of the parent). If the result is a known position
+ * reached by a database move, that move's step is returned, so the line is back "in the book".
+ */
+export function freeStep(ctx: Ctx, parent: Step, sign: Sign, pt: Pt | null): Step {
+  const known = visibleEdges(ctx.graph, parent.key, ctx.active).find(
+    (e) => e.sign === sign && (pt ? e.pt && e.pt[0] === pt[0] && e.pt[1] === pt[1] : !e.pt),
+  )
+  if (known) return childStep(parent, known)
+  let b = new GoBoard(node(ctx, parent).board)
+  if (pt) b = b.makeMove(sign, pt)
+  const after = b.signMap as SignMap
+  const { key, toCanon } = canonical(after, (-sign) as Sign)
+  const D = compose(parent.D, inverse(toCanon))
+  const free = { sign, pt }
+  if (ctx.graph.nodes.has(key)) return { key, D, free }
+  return { key, D, free, board: transformMap(toCanon, after), toMove: applySign(toCanon, (-sign) as Sign) }
+}
+
+/** Same as freeStep, with the move given in display coordinates and colors. */
+export function playFree(ctx: Ctx, parent: Step, sign: Sign, pt: Pt | null): Step {
+  const toCanon = inverse(frame(ctx, parent))
+  return freeStep(ctx, parent, applySign(toCanon, sign), pt ? apply(toCanon, pt) : null)
+}
+
+/** Rebuilds a line on a (new) graph or new active databases, keeping freely played moves. */
+export function rebaseLine(ctx: Ctx, entryId: string, old: Step[]): Step[] {
+  if (!ctx.graph.entries.has(entryId)) return []
+  const out = [rootStep(ctx, entryId)]
+  for (const s of old.slice(1)) {
+    const parent = out[out.length - 1]
+    const c = candidates(ctx, parent).find((c) => c.step.key === s.key)
+    if (c) {
+      out.push(c.step)
+      continue
+    }
+    const m = moveOf(s)
+    if (!m) break
+    // The parent's canonical frame only depends on its position, so the stored move still applies.
+    try {
+      out.push(freeStep(ctx, parent, m.sign, m.pt))
+    } catch {
+      break
+    }
+  }
+  return out
+}
 
 export function rootStep(ctx: Ctx, entryId: string): Step {
   const e = ctx.graph.entries.get(entryId)!

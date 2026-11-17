@@ -360,6 +360,13 @@ Responsive behavior: under 1100 px wide the info panel moves below the board.
 - **Tenuki button** next to the board, in the color of the tenuki move's category. It is disabled when the database has no tenuki move at that position.
 - Buttons: start, back, forward along the main line, end of the main line. Keys: ← → Home End.
 - Last move marker, and a "move numbers" switch.
+- **Free play** (outside Edit mode): clicking any empty point plays a legal move, in or out of the databases.
+  - Out of the databases, the board keeps working (captures, ko) but messages and next moves stop; a "Free play" label and an "Out of the database" box appear.
+  - If the line reaches a known position again (also by transposition), messages and next moves come back.
+  - Back and forward step through your own moves too: going back keeps the moves after it, and forward replays them until you play something else.
+  - "Save this line" writes the free moves into the chosen database, as in Edit mode.
+  - Tenuki without a database tenuki plays a pass.
+- **Empty corner** entry (`general`): an empty corner with Black to play and the usual first moves (4-4, 3-4, 3-3, 5-4, 5-3). Each move reaches the start position of the joseki that begin there, so the line continues into them; the status line and info panel then show the most specific entry.
 - **Playing a move that is not in the database** (in any mode except Quiz):
   - it is checked for legality (captures, suicide, ko) with `@sabaki/go-board`;
   - if its resulting position already exists, the app **joins** it and says so ("Joins: 3-3 invasion, move 6");
@@ -410,7 +417,8 @@ Rules:
 
 | Option | Behavior |
 |---|---|
-| On hover/tap, one color **(default)** | As in the mock-up |
+| Hover, or click/tap to keep **(default)** | With a mouse, hovering shows the marks and clicking keeps them. On touch screens a tap shows them and a second tap hides them. |
+| Click or tap only | No hover: marks appear only when the words are clicked or tapped, and disappear on a second click. |
 | Always shown, one color per reference | Every reference in the visible messages is drawn at once. Each one gets its own color from a fixed palette, and the linked words are underlined in that same color. Hovering a reference highlights it and dims the rest. |
 
 ### 8.6 Variation tree
@@ -541,9 +549,9 @@ The databases are filled by hand by the user, which is also how they practice, s
 | mistake | red `#d33232` | ✕ |
 | overplay | orange `#e8741c` | ! |
 | trick | purple `#8b47d6` | ? |
-| punish | green ring | ○ |
+| punish | blue ring `#2563eb` | ○ |
 | correct (shapes) | green | ● |
-| ko (shapes) | blue `#2f74d0` | K |
+| ko (shapes) | cyan `#0891b2` | K |
 | wrong (shapes) | red | ✕ |
 
 Every category has a symbol as well as a color, so the board is readable for color-blind users.

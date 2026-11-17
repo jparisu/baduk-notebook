@@ -20,3 +20,14 @@ test('phone: tapping a next-move marker plays it', async ({ page }) => {
   await page.locator('svg.board .marker').first().tap()
   await expect(page.locator('.status')).toContainText('Move 1')
 })
+
+test('phone: tapping a reference shows its marks and tapping again hides them', async ({ page }) => {
+  for (let i = 0; i < 4; i++) await page.locator('.bottom-bar').getByRole('button', { name: 'Forward (→)' }).click()
+  const ref = page.locator('.msg.callout .ref').first()
+  const marks = () => page.locator('svg.board polygon').count()
+  const base = await marks()
+  await ref.tap()
+  await expect.poll(marks).toBeGreaterThan(base)
+  await ref.tap()
+  await expect.poll(marks).toBe(base)
+})
