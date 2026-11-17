@@ -511,3 +511,65 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 .offbook h3 { border: 0; padding: 0; margin: 0 0 4px; }
 .offbook .text { font-size: 13px; margin: 0 0 8px; }
 .offbook .target { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ---------- Position-first layout ---------- */
+.layout { grid-template-columns: 300px minmax(0, 1fr) 380px; grid-template-areas: "top top top" "left center right"; }
+.left { display: flex; flex-direction: column; gap: 12px; }
+.left .library { max-height: 340px; overflow: auto; }
+.start-bar { display: flex; flex-wrap: wrap; gap: 6px; }
+.start-bar button { font-size: 13px; }
+.tree-sec h2, .pos-info h2, .last-move h2, .next-moves h2 { margin-bottom: 6px; }
+.tree-sec { border-top: 1px solid var(--line); padding-top: 10px; }
+.tree-box { max-height: 300px; overflow: auto; border-radius: var(--radius-sm); background: color-mix(in srgb, var(--chip) 45%, transparent); padding: 4px; }
+.tree-node.cur rect { filter: drop-shadow(0 0 3px var(--accent)); }
+.pos-info { border-top: 1px solid var(--line); padding-top: 10px; }
+.pos-info .summary { font-size: 13px; line-height: 1.5; margin: 6px 0; }
+.pos-fields { margin-top: 6px; }
+.also { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+button.link { background: none; border: none !important; padding: 0; color: var(--accent); text-decoration: underline; font-weight: 500; font-size: inherit; }
+.right { display: flex; flex-direction: column; gap: 14px; }
+.lm-head { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.lm-tags { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; margin: 6px 0; color: var(--muted); }
+.next-moves { border-top: 1px solid var(--line); padding-top: 12px; }
+.nm-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.side-tabs button, .side-switch button { font-size: 12px; padding: 4px 10px; }
+.side-switch { align-self: center; }
+.to-label { color: var(--accent); font-weight: 600; }
+.db-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.cand .dbs { align-items: center; }
+.session-box { border: 2px dashed var(--line); border-radius: var(--radius-sm); padding: 10px 12px; }
+.session-box.off { border-color: var(--markup); }
+.session-box .text { font-size: 13px; margin: 0 0 8px; }
+.danger-text { color: #d33232 !important; }
+.st-label { font-weight: 700; color: var(--fg); }
+.status { gap: 0 8px; align-items: center; }
+
+/* edit panel */
+.edit-panel { display: flex; flex-direction: column; gap: 12px; }
+.edit-panel section { display: flex; flex-direction: column; gap: 4px; }
+.cat-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+.cat-btn { justify-content: flex-start; background: var(--panel-solid); color: var(--fg); border: 1.5px solid var(--line) !important; padding: 6px 8px; font-size: 13px; }
+.cat-btn.on { border-color: var(--cat) !important; background: color-mix(in srgb, var(--cat) 16%, var(--panel-solid)); color: var(--fg); font-weight: 700; }
+.name-form .grp { flex-wrap: nowrap; }
+.name-form input { flex: 1; min-width: 0; }
+.more-toggle { align-self: flex-start; background: transparent; border: none !important; padding: 2px 0; color: var(--accent); }
+.edit-toolbar .tools button { font-size: 12px; }
+
+/* save lines */
+.line-list { list-style: none; padding: 0; margin: 6px 0 10px; display: flex; flex-direction: column; gap: 6px; }
+.line-list li { display: flex; align-items: center; justify-content: space-between; gap: 6px; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 6px 8px; }
+.line-moves { display: inline-flex; flex-wrap: wrap; gap: 0 5px; font-family: ui-monospace, monospace; font-size: 12px; }
+.line-moves .known { color: var(--muted); }
+.line-moves .new { font-weight: 700; }
+
+/* phone panels */
+.phone-panels { grid-area: right; display: flex; flex-direction: column; gap: 10px; }
+.phone-tabs { align-self: stretch; }
+.phone-tabs button { flex: 1; }
+@media (max-width: 1100px) {
+  .layout { grid-template-columns: 260px minmax(0, 1fr); grid-template-areas: "top top" "left center" "right right"; }
+}
+@media (max-width: 700px) {
+  .layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "center" "right"; }
+  .cat-buttons { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

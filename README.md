@@ -17,28 +17,30 @@ A personal web app to study, store and annotate Go joseki and shapes (eye shapes
 - **Quiz** with spaced repetition: find the right move (or the punishment) in a random orientation.
 - Works on phones (drawer, bottom navigation bar, swipe on the board). Three themes: Modern, Simple, Minimalist, each light or dark.
 
-## Adding joseki and shapes
+## How to use it
 
-### In the app (recommended)
-1. Press **Edit**, and choose the database that receives the edits ("into …"). Use "+ New database…" to start a new one.
-2. Open an entry, or create one with **+ New joseki / New shape** in the library.
-3. Click empty points to add moves. If a position already exists, the new line joins it.
-4. Fill in the fields on the right. Fast keys while the board has focus:
+**During or after a game**: play the corner's moves on the board (or set them up in Find). The app recognizes the position whatever the order, corner or colors, and shows its name, the good continuations, the common mistakes and why.
 
-   | Key | Action |
-   |---|---|
-   | `1`–`8` | Category: main, alt, situational, slack, mistake, overplay, trick, punish (shapes: correct, ko, wrong) |
-   | `A` / `B` / `S` | Style: aggressive / balanced / solid |
-   | `P` | Add tenuki |
-   | `Enter` | Write the "why" of the move |
-   | `Esc` | Back to the board |
-   | `←` `→` `Home` `End` | Navigate |
+**Recording what you learn**:
+1. Play the line. Moves that are not in your databases are kept in the session (dashed in the tree), even when you go back and try another variation.
+2. Press **Edit** and choose the database ("into …").
+3. On any move, tap a category: **Mistake**, **Punishment**, **Main joseki**… This saves the line up to that move. Add a "why" and the result in points (`+3` = Black ahead by 3).
+4. To start a new joseki or variation, use **Name this position**. The following moves carry that name.
+5. Or save several lines at once with **Save lines…**, and remove the ones you don't want with **Erase**.
+6. **Export** → **Download .patch** → `git apply` in your clone → pull request.
 
-5. To link words to stones: put the cursor in a text box (select the words if you like), choose a type under **Link text**, click the points, then **Insert**. This writes `{{TR:Q17,Q16|the words}}`.
-6. **Export** → check the list → **Download .patch** → in your clone run `git apply <file>.patch` → open a pull request.
+Fast keys in Edit mode (when the board has focus):
 
-### By hand
-Write SGF files in `db/<database>/joseki/` or `db/<database>/shapes/`. New databases also need a line in `db/index.json`. The properties are listed in SPEC.md §4. The file list is generated automatically by the build.
+| Key | Action |
+|---|---|
+| `1`–`8` | Category: main, alt, situational, slack, mistake, overplay, trick, punish (shapes: correct, ko, wrong) |
+| `A` / `B` / `S` | Style: aggressive / balanced / solid |
+| `P` | Tenuki (pass) |
+| `Enter` | Write the "why" of the move |
+| `Esc` | Back to the board |
+| `←` `→` `Home` `End` | Navigate (also outside Edit mode) |
+
+**By hand**: write SGF files in `db/<database>/joseki/` or `db/<database>/shapes/`. `XID` + `XNAME` on any node names that position (SPEC.md §4.2). New databases also need a line in `db/index.json`.
 
 ## Development
 

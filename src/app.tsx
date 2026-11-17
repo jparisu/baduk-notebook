@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import {
-  ArrowLeftRight, BookOpen, ChevronLeft, ChevronRight, Contrast, Menu, Pencil, Plus, RotateCcw,
-  Settings as SettingsIcon, SkipBack, SkipForward, SlidersHorizontal, Upload, X,
+  ArrowLeftRight, BookOpen, ChevronLeft, ChevronRight, Contrast, Flag, Menu, Pencil, Plus, RotateCcw, Save,
+  Settings as SettingsIcon, SkipBack, SkipForward, SlidersHorizontal, Trash2, Upload, X,
 } from 'lucide-preact'
 import { loadDatabases, type DatabaseInfo } from './data/load'
 import { buildGraph, type Graph } from './core/graph'
@@ -9,48 +9,53 @@ import { CATEGORIES, JOSEKI_CATEGORIES, SHAPE_CATEGORIES } from './core/fields'
 import { apply, applySign, compose, cornerWindow, inverse, parseSgfPtList, ptName, userTransform, type Corner, type Pt, type Sign } from './core/geometry'
 import type { Mark } from './core/refs'
 import { applyTheme, loadSettings, saveSettings, type Settings } from './settings'
-import { candidates, displayBoard, frame, entryFields, inBook, moveOf, playFree, positionFields, rebaseLine, rootStep, toMove, type Ctx, type Step } from './view'
+import {
+  candidates, displayBoard, entryFields, frame, inBook, labelStart, moveOf, movesOf, playFree, positionFields, primaryLabel,
+  replay, rootStep, startStep, toMove, type Candidate, type Ctx, type Start, type Step,
+} from './view'
 import { collectMessages } from './messages'
 import { Board } from './ui/Board'
 import { Tree } from './ui/Tree'
-import { InfoPanel, CategoryDot } from './ui/InfoPanel'
-import { Message } from './ui/Message'
-import { Rich, type RefHandlers } from './ui/Rich'
+import { CategoryDot, LastMove, NextMoves, PositionInfo } from './ui/Panels'
+import { type RefHandlers } from './ui/Rich'
 import { SettingsDialog } from './ui/SettingsDialog'
 import { Library } from './ui/Library'
 import { useMedia } from './ui/useMedia'
 import { EditPanel } from './ui/EditPanel'
-import { ExportDialog, NewDatabaseDialog, NewEntryDialog } from './ui/Dialogs'
+import { ExportDialog, NewDatabaseDialog, NewEntryDialog, SaveLinesDialog, type SessionLineView } from './ui/Dialogs'
 import { FindMode } from './ui/FindMode'
 import { QuizMode } from './ui/QuizMode'
 import { changeCount, createWorkspace, discardDrafts, restoreDrafts, saveDrafts, type Workspace } from './edit/workspace'
-import { addMove, checkMove, createDatabase, createEntry, deleteMove, describePosition, locate, setProps } from './edit/ops'
+import { checkMove, createDatabase, createEntry, deleteMove, locate, setProps } from './edit/ops'
 import { sgfPoint } from './edit/sgfio'
+import { erase, loadPosition, loadSession, record, remove, savePosition, saveSession, sameStart, type Line } from './session'
 
 // Distinct colors for "always show" references (SPEC §11.2).
 const REF_PALETTE = ['#d81b60', '#1e88e5', '#00897b', '#f4511e', '#8e24aa', '#6d4c41', '#3949ab', '#c0ca33']
 
 type Mode = 'explore' | 'find' | 'quiz'
 type Tool = 'move' | 'TR' | 'SQ' | 'CR' | 'MA' | 'LB' | 'XCUT' | 'XWALL' | 'XINF' | 'AR' | 'AB' | 'AW' | 'AE'
-const TOOLS: [Tool, string][] = [
-  ['move', 'Play'], ['TR', '△'], ['SQ', '□'], ['CR', '○'], ['MA', '✕'], ['LB', 'A'], ['XCUT', 'Cut'],
-  ['XWALL', 'Wall'], ['XINF', 'Influence'], ['AR', 'Arrow'], ['AB', '● stone'], ['AW', '○ stone'], ['AE', 'Erase stone'],
+/** Edit tools: id, button text, explanation (shown on hover and long-press). */
+const TOOLS: [Tool, string, string][] = [
+  ['move', 'Play', 'Play moves (saved when you annotate them or use Save lines)'],
+  ['TR', '△ Triangle', 'Triangle mark on a point'],
+  ['SQ', '□ Square', 'Square mark on a point'],
+  ['CR', '○ Circle', 'Circle mark on a point'],
+  ['MA', '✕ Cross', 'X mark on a point'],
+  ['LB', 'A Letter', 'Letters A, B, C… on points'],
+  ['XCUT', '✂ Cut', 'Cutting point'],
+  ['XWALL', '▬ Wall', 'Wall: a barrier of stones that stops influence (click start and end)'],
+  ['XINF', '⇢ Influence', 'Direction where a wall or group exerts influence (click start and end)'],
+  ['AR', '→ Arrow', 'Plain arrow (click start and end)'],
+  ['AB', '● Black stone', 'Set-up black stone (start position only)'],
+  ['AW', '○ White stone', 'Set-up white stone (start position only)'],
+  ['AE', '⌫ Erase stone', 'Remove a set-up stone (start position only)'],
 ]
 const PAIR_TOOLS = new Set<Tool>(['XWALL', 'XINF', 'AR'])
 const SETUP_TOOLS = new Set<Tool>(['AB', 'AW', 'AE'])
-const REF_TYPES = ['TR', 'SQ', 'CR', 'MA', 'CUT', 'WALL', 'INF', 'AR'] as const
-
-/** Rebuilds a line by position keys on a (new) graph. */
-function rebase(ctx: Ctx, entryId: string, keys: string[]): Step[] {
-  if (!ctx.graph.entries.has(entryId)) return []
-  const out = [rootStep(ctx, entryId)]
-  for (const k of keys.slice(1)) {
-    const c = candidates(ctx, out[out.length - 1]).find((c) => c.step.key === k)
-    if (!c) break
-    out.push(c.step)
-  }
-  return out
-}
+const REF_TYPES: [string, string][] = [
+  ['TR', 'Triangle'], ['SQ', 'Square'], ['CR', 'Circle'], ['MA', 'Cross'], ['CUT', 'Cutting point'], ['WALL', 'Wall'], ['INF', 'Influence'], ['AR', 'Arrow'],
+]
 
 export function App() {
   const ws = useRef<Workspace | null>(null)
@@ -62,39 +67,63 @@ export function App() {
   const [lib, setLib] = useState<'joseki' | 'shape'>('joseki')
   const [drawer, setDrawer] = useState(false)
   const [viewOpen, setViewOpen] = useState(false)
-  const [entryId, setEntryId] = useState<string | null>(null)
+  const [start, setStart] = useState<Start>({ kind: 'empty' })
   const [line, setLine] = useState<{ path: Step[]; future: Step[] }>({ path: [], future: [] })
   const path = line.path
-  /** Replaces the line; the moves after it are forgotten unless `keepFuture`. */
-  const setPath = (p: Step[] | ((old: Step[]) => Step[])) =>
-    setLine((l) => ({ path: typeof p === 'function' ? p(l.path) : p, future: [] }))
+  const [session, setSessionState] = useState<Line[]>(loadSession)
+  const [side, setSide] = useState<1 | -1>(1)
   const [hovered, setHovered] = useState<string | null>(null)
   const [pinned, setPinned] = useState<string | null>(null)
   const [highlighted, setHighlighted] = useState<string | null>(null)
-  const [dialog, setDialog] = useState<null | 'settings' | 'export' | 'new-entry' | 'new-db'>(null)
+  const [dialog, setDialog] = useState<null | 'settings' | 'export' | 'new-start' | 'new-db' | 'save-lines'>(null)
   const [edit, setEdit] = useState(false)
   const [target, setTarget] = useState<string>('')
-  const [playAs, setPlayAs] = useState<'auto' | 'B' | 'W'>('auto')
   const [tool, setTool] = useState<Tool>('move')
   const [pending, setPending] = useState<Pt[]>([])
-  const [refType, setRefType] = useState<(typeof REF_TYPES)[number] | null>(null)
+  const [refType, setRefType] = useState<string | null>(null)
+  const [phoneTab, setPhoneTab] = useState<'next' | 'why' | 'info' | 'tree'>('next')
   const [toast, setToast] = useState<string | null>(null)
   const lastText = useRef<HTMLTextAreaElement | null>(null)
+  // Board clicks that arrive before the screen caught up with the previous one wait for the next render.
+  const settling = useRef(false)
+  const onPointRef = useRef<(pt: Pt) => void>(() => {})
+  const latest = useRef<{ start: Start; path: Step[] }>({ start: { kind: 'empty' }, path: [] })
   const phone = useMedia('(max-width: 700px)')
 
   const setSettings = (s: Settings) => {
     setSettingsState(s)
     saveSettings(s)
   }
+  const setSession = (l: Line[]) => {
+    setSessionState(l)
+    saveSession(l)
+  }
   useEffect(() => applyTheme(settings), [settings.theme, settings.colorMode])
 
+  const databases: DatabaseInfo[] = ws.current?.databases ?? []
+  const active = useMemo(
+    () => new Set(settings.activeDatabases ?? databases.filter((d) => d.activeByDefault).map((d) => d.id)),
+    [settings.activeDatabases, databases],
+  )
+  const shown = useMemo(() => (edit && target ? new Set([...active, target]) : active), [active, edit, target])
+  const ctx: Ctx | null = graph ? { graph, active: shown, order: databases.map((d) => d.id), U: userTransform(settings.display) } : null
+
+  // Load the databases, restore drafts, and reopen the last position.
   useEffect(() => {
     loadDatabases()
       .then(async ({ databases, texts }) => {
         const w = createWorkspace(databases, texts)
         const restored = await restoreDrafts(w)
         ws.current = w
-        setGraph(buildGraph(w.files))
+        const g = buildGraph(w.files)
+        const s0 = loadSettings()
+        const act = new Set(s0.activeDatabases ?? w.databases.filter((d) => d.activeByDefault).map((d) => d.id))
+        const c: Ctx = { graph: g, active: act, order: w.databases.map((d) => d.id), U: userTransform(s0.display) }
+        const last = loadPosition()
+        const st: Start = last?.start ?? { kind: 'empty' }
+        setStart(st)
+        setLine({ path: replay(c, st, last?.moves ?? []), future: [] })
+        setGraph(g)
         setTarget(w.databases[w.databases.length - 1]?.id ?? '')
         if (restored) setToast(`Restored ${restored} unsaved change${restored > 1 ? 's' : ''} from this browser.`)
       })
@@ -108,18 +137,36 @@ export function App() {
   }, [toast])
   const flash = (m: string) => setToast(m)
 
-  const databases: DatabaseInfo[] = ws.current?.databases ?? []
-  const active = useMemo(
-    () => new Set(settings.activeDatabases ?? databases.filter((d) => d.activeByDefault).map((d) => d.id)),
-    [settings.activeDatabases, databases],
-  )
-  // The database being edited is always shown.
-  const shown = useMemo(() => (edit && target ? new Set([...active, target]) : active), [active, edit, target])
-  const ctx: Ctx | null = graph
-    ? { graph, active: shown, order: databases.map((d) => d.id), U: userTransform(settings.display) }
-    : null
+  /** Rebuilds the line (and the moves after it) on the current graph and databases. */
+  const rebuild = (c: Ctx, st: Start, l: { path: Step[]; future: Step[] }) => {
+    const all = replay(c, st, [...movesOf(l.path), ...l.future.map((s) => moveOf(s)!)])
+    return { path: all.slice(0, Math.max(1, Math.min(l.path.length, all.length))), future: all.slice(l.path.length) }
+  }
+  useEffect(() => {
+    if (ctx && path.length) setLine((l) => rebuild(ctx, start, l))
+  }, [graph, shown])
+
+  // Remember the last position (SPEC: reopen where you left), also when the page closes.
+  useEffect(() => {
+    if (path.length) savePosition({ start, moves: movesOf(path) })
+  }, [path, start])
+  useEffect(() => {
+    settling.current = false
+    latest.current = { start, path }
+  })
+  useEffect(() => {
+    const save = () => latest.current.path.length && savePosition({ start: latest.current.start, moves: movesOf(latest.current.path) })
+    window.addEventListener('pagehide', save)
+    return () => window.removeEventListener('pagehide', save)
+  }, [])
+
+  // Keep the current tree node visible.
+  useEffect(() => {
+    document.querySelector('.tree-node.cur')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }, [path])
+
   const dbColor = (id: string) => databases.find((d) => d.id === id)?.color ?? '#888'
-  const entries = graph ? [...graph.entries.values()].filter((e) => e.contribs.some((c) => shown.has(c.db))) : []
+  const entries = graph ? [...graph.entries.values()].filter((e) => e.defined && e.contribs.some((c) => shown.has(c.db))) : []
   const entryName = (id: string) => (ctx && ctx.graph.entries.has(id) ? entryFields(ctx, id, rootStep(ctx, id)).one('XNAME')?.value ?? id : id)
 
   const toggleDb = (id: string) => {
@@ -128,38 +175,23 @@ export function App() {
     setSettings({ ...settings, activeDatabases: databases.map((d) => d.id).filter((d) => next.has(d)) })
   }
 
-  // Open the first entry once loaded; keep the line valid when databases change.
-  useEffect(() => {
-    if (!ctx) return
-    if (!entryId || !entries.some((e) => e.id === entryId)) {
-      const first = entries.find((e) => e.type === lib) ?? entries[0]
-      if (first) open(first.id)
-      return
-    }
-    const fresh = rebaseLine(ctx, entryId, path)
-    if (fresh.length !== path.length || fresh.some((s, i) => s.key !== path[i].key || s.edge !== path[i].edge)) setLine((l) => ({ path: fresh, future: l.future }))
-  }, [graph, shown])
-
-  function open(id: string, keys?: string[]) {
-    if (!ctx) return
-    setEntryId(id)
-    setPath(keys ? rebase(ctx, id, keys) : [rootStep(ctx, id)])
-    setPinned(null)
-    setDrawer(false)
-    setPending([])
-  }
-  const go = (p: Step[]) => {
-    setPath(p)
-    setPinned(null)
-    setHovered(null)
-    setPending([])
-  }
   const resetMarks = () => {
     setPinned(null)
     setHovered(null)
     setPending([])
   }
-  // Back and forward keep the moves you step back over, in or out of the database (SPEC §8.3).
+  const go = (p: Step[]) => {
+    setLine({ path: p, future: [] })
+    resetMarks()
+  }
+  function openStart(st: Start) {
+    if (!ctx) return
+    setStart(st)
+    setLine({ path: [startStep(ctx, st)], future: [] })
+    setDrawer(false)
+    resetMarks()
+  }
+  // Back and forward keep the moves you step over, in or out of the databases.
   const back = () => {
     resetMarks()
     setLine((l) => (l.path.length > 1 ? { path: l.path.slice(0, -1), future: [l.path[l.path.length - 1], ...l.future] } : l))
@@ -179,28 +211,23 @@ export function App() {
   }
   const toEnd = () => {
     resetMarks()
-    setLine((l) => {
-      if (!ctx) return l
-      if (l.future.length) return { path: [...l.path, ...l.future], future: [] }
-      return { path: mainLineEnd(ctx, l.path), future: [] }
-    })
+    setLine((l) => (!ctx ? l : l.future.length ? { path: [...l.path, ...l.future], future: [] } : { path: mainLineEnd(ctx, l.path), future: [] }))
   }
 
-  /** After an edit: rebuild the graph, keep the line, save drafts. */
-  const commit = (msg?: string, adjust?: (c: Ctx, p: Step[]) => Step[] | null) => {
+  /** After an edit: rebuild the graph, keep the line, drop session lines that are now stored, save drafts. */
+  const commit = (msg?: string) => {
     const w = ws.current!
     const g = buildGraph(w.files)
     const c: Ctx = { graph: g, active: shown, order: w.databases.map((d) => d.id), U: userTransform(settings.display) }
-    let p = entryId ? rebaseLine(c, entryId, path) : []
-    if (adjust) p = adjust(c, p) ?? p
     setGraph(g)
-    setPath(p)
+    setLine((l) => rebuild(c, start, l))
+    setSession(session.filter((l) => replay(c, l.start, l.moves).some((s) => s.free && !s.edge)))
     setVersion(w.version)
     saveDrafts(w)
     if (msg) flash(msg)
   }
 
-  // Keyboard: navigation, and the fast entry keys in edit mode (SPEC §10.1).
+  // Keyboard: navigation everywhere; fast annotation keys in edit mode.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement
@@ -216,16 +243,16 @@ export function App() {
         return
       }
       if (!edit || e.ctrlKey || e.metaKey || e.altKey) return
-      const entry = entryId ? ctx.graph.entries.get(entryId) : null
-      const cats = entry?.type === 'shape' ? SHAPE_CATEGORIES : JOSEKI_CATEGORIES
+      const cats = isShape ? SHAPE_CATEGORIES : JOSEKI_CATEGORIES
       const k = e.key.toLowerCase()
       const styles: Record<string, string> = { a: 'aggressive', b: 'balanced', s: 'solid' }
       if (/^[1-8]$/.test(k) && path.length > 1 && cats[Number(k) - 1]) {
-        writeNode({ XCAT: [cats[Number(k) - 1]] }, `Category: ${CATEGORIES[cats[Number(k) - 1]].label}`)
-      } else if (styles[k]) {
-        if (path.length > 1) writeNode({ XSTY: [styles[k]] }, `Style: ${styles[k]}`)
+        const c = cats[Number(k) - 1]
+        writeNode({ XCAT: [c] }, `Saved as ${CATEGORIES[c].label.toLowerCase()} in ${target}`)
+      } else if (styles[k] && path.length > 1) {
+        writeNode({ XSTY: [styles[k]] }, `Style: ${styles[k]}`)
       } else if (k === 'p') {
-        playMove(null)
+        playFreeMove(null)
       } else if (e.key === 'Enter') {
         document.getElementById('f-node-XMW')?.focus()
       } else return
@@ -236,27 +263,45 @@ export function App() {
   })
 
   if (error) return <div class="pane error-box">Could not load the databases: {error}</div>
-  if (!ctx || !ws.current) return <div class="pane loading">Loading databases…</div>
+  if (!ctx || !ws.current || !path.length) return <div class="pane loading">Loading databases…</div>
   const w = ws.current
-  if (!entryId || !path.length) {
-    return (
-      <div class="pane loading">
-        No entries in the active databases. <button onClick={() => setDialog('settings')}>Settings</button>
-        {dialog === 'settings' && <SettingsDialog s={settings} set={setSettings} close={() => setDialog(null)} databases={databases} active={active} toggleDb={toggleDb} />}
-      </div>
-    )
-  }
 
   const step = path[path.length - 1]
   const F = frame(ctx, step)
   const board = displayBoard(ctx, step)
-  const entry = graph!.entries.get(entryId)!
-  const win: [number, number, number, number] = settings.view === 'full' ? [0, 18, 0, 18] : cornerWindow(settings.display.corner)
   const toPlay = toMove(ctx, step)
+  const label = primaryLabel(ctx, path)
+  const isShape = !!label && ctx.graph.entries.get(label)?.type === 'shape'
+  const win: [number, number, number, number] = settings.view === 'full' ? [0, 18, 0, 18] : cornerWindow(settings.display.corner)
+  const offBook = !inBook(ctx, step)
+  const firstFree = path.findIndex((s) => !inBook(ctx, s))
 
-  /* ---- editing ---- */
+  /* ---- playing and editing ---- */
+  const lastMove = moveOf(step)
+  const lastSign = lastMove ? applySign(frame(ctx, path[path.length - 2]), lastMove.sign) : 0
+
+  function playFreeMove(pt: Pt | null) {
+    const sign: Sign = toPlay || (bothSides ? side : lastSign ? ((-lastSign) as Sign) : side)
+    const check = checkMove(ctx!, path, sign, pt)
+    if (!check.ok) return flash(check.reason)
+    const next = playFree(ctx!, step, sign, pt)
+    const fut = line.future[0]
+    const newPath = [...path, next]
+    setLine({ path: newPath, future: fut && fut.key === next.key ? line.future.slice(1) : [] })
+    resetMarks()
+    if (newPath.some((s) => s.free && !s.edge)) setSession(record(session, { start, moves: movesOf(newPath) }))
+    if (inBook(ctx!, step) && !inBook(ctx!, next)) flash('Not in your databases. Keep playing; your moves are kept in this session.')
+    else if (!inBook(ctx!, step) && inBook(ctx!, next)) flash('Back in a known position.')
+  }
+
+  function playCandidate(c: Candidate) {
+    const fut = line.future[0]
+    setLine({ path: [...path, c.step], future: fut && fut.key === c.step.key ? line.future.slice(1) : [] })
+    resetMarks()
+  }
+
   function writeNode(values: Record<string, string[] | null>, msg?: string) {
-    const loc = locate(w, ctx!, path, target, entryId!, true)!
+    const loc = locate(w, ctx!, path, target, label, true)!
     if (values.XCAT) {
       const c = values.XCAT[0]
       Object.assign(values, {
@@ -270,51 +315,13 @@ export function App() {
     commit(msg)
   }
 
-  function playMove(pt: Pt | null) {
-    const sign: Sign = playAs === 'B' ? 1 : playAs === 'W' ? -1 : toPlay || 1
-    const check = checkMove(ctx!, path, sign, pt)
-    if (!check.ok) return flash(check.reason)
-    const existing = candidates(ctx!, step).find((c) => c.sign === sign && (pt ? c.pt && c.pt[0] === pt[0] && c.pt[1] === pt[1] : !c.pt))
-    if (existing && existing.dbs.includes(target)) return go([...path, existing.step])
-    const { canonPt, canonSign } = addMove(w, ctx!, path, target, entryId!, sign, pt)
-    let joined: string | null = null
-    commit(undefined, (c, p) => {
-      const cand = candidates(c, p[p.length - 1]).find(
-        (x) => x.edge.sign === canonSign && (canonPt ? x.edge.pt && x.edge.pt[0] === canonPt[0] && x.edge.pt[1] === canonPt[1] : !x.edge.pt),
-      )
-      if (!cand) return null
-      if (check.joins) joined = describePosition(c.graph, cand.step.key)
-      return [...p, cand.step]
-    })
-    flash(joined ? `Joins an existing position: ${joined}` : `Added ${sign === 1 ? 'Black' : 'White'} ${pt ? ptName(pt) : 'tenuki'} to ${target}`)
-  }
-
-  /** Plays a move that may not be in any database (SPEC §8.3 free play). */
-  function playFreeMove(pt: Pt | null) {
-    const sign: Sign = toPlay || (lastSign ? (-lastSign as Sign) : 1)
-    const check = checkMove(ctx!, path, sign, pt)
-    if (!check.ok) return flash(check.reason)
-    const next = playFree(ctx!, step, sign, pt)
-    const fut = line.future[0]
-    const same = fut && fut.key === next.key
-    setLine({ path: [...path, next], future: same ? line.future.slice(1) : [] })
-    resetMarks()
-    if (inBook(ctx!, step) && !inBook(ctx!, next)) flash('Out of the database. Keep playing, or save this line.')
-    else if (!inBook(ctx!, step) && inBook(ctx!, next)) flash('Back in a known position.')
-  }
-
-  function saveLine() {
-    locate(w, ctx!, path, target, entryId!, true)
-    commit(`Saved this line to ${target}`)
-  }
-
   function onPoint(pt: Pt) {
-    if (!edit) return playFreeMove(pt)
+    settling.current = true
+    if (!edit || (tool === 'move' && !refType)) return playFreeMove(pt)
     if (refType) return setPending([...pending, pt])
-    if (tool === 'move') return playMove(pt)
     const setup = SETUP_TOOLS.has(tool)
     if (setup && path.length > 1) return flash('Set-up stones can only be changed at the start position.')
-    const loc = locate(w, ctx!, setup ? path.slice(0, 1) : path, target, entryId!, true)!
+    const loc = locate(w, ctx!, setup ? path.slice(0, 1) : path, target, label, true)!
     const toDisplay = compose(setup ? frame(ctx!, path[0]) : F, loc.T)
     const sp = sgfPoint(apply(inverse(toDisplay), pt))
     const d = loc.node.data
@@ -348,7 +355,7 @@ export function App() {
     if (!refType || !pending.length) return
     const ta = lastText.current
     if (!ta || !document.body.contains(ta)) return flash('Click in a text box first, then pick the points.')
-    const loc = locate(w, ctx!, path, target, entryId!, true)!
+    const loc = locate(w, ctx!, path, target, label, true)!
     const toFile = inverse(compose(F, loc.T))
     const names = pending.map((p) => ptName(apply(toFile, p)))
     const body = ['WALL', 'INF', 'AR'].includes(refType) ? `${names[0]}-${names[1] ?? names[0]}` : names.join(',')
@@ -360,11 +367,64 @@ export function App() {
   }
 
   function clearMarks() {
-    const loc = locate(w, ctx!, path, target, entryId!, false)
+    const loc = locate(w, ctx!, path, target, label, false)
     if (!loc) return
     setProps(w, loc, Object.fromEntries(['TR', 'SQ', 'CR', 'MA', 'LB', 'XCUT', 'XWALL', 'XINF', 'AR', 'LN', 'XTB', 'XTW'].map((k) => [k, null])))
     commit('Marks cleared on this position')
   }
+
+  /* ---- session lines ---- */
+  const startLabel = start.kind === 'label' ? start.id : null
+  const sessionSteps = session.filter((l) => sameStart(l.start, start)).map((l) => ({ line: l, steps: replay(ctx, start, l.moves) }))
+  const unsaved = sessionSteps.filter((s) => s.steps.some((st) => st.free && !st.edge))
+  const lineViews: SessionLineView[] = unsaved.map((s, id) => {
+    const curMoves = movesOf(path)
+    const lm = s.line.moves
+    const n = Math.min(curMoves.length, lm.length)
+    const current = curMoves.slice(0, n).every((m, i) => m.sign === lm[i].sign && JSON.stringify(m.pt) === JSON.stringify(lm[i].pt))
+    return {
+      id,
+      current,
+      newMoves: s.steps.filter((st) => st.free && !st.edge).length,
+      moves: s.steps.slice(1).map((st, i) => {
+        const m = moveOf(st)!
+        const pt = m.pt ? apply(frame(ctx, s.steps[i]), m.pt) : null
+        return { name: pt ? ptName(pt) : 'pass', known: !!st.edge }
+      }),
+    }
+  })
+  function saveLines(ids: number[], into: string) {
+    let left = session
+    for (const id of ids) {
+      const s = unsaved[id]
+      locate(w, ctx!, s.steps, into, startLabel, true)
+      left = remove(left, s.line)
+    }
+    setTarget(into)
+    setSession(left)
+    setDialog(null)
+    commit(`Saved ${ids.length} line${ids.length === 1 ? '' : 's'} to ${into}`)
+  }
+  function eraseVariation() {
+    setSession(erase(session, start, movesOf(path)))
+    go(path.slice(0, -1))
+    flash('Variation erased from this session')
+  }
+  const extraChildren = (keys: string[]) => {
+    const out: Step[] = []
+    for (const { steps } of sessionSteps) {
+      if (steps.length <= keys.length || !keys.every((k, i) => steps[i].key === k)) continue
+      const s = steps[keys.length]
+      if (s.free && !s.edge && !out.some((o) => o.key === s.key)) out.push(s)
+    }
+    return out
+  }
+  const tagOf = (key: string) => {
+    const e = entries.find((e) => e.root === key)
+    return e ? entryName(e.id) : null
+  }
+
+  onPointRef.current = (pt: Pt) => (settling.current ? setTimeout(() => onPointRef.current(pt), 30) : onPoint(pt))
 
   /* ---- what the board shows ---- */
   const numbers = new Map<string, number>()
@@ -376,14 +436,18 @@ export function App() {
     if (pt) numbers.set(`${pt[0]},${pt[1]}`, i)
     if (i === path.length - 1) last = pt
   })
-  const cands = candidates(ctx, step).filter((c) => !c.cat || !settings.hiddenCategories.includes(c.cat))
+  const allCands = candidates(ctx, step).filter((c) => !c.cat || !settings.hiddenCategories.includes(c.cat))
+  const bothSides = allCands.some((c) => c.sign === 1) && allCands.some((c) => c.sign === -1)
+  const cands = bothSides ? allCands.filter((c) => c.sign === side) : allCands
   const tenuki = cands.find((c) => !c.pt)
 
   const messages = collectMessages(ctx, path, settings)
   const refMarks = new Map<string, Mark[]>()
   for (const m of messages) for (const s of m.segments) if ('ref' in s) refMarks.set(s.id, s.ref)
-  const ef = entryFields(ctx, entryId, path[0])
-  for (const prop of ['XSUM', 'XRULE']) for (const t of ef.text(prop)) for (const s of t.segments) if ('ref' in s) refMarks.set(s.id, s.ref)
+  if (label) {
+    const ef = entryFields(ctx, label, path[labelStart(ctx, path, label)])
+    for (const t of ef.text('XSUM')) for (const s of t.segments) if ('ref' in s) refMarks.set(s.id, s.ref)
+  }
   const colors = settings.aids === 'always' ? new Map([...refMarks.keys()].map((id, i) => [id, REF_PALETTE[i % REF_PALETTE.length]])) : null
   const shownRefs = colors ? [...refMarks.keys()] : [hovered ?? pinned].filter((x): x is string => !!x)
   const marks: Mark[] = [
@@ -396,19 +460,7 @@ export function App() {
   ]
   const refs: RefHandlers = { hovered, pinned, colors, hover: settings.aids === 'hover', onHover: setHovered, onPin: (id) => setPinned((p) => (p === id ? null : id)) }
 
-  const callout = messages.filter((m) => m.place === 'callout')
-  const offBook = !inBook(ctx, step)
-  const firstFree = path.findIndex((s) => !inBook(ctx, s))
-  const freeCount = path.filter((s) => s.free && !s.edge).length
-  // The most specific entry along the line (e.g. "Empty corner" → "4-4 point · 3-3 invasion").
-  let shownIdx = 0
-  path.forEach((s, i) => {
-    if (i > 0 && inBook(ctx, s) && entries.some((e) => e.root === s.key && e.id !== entryId)) shownIdx = i
-  })
-  const shownEntry = shownIdx ? entries.find((e) => e.root === path[shownIdx].key && e.id !== entryId)!.id : entryId
   const moveNo = path.length - 1
-  const lastMove = moveOf(step)
-  const lastSign = lastMove ? applySign(frame(ctx, path[path.length - 2]), lastMove.sign) : 0
   const lastName = `${lastSign === 1 ? 'Black' : 'White'} ${last ? ptName(last) : 'tenuki'}`
   const setDisplay = (d: Partial<Settings['display']>) => setSettings({ ...settings, display: { ...settings.display, ...d } })
   const nChanges = changeCount(w)
@@ -427,10 +479,30 @@ export function App() {
   }
 
   /* ---- pieces ---- */
-  const newEntryButton = edit && (
-    <button class="new-entry" onClick={() => setDialog('new-entry')}><Plus size={15} /> New {lib === 'joseki' ? 'joseki' : 'shape'}</button>
+  const common = { ctx, path, settings, messages, refs, dbColor, entryName }
+  const startBar = (
+    <div class="start-bar">
+      <button class={start.kind === 'empty' && path.length === 1 ? 'on' : ''} onClick={() => openStart({ kind: 'empty' })} title="Start again from an empty corner">
+        <Flag size={15} /> Empty corner
+      </button>
+      {label && labelStart(ctx, path, label) < path.length - 1 && (
+        <button onClick={() => openStart({ kind: 'label', id: label })} title="Go to the first move of this joseki">
+          <SkipBack size={15} /> Start of {entryName(label)}
+        </button>
+      )}
+    </div>
   )
-  const library = <Library ctx={ctx} entries={entries} current={entryId} lib={lib} setLib={setLib} onOpen={(id) => open(id)} extra={newEntryButton} />
+  const library = (
+    <Library
+      ctx={ctx}
+      entries={entries}
+      current={startLabel}
+      lib={lib}
+      setLib={setLib}
+      onOpen={(id) => openStart({ kind: 'label', id })}
+      extra={edit && <button class="new-entry" onClick={() => setDialog('new-start')}><Plus size={15} /> New start position</button>}
+    />
+  )
   const modes = (
     <div class="seg modes" role="group" aria-label="Mode">
       {(['explore', 'find', 'quiz'] as Mode[]).map((m) => (
@@ -469,14 +541,10 @@ export function App() {
     <>
       <button class="icon" disabled={path.length < 2} onClick={toStart} aria-label="Start (Home)"><SkipBack size={18} /></button>
       <button class="icon" disabled={path.length < 2} onClick={back} aria-label="Back (←)"><ChevronLeft size={18} /></button>
-      {edit ? (
-        <button class="tenuki" onClick={() => playMove(null)}>+ Tenuki</button>
-      ) : (
-        <button class="tenuki" onClick={() => (tenuki ? go([...path, tenuki.step]) : playFreeMove(null))} title={tenuki ? undefined : 'Pass: not in the database'}>
-          {tenuki && <CategoryDot cat={tenuki.cat} />}
-          Tenuki{!phone && tenuki?.cat ? ` · ${CATEGORIES[tenuki.cat].label}` : ''}
-        </button>
-      )}
+      <button class="tenuki" onClick={() => (tenuki ? playCandidate(tenuki) : playFreeMove(null))} title={tenuki ? undefined : 'Pass: play elsewhere'}>
+        {tenuki && <CategoryDot cat={tenuki.cat} />}
+        Tenuki{!phone && tenuki?.cat ? ` · ${CATEGORIES[tenuki.cat].label}` : ''}
+      </button>
       <button class="icon" disabled={!cands.length && !line.future.length} onClick={forward} aria-label="Forward (→)"><ChevronRight size={18} /></button>
       <button class="icon" disabled={!cands.length && !line.future.length} onClick={toEnd} aria-label="End of main line (End)"><SkipForward size={18} /></button>
     </>
@@ -490,12 +558,8 @@ export function App() {
           </button>
         ))}
       </span>
-      <button class={settings.display.mirror ? 'on' : ''} onClick={() => setDisplay({ mirror: !settings.display.mirror })} title="Mirror the corner along its diagonal">
-        <ArrowLeftRight size={15} /> Mirror
-      </button>
-      <button class={settings.display.swap ? 'on' : ''} onClick={() => setDisplay({ swap: !settings.display.swap })} title="Swap Black and White">
-        <Contrast size={15} /> Swap colors
-      </button>
+      <button class={settings.display.mirror ? 'on' : ''} onClick={() => setDisplay({ mirror: !settings.display.mirror })} title="Mirror the corner along its diagonal"><ArrowLeftRight size={15} /> Mirror</button>
+      <button class={settings.display.swap ? 'on' : ''} onClick={() => setDisplay({ swap: !settings.display.swap })} title="Swap Black and White"><Contrast size={15} /> Swap colors</button>
       <button class="icon" onClick={() => setDisplay({ corner: 'tr', mirror: false, swap: false })} title="Show as stored" aria-label="Reset orientation"><RotateCcw size={15} /></button>
       <span class="sep" />
       <button class={settings.view === 'full' ? 'on' : ''} onClick={() => setSettings({ ...settings, view: settings.view === 'full' ? 'corner' : 'full' })}>Full board</button>
@@ -506,153 +570,159 @@ export function App() {
   const editToolbar = edit && (
     <div class="edit-toolbar">
       <div class="row">
-        <span class="grp-label">Tool</span>
+        <span class="grp-label">Draw</span>
         <div class="tools">
-          {TOOLS.map(([t, l]) => (
-            <button key={t} class={tool === t && !refType ? 'on' : ''} onClick={() => { setTool(t); setPending([]); setRefType(null) }}>{l}</button>
+          {TOOLS.map(([t, l, help]) => (
+            <button key={t} class={tool === t && !refType ? 'on' : ''} title={help} aria-label={help} onClick={() => { setTool(t); setPending([]); setRefType(null) }}>{l}</button>
           ))}
+          <button onClick={clearMarks} title="Remove every mark on this position">Clear marks</button>
         </div>
       </div>
       <div class="row">
-        <span class="grp-label">Play as</span>
-        <div class="seg">
-          {(['auto', 'B', 'W'] as const).map((c) => (
-            <button key={c} class={playAs === c ? 'on' : ''} onClick={() => setPlayAs(c)}>{{ auto: 'Auto', B: 'Black', W: 'White' }[c]}</button>
-          ))}
-        </div>
-        <button onClick={clearMarks}>Clear marks</button>
-      </div>
-      <div class="row">
-        <span class="grp-label">Link text</span>
+        <span class="grp-label" title="Insert a link in the text box you clicked last: hovering the words will show the mark">Link text</span>
         <div class="tools">
-          {REF_TYPES.map((t) => (
-            <button key={t} class={refType === t ? 'on' : ''} onClick={() => { setRefType(refType === t ? null : t); setPending([]) }}>{t}</button>
+          {REF_TYPES.map(([t, name]) => (
+            <button key={t} class={refType === t ? 'on' : ''} title={`Link words to a ${name.toLowerCase()} on the board`} onClick={() => { setRefType(refType === t ? null : t); setPending([]) }}>{name}</button>
           ))}
+          {refType && <button class="on" disabled={!pending.length} onClick={insertRef}>Insert{pending.length ? ` (${pending.length})` : ''}</button>}
         </div>
-        {refType && <button class="on" disabled={!pending.length} onClick={insertRef}>Insert{pending.length ? ` (${pending.length})` : ''}</button>}
       </div>
-      <p class="hint">
-        {refType
-          ? 'Select words in a text box (optional), click points on the board, then Insert.'
-          : tool === 'move'
-            ? `Click an empty point to add a move to ${target}. Colored markers follow existing moves.`
-            : PAIR_TOOLS.has(tool)
-              ? pending.length ? 'Now click the end point.' : 'Click the start point.'
-              : SETUP_TOOLS.has(tool)
-                ? 'Click points to place or remove set-up stones (start position only).'
-                : 'Click points to add or remove the mark on this position.'}
-      </p>
+    </div>
+  )
+  const sessionBox = (offBook || unsaved.length > 0) && (
+    <div class={`session-box ${offBook ? 'off' : ''}`}>
+      {offBook ? (
+        <p class="text"><b>Not in your databases.</b> Keep playing: your moves are kept in this session.</p>
+      ) : (
+        <p class="text">{unsaved.length} line{unsaved.length === 1 ? '' : 's'} of yours not saved yet.</p>
+      )}
+      <div class="grp">
+        {offBook && firstFree > 0 && <button onClick={() => go(path.slice(0, firstFree))}>Back to the database</button>}
+        {unsaved.length > 0 && <button class="on" onClick={() => setDialog('save-lines')}><Save size={15} /> Save lines…</button>}
+        {step.free && !step.edge && <button class="ghost danger-text" onClick={eraseVariation} title="Erase this move and what follows from the session"><Trash2 size={15} /> Erase variation</button>}
+      </div>
+    </div>
+  )
+  const tree = (
+    <section class="tree-sec">
+      <h2>Moves</h2>
+      <div class="tree-box">
+        <Tree ctx={ctx} root={path[0]} path={path} defaultDb={databases[0]?.id ?? ''} onSelect={go} extra={extraChildren} tagOf={tagOf} />
+      </div>
+    </section>
+  )
+  const positionInfo = <PositionInfo {...common} onOpenLabel={(id) => openStart({ kind: 'label', id })} />
+  const lastMovePanel = edit ? (
+    <EditPanel
+      ws={w}
+      ctx={ctx}
+      path={path}
+      target={target}
+      shapes={isShape}
+      commit={commit}
+      onFocusText={(el) => (lastText.current = el)}
+      onDeleteMove={() => {
+        if (deleteMove(w, path, target)) {
+          setLine({ path: path.slice(0, -1), future: [] })
+          commit(`Deleted from ${target}`)
+        }
+      }}
+    />
+  ) : (
+    <LastMove {...common} onGoTo={(n) => go(path.slice(0, n + 1))} />
+  )
+  const nextMoves = (
+    <NextMoves {...common} side={side} setSide={setSide} highlighted={highlighted} onHighlight={setHighlighted} onPlay={playCandidate} />
+  )
+
+  const status = (
+    <div class="status">
+      {phone ? (
+        <button class="entry-title" onClick={() => setDrawer(true)}>{label ? entryName(label) : offBook ? 'Your own line' : 'Known position'}</button>
+      ) : (
+        <span class="st-label">{label ? entryName(label) : offBook ? 'Your own line' : 'Known position'}</span>
+      )}
+      {offBook && <span class="offbook-pill">Free play</span>}
+      <span>{moveNo ? `Move ${moveNo}: ${lastName}` : 'Start'} · <b>{toPlay === 1 ? 'Black' : toPlay === -1 ? 'White' : bothSides ? (side === 1 ? 'Black' : 'White') : 'Either side'} to play</b></span>
+    </div>
+  )
+  const boardEl = (
+    <div class="board-wrap" onTouchStart={edit ? undefined : onTouchStart} onTouchEnd={edit ? undefined : onTouchEnd}>
+      <Board
+        window={win}
+        board={board}
+        last={last}
+        numbers={settings.moveNumbers ? numbers : null}
+        coordinates={settings.coordinates}
+        marks={marks}
+        onPoint={(pt) => (settling.current ? setTimeout(() => onPointRef.current(pt), 30) : onPoint(pt))}
+        pending={pending}
+        markers={settings.showNext && !(edit && (tool !== 'move' || refType)) ? cands.filter((c) => c.pt).map((c) => ({
+          pt: c.pt!,
+          sign: c.sign,
+          showColor: false,
+          cat: c.cat,
+          title: `${c.cat ? CATEGORIES[c.cat].label : 'Unclassified'}: ${c.label}`,
+          highlight: highlighted === c.step.key,
+          onClick: () => playCandidate(c),
+        })) : []}
+      />
+    </div>
+  )
+  const sideSwitch = bothSides && (
+    <div class="seg side-switch" role="group" aria-label="Who plays next">
+      <button class={side === 1 ? 'on' : ''} onClick={() => setSide(1)}>● Black plays</button>
+      <button class={side === -1 ? 'on' : ''} onClick={() => setSide(-1)}>○ White plays</button>
     </div>
   )
 
-  const explore = (
+  const explore = phone ? (
     <>
-      {!phone && <aside class="pane left">{library}</aside>}
       <main class="pane center">
-        <div class="status">
-          {phone ? (
-            <button class="entry-title" onClick={() => setDrawer(true)}>{entryName(shownEntry)}</button>
-          ) : (
-            <span>{entryName(shownEntry)} · </span>
-          )}
-          {offBook && <span class="offbook-pill">Free play</span>}
-          <span>{moveNo ? `Move ${moveNo}: ${lastName}` : 'Start position'} · <b>{toPlay === 1 ? 'Black' : toPlay === -1 ? 'White' : 'Either side'} to play</b></span>
-        </div>
-        <div class="board-wrap" onTouchStart={edit ? undefined : onTouchStart} onTouchEnd={edit ? undefined : onTouchEnd}>
-          <Board
-            window={win}
-            board={board}
-            last={last}
-            numbers={settings.moveNumbers ? numbers : null}
-            coordinates={settings.coordinates}
-            marks={marks}
-            onPoint={onPoint}
-            pending={pending}
-            markers={settings.showNext && !(edit && (tool !== 'move' || refType)) ? cands.filter((c) => c.pt).map((c) => ({
-              pt: c.pt!,
-              sign: c.sign,
-              showColor: toPlay === 0,
-              cat: c.cat,
-              title: `${c.cat ? CATEGORIES[c.cat].label : 'Unclassified'}: ${c.label}`,
-              highlight: highlighted === c.step.key,
-              onClick: () => go([...path, c.step]),
-            })) : []}
-          />
-        </div>
-        {!phone && <div class="nav">{navButtons}</div>}
+        {status}
+        {sideSwitch}
+        {boardEl}
         {editToolbar}
-        {phone ? (
-          <>
-            <button class={`view-toggle ${viewOpen ? 'on' : ''}`} onClick={() => setViewOpen(!viewOpen)} aria-expanded={viewOpen}>
-              <SlidersHorizontal size={15} /> View
+        <button class={`view-toggle ${viewOpen ? 'on' : ''}`} onClick={() => setViewOpen(!viewOpen)} aria-expanded={viewOpen}><SlidersHorizontal size={15} /> View</button>
+        {viewOpen && viewOptions}
+      </main>
+      <section class="pane phone-panels">
+        {sessionBox}
+        <div class="seg phone-tabs" role="tablist">
+          {(['next', 'why', 'info', 'tree'] as const).map((t) => (
+            <button key={t} role="tab" aria-selected={phoneTab === t} class={phoneTab === t ? 'on' : ''} onClick={() => setPhoneTab(t)}>
+              {{ next: 'Next', why: edit ? 'Edit' : 'Why', info: 'Info', tree: 'Tree' }[t]}
             </button>
-            {viewOpen && viewOptions}
-          </>
-        ) : (
-          viewOptions
-        )}
-        {!edit && callout.map((m, i) => (
-          <Message key={i} kind="move" title={m.title} db={m.db} dbColor={dbColor(m.db)} callout>
-            <Rich segments={m.segments} h={refs} />
-          </Message>
-        ))}
+          ))}
+        </div>
+        {phoneTab === 'next' && nextMoves}
+        {phoneTab === 'why' && lastMovePanel}
+        {phoneTab === 'info' && positionInfo}
+        {phoneTab === 'tree' && tree}
+      </section>
+      <div class="bottom-bar" role="toolbar" aria-label="Move navigation">{navButtons}</div>
+    </>
+  ) : (
+    <>
+      <aside class="pane left">
+        {startBar}
+        {library}
+        {tree}
+        {positionInfo}
+      </aside>
+      <main class="pane center">
+        {status}
+        {sideSwitch}
+        {boardEl}
+        <div class="nav">{navButtons}</div>
+        {editToolbar}
+        {viewOptions}
       </main>
       <aside class="pane right">
-        {edit ? (
-          <EditPanel
-            ws={w}
-            ctx={ctx}
-            path={path}
-            entryId={entryId}
-            target={target}
-            commit={commit}
-            onFocusText={(el) => (lastText.current = el)}
-            onDeleteMove={() => {
-              if (deleteMove(w, path, target)) {
-                const keys = path.slice(0, -1).map((s) => s.key)
-                commit(`Deleted from ${target}`, (c) => rebase(c, entryId, keys))
-              }
-            }}
-          />
-        ) : (
-          <>
-            {offBook && (
-              <div class="offbook">
-                <h3>Out of the database</h3>
-                <p class="text">
-                  {freeCount} move{freeCount === 1 ? '' : 's'} played freely {firstFree > 1 ? `after move ${firstFree - 1}` : 'from the start'}. Messages and next moves come back when the line reaches a known position.
-                </p>
-                <div class="grp">
-                  <button onClick={() => go(path.slice(0, firstFree))}>Back to the database</button>
-                  <label class="target">
-                    <span class="grp-label">Save to</span>
-                    <select value={target} onChange={(e) => setTarget((e.target as HTMLSelectElement).value)} aria-label="Database to save this line to">
-                      {databases.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                    </select>
-                  </label>
-                  <button class="on" onClick={saveLine}>Save this line</button>
-                </div>
-              </div>
-            )}
-            <InfoPanel ctx={ctx} entryId={shownEntry} path={path.slice(shownIdx)} settings={settings} messages={messages} refs={refs} dbColor={dbColor} highlighted={highlighted} onHighlight={setHighlighted} onGo={(p) => go([...path.slice(0, shownIdx), ...p])} />
-          </>
-        )}
+        {sessionBox}
+        {lastMovePanel}
+        {nextMoves}
       </aside>
-      <section class="pane tree">
-        <h2>Variation tree</h2>
-        <div class="tree-box">
-          <Tree ctx={ctx} root={path[0]} path={path} defaultDb={databases[0]?.id ?? ''} onSelect={go} />
-        </div>
-        <div class="legend">
-          {(entry.type === 'joseki' ? JOSEKI_CATEGORIES : SHAPE_CATEGORIES).map((c) => (
-            <span key={c}><CategoryDot cat={c} />{CATEGORIES[c].label}</span>
-          ))}
-          <span>T = tenuki</span>
-          <span>⇄ = joins a position shown elsewhere</span>
-          <span><span class="dot" style={{ background: 'var(--db-extra)' }} />only in another database</span>
-        </div>
-      </section>
-      {phone && <div class="bottom-bar" role="toolbar" aria-label="Move navigation">{navButtons}</div>}
     </>
   )
 
@@ -683,10 +753,11 @@ export function App() {
         <div class="drawer-backdrop" onClick={(e) => e.target === e.currentTarget && setDrawer(false)}>
           <nav class="drawer" aria-label="Library and menu">
             <div class="drawer-head">
-              <b><BookOpen size={18} /> Library</b>
+              <b><BookOpen size={18} /> Menu</b>
               <button class="icon ghost" onClick={() => setDrawer(false)} aria-label="Close"><X size={20} /></button>
             </div>
             {modes}
+            {startBar}
             {library}
             <div class="fam">Databases</div>
             {databases.map((d) => (
@@ -711,23 +782,40 @@ export function App() {
           entryName={entryName}
           onOpen={(id, keys, display) => {
             setSettings({ ...settings, display })
-            open(id, keys)
+            const st: Start = { kind: 'label', id }
+            const c = { ...ctx, U: userTransform(display) }
+            const p = [startStep(c, st)]
+            for (const k of keys.slice(1)) {
+              const n = candidates(c, p[p.length - 1]).find((x) => x.step.key === k)
+              if (!n) break
+              p.push(n.step)
+            }
+            setStart(st)
+            setLine({ path: p, future: [] })
             setMode('explore')
           }}
         />
       )}
       {mode === 'quiz' && <QuizMode ctx={ctx} phone={phone} settings={settings} entryName={entryName} />}
 
-      {dialog === 'settings' && (
-        <SettingsDialog s={settings} set={setSettings} close={() => setDialog(null)} databases={databases} active={active} toggleDb={toggleDb} />
-      )}
+      {dialog === 'settings' && <SettingsDialog s={settings} set={setSettings} close={() => setDialog(null)} databases={databases} active={active} toggleDb={toggleDb} />}
       {dialog === 'export' && (
         <ExportDialog ws={w} close={() => setDialog(null)} onDiscard={async () => {
           await discardDrafts(w)
           commit('All changes discarded')
         }} />
       )}
-      {dialog === 'new-entry' && (
+      {dialog === 'save-lines' && (
+        <SaveLinesDialog
+          lines={lineViews}
+          databases={databases}
+          target={target}
+          close={() => setDialog(null)}
+          save={saveLines}
+          erase={(id) => setSession(remove(session, unsaved[id].line))}
+        />
+      )}
+      {dialog === 'new-start' && (
         <NewEntryDialog type={lib} target={target} close={() => setDialog(null)} create={(e) => {
           const err = createEntry(w, target, e)
           if (err) return err
@@ -735,8 +823,9 @@ export function App() {
           setGraph(g)
           setVersion(w.version)
           saveDrafts(w)
-          setEntryId(e.id)
-          setPath([rootStep({ ...ctx, graph: g }, e.id)])
+          const st: Start = { kind: 'label', id: e.id }
+          setStart(st)
+          setLine({ path: [startStep({ ...ctx, graph: g }, st)], future: [] })
           flash(`Created ${e.name} in ${target}`)
           return null
         }} />

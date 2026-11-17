@@ -13,6 +13,7 @@ test('finds a joseki placed in another corner and opens it in that orientation',
   const exact = page.locator('.result', { hasText: 'Exact' }).first()
   await expect(exact).toContainText('3-3 invasion')
   await expect(exact).toContainText('bottom-right corner')
+  await expect(page.locator('.result', { hasText: '3-3 invasion' })).toHaveCount(1) // exact match hides the rest of its tree
   await exact.click()
   await expect(page.locator('.status')).toContainText('Move 2')
   await expect(page.getByRole('button', { name: 'Bottom-right corner' })).toHaveClass(/on/)

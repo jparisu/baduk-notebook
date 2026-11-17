@@ -3,13 +3,15 @@
  * and for shapes anywhere on the board (with translation, SPEC §6.3).
  */
 import { SIZE, SYMMETRIES, compose, cornerWindow, inverse, transformMap, userTransform, withSwap, type Corner, type DisplayOptions, type Sign, type SignMap, type Transform } from './geometry'
-import type { Graph } from './graph'
+import { labelsAt, type Graph } from './graph'
 
 export type MatchKind = 'exact' | 'contained' | 'near'
 
 export interface Match {
   kind: MatchKind
   entryId: string
+  /** Every label of the matched position (an exact match can belong to several). */
+  labels: string[]
   keys: string[] // line from the entry root to the matched position
   where: string // "top-right corner" / "shape area around Q16"
   /** user frame → canonical frame of the matched position */
@@ -47,7 +49,12 @@ export function indexLines(g: Graph, active: Set<string>): Map<string, { entryId
       if (seen.has(k)) continue
       seen.add(k)
       out.set(k, [...(out.get(k) ?? []), { entryId: e.id, keys }])
-      for (const ed of g.nodes.get(k)?.edges ?? []) if (ed.contribs.some((c) => active.has(c.db))) queue.push([...keys, ed.child])
+      for (const ed of g.nodes.get(k)?.edges ?? []) {
+        if (!ed.contribs.some((c) => active.has(c.db))) continue
+        // Stay inside this label: stop where the following positions carry only other labels.
+        if (!labelsAt(g, ed.child, active).includes(e.id)) continue
+        queue.push([...keys, ed.child])
+      }
     }
   }
   return out
@@ -88,7 +95,7 @@ export function search(g: Graph, active: Set<string>, user: SignMap, maxNear = 2
           const { missing, extra, stones } = compare(node.board, u)
           if (!stones) continue
           const kind: MatchKind | null = !missing && !extra ? 'exact' : !missing ? 'contained' : missing + extra <= maxNear && stones >= 3 ? 'near' : null
-          if (kind) keep({ kind, entryId: o.entryId, keys: o.keys, where: `${label} corner`, toCanon: t, missing, extra, stones })
+          if (kind) keep({ kind, entryId: o.entryId, labels: [o.entryId], keys: o.keys, where: `${label} corner`, toCanon: t, missing, extra, stones })
         }
       }
     }
@@ -120,13 +127,42 @@ export function search(g: Graph, active: Set<string>, user: SignMap, maxNear = 2
                   if (b && node.board[y - dy][x - dx] !== b) extra++
                 }
               const kind: MatchKind | null = !missing && !extra ? 'exact' : missing + extra <= maxNear && st.length >= 3 ? 'near' : null
-              if (kind) keep({ kind, entryId: o.entryId, keys: o.keys, where: 'shape', toCanon: t, missing, extra, stones: st.length, translated: [dx, dy] })
+              if (kind) keep({ kind, entryId: o.entryId, labels: [o.entryId], keys: o.keys, where: 'shape', toCanon: t, missing, extra, stones: st.length, translated: [dx, dy] })
             }
         }
       }
 
+  return dedupe([...best.values()])
+}
+
+/**
+ * One result per position and per label (SPEC §7.2): exact matches of the same position are merged,
+ * and a label with an exact match shows no other (earlier or later) positions of its tree.
+ */
+export function dedupe(all: Match[]): Match[] {
   const order = { exact: 0, contained: 1, near: 2 }
-  return [...best.values()].sort((a, b) => order[a.kind] - order[b.kind] || b.stones - a.stones || a.missing + a.extra - (b.missing + b.extra)).slice(0, 30)
+  const exact = new Map<string, Match>()
+  for (const m of all.filter((m) => m.kind === 'exact')) {
+    const key = m.keys[m.keys.length - 1]
+    const cur = exact.get(key)
+    if (!cur) exact.set(key, { ...m, labels: [...m.labels] })
+    else {
+      for (const l of m.labels) if (!cur.labels.includes(l)) cur.labels.push(l)
+      // Keep the most specific label (the shortest line from its first node) as the main one.
+      if (m.keys.length < cur.keys.length) Object.assign(cur, { entryId: m.entryId, keys: m.keys, toCanon: m.toCanon })
+    }
+  }
+  const covered = new Set([...exact.values()].flatMap((m) => m.labels))
+  const rest = new Map<string, Match>()
+  for (const m of all.filter((m) => m.kind !== 'exact')) {
+    if (covered.has(m.entryId) || exact.has(m.keys[m.keys.length - 1])) continue
+    const cur = rest.get(m.entryId)
+    const better = !cur || order[m.kind] < order[cur.kind] || (order[m.kind] === order[cur.kind] && (m.stones > cur.stones || (m.stones === cur.stones && m.missing + m.extra < cur.missing + cur.extra)))
+    if (better) rest.set(m.entryId, m)
+  }
+  return [...exact.values(), ...rest.values()]
+    .sort((a, b) => order[a.kind] - order[b.kind] || b.stones - a.stones || a.missing + a.extra - (b.missing + b.extra))
+    .slice(0, 30)
 }
 
 /** The display options (corner, mirror, colors) that show a position the way the user sees it. */

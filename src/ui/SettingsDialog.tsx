@@ -77,7 +77,6 @@ export function SettingsDialog({ s, set, close, databases, active, toggleDb }: {
         <h3>Messages</h3>
         {sel('history', 'Show messages from', [['current', 'Current move only'], ['last3', 'Current + 3 previous moves'], ['line', 'Whole line']])}
         {sel('aids', 'Visual aids in text', [['hover', 'Hover, or click/tap to keep'], ['click', 'Click or tap only'], ['always', 'Always, one color each']])}
-        {sel('moveMessage', '"Why this move"', [['board', 'Under the board'], ['panel', 'In the side panel']])}
         {sel('icons', 'Icons', [[true, 'Shown'], [false, 'Hidden']])}
         <h3>Orientation</h3>
         {sel('rememberTransform', 'Remember corner / mirror / colors', [[true, 'Yes'], [false, 'No']])}
