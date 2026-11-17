@@ -8,7 +8,9 @@
       "tags": [
         "influence"
       ],
-      "notes": "{{TR:P16|{{White}}'s knight's move approach}} to {{TR:R17|the 3-3 stone}}. Knight's move approach on the fourth line.",
+      "notes": [
+        "{{TR:P16|{{White}}'s knight's move approach}} to {{TR:R17|the 3-3 stone}}. Knight's move approach on the fourth line."
+      ],
       "eval": {
         "difficulty": "15k"
       },
@@ -29,7 +31,9 @@
           "move": "pe",
           "to": "joseki/3-3 point/High approach:3",
           "status": "main",
-          "why": "Pushes underneath {{White}}'s stone.",
+          "notes": [
+            "Pushes underneath {{White}}'s stone."
+          ],
           "extra": {
             "XSTY": "balanced",
             "XPUR": "territory"
@@ -110,7 +114,9 @@
           "move": "pg",
           "to": "joseki/3-3 point/High approach:7",
           "status": "main",
-          "why": "{{Black}} has territory on the side; {{White}} has a wall. {{White}} now finishes the top.",
+          "notes": [
+            "{{Black}} has territory on the side; {{White}} has a wall. {{White}} now finishes the top."
+          ],
           "extra": {
             "XSTY": "solid",
             "XPUR": "territory"
@@ -131,7 +137,9 @@
           "move": "pc",
           "to": "joseki/3-3 point/High approach:8",
           "status": "main",
-          "why": "Hane on top, reducing the corner.",
+          "notes": [
+            "Hane on top, reducing the corner."
+          ],
           "extra": {
             "XSTY": "aggressive",
             "XPUR": "territory"
@@ -152,7 +160,9 @@
           "move": "qb",
           "to": "joseki/3-3 point/High approach:9",
           "status": "main",
-          "why": "Blocks underneath.",
+          "notes": [
+            "Blocks underneath."
+          ],
           "extra": {
             "XSTY": "solid",
             "XPUR": "defend"
@@ -173,7 +183,9 @@
           "move": "jd",
           "to": "joseki/3-3 point/High approach:10",
           "status": "main",
-          "why": "Extends along the top to use the wall.",
+          "notes": [
+            "Extends along the top to use the wall."
+          ],
           "extra": {
             "XSTY": "balanced",
             "XPUR": [
@@ -188,11 +200,13 @@
       "id": "joseki/3-3 point/High approach:10",
       "stones": "B:pe,pf,pg,qb,qc W:jd,od,oe,of,pc",
       "toPlay": "B",
+      "notes": [
+        "Outcome: {{Black}} has the corner and left side; {{White}} has a wall and the top side."
+      ],
       "extra": {
         "XST": "end",
         "XEV": "=",
-        "XSEN": "B",
-        "XRES": "{{Black}} has the corner and left side; {{White}} has a wall and the top side."
+        "XSEN": "B"
       },
       "moves": []
     }

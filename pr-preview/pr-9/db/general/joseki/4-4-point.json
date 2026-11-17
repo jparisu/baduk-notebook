@@ -8,7 +8,9 @@
       "tags": [
         "corner start"
       ],
-      "notes": "A lone {{TR:Q16|4-4 stone}}. The {{CR:R17|3-3 point}} is still empty, so {{White}} can take the corner directly.",
+      "notes": [
+        "A lone {{TR:Q16|4-4 stone}}. The {{CR:R17|3-3 point}} is still empty, so {{White}} can take the corner directly."
+      ],
       "eval": {
         "difficulty": "25k"
       },
@@ -27,7 +29,9 @@
           "move": "qc",
           "to": "joseki/4-4 point/3-3 invasion",
           "status": "main",
-          "why": "Takes the corner and {{Black}}'s base. {{White}} lives small; {{Black}} gets outside thickness.",
+          "notes": [
+            "Takes the corner and {{Black}}'s base. {{White}} lives small; {{Black}} gets outside thickness."
+          ],
           "extra": {
             "XSTY": "balanced",
             "XPUR": "territory",

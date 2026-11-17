@@ -4,10 +4,10 @@
       "id": "joseki/4-4 point",
       "stones": "B:dp",
       "toPlay": "W",
-      "extra": {
-        "XPN": "I usually approach instead. I invade when {{Black}}'s wall would face my own strong stones.",
-        "C": "Personal notes on the 3-3 invasion. Written in the bottom-left corner on purpose: the app joins it with the General entry anyway."
-      },
+      "notes": [
+        "I usually approach instead. I invade when {{Black}}'s wall would face my own strong stones.",
+        "Personal notes on the 3-3 invasion. Written in the bottom-left corner on purpose: the app joins it with the General entry anyway."
+      ],
       "moves": [
         {
           "move": "cq",
@@ -74,9 +74,9 @@
       "id": "joseki/4-4 point/3-3 invasion/Hane:7b",
       "stones": "B:co,dp,dq,er W:cp,cq,dr",
       "toPlay": "W",
-      "extra": {
-        "XPN": "Remember: {{TR:E2,D3,D4,C5|this wall}} is only worth it if {{Black}} uses it to attack or build. {{White}} must not forget {{CUT:C2}}."
-      },
+      "notes": [
+        "Remember: {{TR:E2,D3,D4,C5|this wall}} is only worth it if {{Black}} uses it to attack or build. {{White}} must not forget {{CUT:C2}}."
+      ],
       "moves": []
     }
   ]

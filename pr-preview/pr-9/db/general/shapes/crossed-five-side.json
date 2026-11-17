@@ -15,7 +15,11 @@
         "inside stones/0",
         "arrangement/connected"
       ],
-      "notes": "{{SQ:S14,S15,S16,R15,T15|The crossed five}}. {{CR:S15|The center}} touches all four other points.",
+      "notes": [
+        "{{SQ:S14,S15,S16,R15,T15|The crossed five}}. {{CR:S15|The center}} touches all four other points.",
+        "One eye space of 5 points",
+        "0 outside liberties"
+      ],
       "eval": {
         "difficulty": "20k"
       },
@@ -28,17 +32,17 @@
         ],
         "XSUM": "Five points in a plus shape. The center is the vital point.",
         "XSRC": "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search.",
-        "XSB": "alive",
-        "XSW": "dead",
-        "XEYE": "One eye space of 5 points",
-        "XLIB": "0 outside liberties"
+        "XSB": "B-alive",
+        "XSW": "B-dead"
       },
       "moves": [
         {
           "move": "re",
           "to": "life & death/Crossed five/Side, enclosed/Black vital point",
           "status": "main",
-          "why": "Takes the center: four single-point eyes."
+          "notes": [
+            "Takes the center: four single-point eyes."
+          ]
         },
         {
           "move": "tenuki",
@@ -52,10 +56,12 @@
       "toPlay": "W",
       "free": "horizontal",
       "name": "Black vital point",
+      "notes": [
+        "Four eyes"
+      ],
       "extra": {
-        "XSB": "alive",
-        "XSW": "alive",
-        "XEYE": "Four eyes"
+        "XSB": "B-alive",
+        "XSW": "B-alive"
       },
       "moves": []
     },
@@ -65,10 +71,12 @@
       "toPlay": "B",
       "free": "horizontal",
       "name": "White vital point",
+      "notes": [
+        "One eye"
+      ],
       "extra": {
-        "XSB": "dead",
-        "XSW": "dead",
-        "XEYE": "One eye"
+        "XSB": "B-dead",
+        "XSW": "B-dead"
       },
       "moves": []
     },
@@ -83,7 +91,9 @@
           "move": "re",
           "to": "life & death/Crossed five/Side, enclosed/White first/White vital point",
           "status": "main",
-          "why": "Takes the center. {{Black}} can make only one eye."
+          "notes": [
+            "Takes the center. {{Black}} can make only one eye."
+          ]
         }
       ]
     }

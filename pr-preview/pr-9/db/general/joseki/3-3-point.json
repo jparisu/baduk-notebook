@@ -8,7 +8,9 @@
       "tags": [
         "corner start"
       ],
-      "notes": "{{TR:R17|The 3-3 stone}} is already alive in the corner but low toward the center.",
+      "notes": [
+        "{{TR:R17|The 3-3 stone}} is already alive in the corner but low toward the center."
+      ],
       "eval": {
         "difficulty": "25k"
       },

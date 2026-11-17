@@ -15,7 +15,11 @@
         "inside stones/0",
         "arrangement/connected"
       ],
-      "notes": "{{SQ:T15,T16,S15,S16|The square}} is a single eye. {{Black}} has no move that splits it.",
+      "notes": [
+        "{{SQ:T15,T16,S15,S16|The square}} is a single eye. {{Black}} has no move that splits it.",
+        "One eye space of 4 points",
+        "0 outside liberties"
+      ],
       "eval": {
         "difficulty": "25k"
       },
@@ -28,17 +32,17 @@
         ],
         "XSUM": "Four points in a 2×2 block. Dead even if {{Black}} plays first: any move inside leaves a bent three, and {{White}} kills it at the bend.",
         "XSRC": "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search.",
-        "XSB": "dead",
-        "XSW": "dead",
-        "XEYE": "One eye space of 4 points",
-        "XLIB": "0 outside liberties"
+        "XSB": "B-dead",
+        "XSW": "B-dead"
       },
       "moves": [
         {
           "move": "rd",
           "to": "life & death/Square four/Side, enclosed/Black S16",
           "status": "mistake",
-          "why": "Any {{Black}} move inside leaves a bent three."
+          "notes": [
+            "Any {{Black}} move inside leaves a bent three."
+          ]
         }
       ]
     },
@@ -49,15 +53,17 @@
       "free": "horizontal",
       "name": "Black S16",
       "extra": {
-        "XSB": "alive",
-        "XSW": "dead"
+        "XSB": "B-alive",
+        "XSW": "B-dead"
       },
       "moves": [
         {
           "move": "se",
           "to": "life & death/Square four/Side, enclosed/Black S16:2",
           "status": "main",
-          "why": "Takes the vital point of the bent three."
+          "notes": [
+            "Takes the vital point of the bent three."
+          ]
         }
       ]
     },
@@ -66,10 +72,12 @@
       "stones": "B:qc,qd,qe,qf,rc,rd,rf,sc,sf W:pb,pc,pd,pe,pf,pg,qb,qg,rb,rg,sb,se,sg",
       "toPlay": "B",
       "free": "horizontal",
+      "notes": [
+        "One eye"
+      ],
       "extra": {
-        "XSB": "dead",
-        "XSW": "dead",
-        "XEYE": "One eye"
+        "XSB": "B-dead",
+        "XSW": "B-dead"
       },
       "moves": []
     }
