@@ -6,6 +6,7 @@ import { changes, download, makePatch, makeZip, type Workspace } from '../edit/w
 import { parsePt, type Pt, type Sign } from '../core/geometry'
 import type { NewEntry } from '../edit/ops'
 import type { DatabaseInfo } from '../data/load'
+import { BRANCH, REPO } from '../config'
 
 function Shell({ title, close, children }: { title: string; close: () => void; children: ComponentChildren }) {
   return (
@@ -75,7 +76,34 @@ export function ExportDialog({ ws, close, onDiscard }: { ws: Workspace; close: (
             <button onClick={() => navigator.clipboard?.writeText(patch).then(() => setCopied(true), () => setCopied(false))}>{copied ? 'Copied' : 'Copy patch'}</button>
           </div>
           {errors.length > 0 && <p class="hint">Fix the errors above before exporting.</p>}
-          <h3>How to submit</h3>
+          <h3>Propose on GitHub (no git needed)</h3>
+          <p class="hint">Opens GitHub with each file ready. Press "Commit changes…", choose "Create a new branch and start a pull request", and GitHub opens the pull request.</p>
+          <ul class="propose">
+            {list.map((c) => {
+              const isNew = c.before === null
+              const url = isNew
+                ? `https://github.com/${REPO}/new/${BRANCH}?filename=${encodeURIComponent(c.path)}&value=${encodeURIComponent(c.after)}`
+                : `https://github.com/${REPO}/edit/${BRANCH}/${c.path}`
+              const tooLong = isNew && url.length > 7500
+              return (
+                <li key={c.path}>
+                  <code>{c.path}</code>
+                  {isNew && !tooLong ? (
+                    <a class="btn-link" href={url} target="_blank" rel="noopener">Create on GitHub</a>
+                  ) : (
+                    <>
+                      <button onClick={() => navigator.clipboard?.writeText(c.after)}>Copy content</button>
+                      <a class="btn-link" href={isNew ? `https://github.com/${REPO}/new/${BRANCH}?filename=${encodeURIComponent(c.path)}` : url} target="_blank" rel="noopener">
+                        {isNew ? 'Create on GitHub' : 'Edit on GitHub'}
+                      </a>
+                      <span class="hint">{isNew ? 'Too long for a link: copy, then paste on GitHub.' : 'Copy, then replace the text on GitHub.'}</span>
+                    </>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+          <h3>Or with git</h3>
           <ol class="steps">
             <li>In a clone of the repository, run <code>git apply baduk-notebook-{stamp}.patch</code>.</li>
             <li>Or unzip the files into the repository folder, or upload them on GitHub ("Add file → Upload files").</li>

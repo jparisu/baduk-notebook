@@ -7,6 +7,8 @@ import type { ComponentChildren } from 'preact'
 import { ChevronRight, X } from 'lucide-preact'
 import type { Entry } from '../core/graph'
 import { entryFields, rootStep, type Ctx } from '../view'
+import { CATEGORIES, categoryOf } from '../core/fields'
+import { storageKey } from '../storage'
 
 const RANK = (r: string) => {
   const m = r.match(/^(\d+)([kd])$/)
@@ -19,6 +21,14 @@ interface Item {
   diff: string
   fam: string[]
   tags: string[]
+  /** A joseki whose first move is a mistake, overplay or trick ("mistake joseki", shown in red). */
+  mistake: boolean
+}
+
+/** True when the move that starts the label is not a good move. */
+export function isMistakeEntry(e: Entry): boolean {
+  const c = categoryOf(e.contribs[0]?.node.data ?? {})
+  return !!c && !CATEGORIES[c].good
 }
 
 interface Node {
@@ -66,6 +76,21 @@ export function Library(props: {
   const [tags, setTags] = useState<string[]>([])
   const [showTags, setShowTags] = useState(false)
   const [open, setOpen] = useState<Set<string>>(new Set())
+  const [kind, setKind] = useState<'good' | 'all' | 'mistakes'>(() => {
+    try {
+      return (localStorage.getItem(storageKey('baduk-notebook.libkind')) as never) || 'good'
+    } catch {
+      return 'good'
+    }
+  })
+  const pickKind = (k: typeof kind) => {
+    setKind(k)
+    try {
+      localStorage.setItem(storageKey('baduk-notebook.libkind'), k)
+    } catch {
+      /* ignore */
+    }
+  }
 
   const all = useMemo<Item[]>(
     () =>
@@ -77,17 +102,18 @@ export function Library(props: {
           const famRaw = f.one('XFAM')?.value ?? (props.lib === 'shape' ? f.one('XLOC')?.value : null)
           const fam = famRaw ? famRaw.split('/').map((s) => s.trim()).filter(Boolean) : ['Other']
           if (props.lib === 'shape') fam.push(name)
-          return { e, name, diff: f.one('XDIFF')?.value ?? '', fam, tags: f.list('XTAG') }
+          return { e, name, diff: f.one('XDIFF')?.value ?? '', fam, tags: f.list('XTAG'), mistake: isMistakeEntry(e) }
         }),
     [props.entries, props.lib, ctx.graph, ctx.active],
   )
   const allTags = useMemo(() => [...new Set(all.flatMap((i) => i.tags))].sort(), [all])
   const q = query.trim().toLowerCase()
-  const filtering = !!q || tags.length > 0 || maxRank !== 'any'
+  const filtering = !!q || tags.length > 0 || maxRank !== 'any' || kind === 'mistakes'
   const items = all
     .filter((i) => !q || i.name.toLowerCase().includes(q) || i.fam.join(' ').toLowerCase().includes(q))
     .filter((i) => tags.every((t) => i.tags.includes(t)))
     .filter((i) => maxRank === 'any' || !i.diff || RANK(i.diff) <= RANK(maxRank))
+    .filter((i) => kind === 'all' || (kind === 'good' ? !i.mistake : i.mistake) || i.e.id === props.current)
   const tree = buildTree(items)
 
   // Families around the current entry start open.
@@ -121,7 +147,10 @@ export function Library(props: {
             <span class="twisty-space" />
           )}
           {n.item ? (
-            <button class="lib-name" onClick={() => props.onOpen(n.item!.e.id)} title={n.item.name}>{n.name}</button>
+            <button class={`lib-name ${n.item.mistake ? 'mistake' : ''}`} onClick={() => props.onOpen(n.item!.e.id)} title={n.item.mistake ? `${n.item.name} (starts with a mistake)` : n.item.name}>
+              {n.item.mistake && <span class="mistake-dot" aria-hidden />}
+              {n.name}
+            </button>
           ) : (
             <button class="lib-name fam-only" onClick={() => toggle(n.key)}>{n.name}</button>
           )}
@@ -139,6 +168,13 @@ export function Library(props: {
         <button role="tab" aria-selected={props.lib === 'shape'} class={props.lib === 'shape' ? 'on' : ''} onClick={() => props.setLib('shape')}>Shapes</button>
       </div>
       <input class="search" type="search" placeholder="Search by name" value={query} onInput={(e) => setQuery((e.target as HTMLInputElement).value)} aria-label="Search by name" />
+      <div class="seg kind-filter" role="group" aria-label="Which joseki">
+        {(['good', 'all', 'mistakes'] as const).map((k) => (
+          <button key={k} class={kind === k ? 'on' : ''} aria-pressed={kind === k} onClick={() => pickKind(k)} title={{ good: 'Only joseki that start with a good move', all: 'Also joseki that start with a mistake (shown in red)', mistakes: 'Only joseki that start with a mistake, overplay or trick' }[k]}>
+            {{ good: 'Good only', all: 'All', mistakes: 'Mistakes' }[k]}
+          </button>
+        ))}
+      </div>
       <div class="lib-filters">
         <select class="filter" value={maxRank} onChange={(e) => setMaxRank((e.target as HTMLSelectElement).value)} aria-label="Difficulty">
           <option value="any">Any difficulty</option>

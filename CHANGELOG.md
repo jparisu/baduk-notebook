@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Design tab
+- New **Design** mode with three panels: board, a large tree of moves, and the info of the selected move (Move / Position / Name tabs).
+- Right-click a move in the tree: category, joseki end, result, why, name a joseki, make it the main line, copy link, fold, delete.
+- Folding is only a Design view. Moves stay in the browser cache until **Save to database**; **Export / pull request** adds **Propose on GitHub**, which opens GitHub with the new files filled in.
+- Library: **Good only / All / Mistakes**; joseki that start with a mistake show in red.
+
+
 ### Shareable links
 - Links open a joseki, shape or exact position: `?open=<id>`, `&line=<moves>`, `&view=<corner>[-m][-s]`. The address bar follows the board; "Copy link" buttons next to the title and in This joseki.
 

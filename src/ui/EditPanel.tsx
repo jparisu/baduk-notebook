@@ -31,6 +31,8 @@ export interface EditApi {
   commit: (msg?: string) => void
   onFocusText: (el: HTMLTextAreaElement) => void
   onDeleteMove: () => void
+  /** Design tab: show one group of fields (with its extra fields open) instead of everything. */
+  only?: 'move' | 'pos' | 'name'
 }
 
 export function EditPanel(p: EditApi) {
@@ -133,10 +135,12 @@ export function EditPanel(p: EditApi) {
   const targetOwnsMove = step.edge?.contribs.some((c) => c.db === p.target)
   const curCat = read('XCAT')
   const definesHere = !!read('XID') && !!read('XNAME')
+  const show = (g: 'move' | 'pos' | 'name') => !p.only || p.only === g
 
   return (
     <div class="edit-panel">
-      {hasMove && (
+      {p.only === 'move' && !hasMove && <p class="hint">This is the start of the line: select a move in the tree.</p>}
+      {hasMove && show('move') && (
         <section>
           <h2>This move is…</h2>
           <div class="cat-buttons" role="group" aria-label="Category of the last move">
@@ -155,10 +159,18 @@ export function EditPanel(p: EditApi) {
             ))}
           </div>
           {field('XMW', 'Why', { area: true, id: 'f-node-XMW', placeholder: 'Why this move is good or bad' })}
+          {p.only === 'move' && (
+            <>
+              {!p.shapes && select('XSTY', 'Style', [['aggressive', 'Aggressive'], ['balanced', 'Balanced'], ['solid', 'Solid']])}
+              {!p.shapes && chips('XPUR', 'Purpose', ['territory', 'influence', 'sente', 'attack', 'defend', 'sabaki', 'probe', 'reduce', 'connect', 'cut', 'eye', 'kill'])}
+              {!p.shapes && field('XCOND', 'Conditions', { placeholder: 'ladder, needs-support…' })}
+              {field('XMN', 'Note on the move', { area: true })}
+            </>
+          )}
         </section>
       )}
 
-      <section>
+      {show('pos') && <section>
         <h2>Result of this position</h2>
         {p.shapes ? (
           <>
@@ -173,9 +185,21 @@ export function EditPanel(p: EditApi) {
           </>
         )}
         {field('XPW', 'Explanation', { area: true })}
-      </section>
+        {p.only === 'pos' && (
+          <>
+            {!p.shapes && field('XPBS', 'Points source', { placeholder: 'katago / book / estimate' })}
+            {!p.shapes && select('XSEN', 'Sente', [['B', 'Black'], ['W', 'White'], ['none', 'None']])}
+            {!p.shapes && field('XRES', 'Outcome', { area: true, placeholder: 'Who got what' })}
+            {!p.shapes && field('XTEN', 'Tenuki here', { area: true })}
+            {field('XAJI', 'Watch out (aji)', { area: true })}
+            {field('XPN', 'Note', { area: true })}
+            {p.shapes && field('XEYE', 'Eyes')}
+            {p.shapes && field('XLIB', 'Liberties')}
+          </>
+        )}
+      </section>}
 
-      <section>
+      {show('name') && <section>
         <h2>Name</h2>
         {definesHere ? (
           <>
@@ -183,6 +207,17 @@ export function EditPanel(p: EditApi) {
             {field('XFAM', 'Family', { placeholder: '4-4 point/3-3 invasion' })}
             {field('XDIFF', 'Difficulty', { placeholder: '15k' })}
             {field('XSUM', 'Summary', { area: true })}
+            {p.only === 'name' && (
+              <>
+                {field('XALIAS', 'Also called', { placeholder: 'comma separated' })}
+                {field('XTAG', 'Tags', { placeholder: 'comma separated' })}
+                {field('XSRC', 'Sources', { placeholder: 'comma separated' })}
+                {p.shapes && select('XLOC', 'Location', [['corner', 'Corner'], ['side', 'Side'], ['center', 'Center']])}
+                {p.shapes && select('XRESB', 'Black first', status)}
+                {p.shapes && select('XRESW', 'White first', status)}
+                {p.shapes && field('XVITAL', 'Vital points', { placeholder: 'e.g. T15' })}
+              </>
+            )}
           </>
         ) : (
           <form class="name-form" onSubmit={(e) => {
@@ -203,10 +238,10 @@ export function EditPanel(p: EditApi) {
             </div>
           </form>
         )}
-      </section>
+      </section>}
 
-      <button class="more-toggle" aria-expanded={more} onClick={() => setMore(!more)}>{more ? '▾' : '▸'} More fields</button>
-      {more && (
+      {!p.only && <button class="more-toggle" aria-expanded={more} onClick={() => setMore(!more)}>{more ? '▾' : '▸'} More fields</button>}
+      {!p.only && more && (
         <section class="more">
           {hasMove && !p.shapes && select('XSTY', 'Style', [['aggressive', 'Aggressive'], ['balanced', 'Balanced'], ['solid', 'Solid']])}
           {hasMove && !p.shapes && chips('XPUR', 'Purpose', ['territory', 'influence', 'sente', 'attack', 'defend', 'sabaki', 'probe', 'reduce', 'connect', 'cut', 'eye', 'kill'])}
@@ -235,7 +270,7 @@ export function EditPanel(p: EditApi) {
         </section>
       )}
 
-      {targetOwnsMove && <button class="danger" onClick={p.onDeleteMove}>Delete this move and what follows from {p.target}</button>}
+      {targetOwnsMove && show('move') && <button class="danger" onClick={p.onDeleteMove}>Delete this move and what follows from {p.target}</button>}
     </div>
   )
 }

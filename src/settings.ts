@@ -26,6 +26,7 @@ export interface Settings {
   hideLeft: boolean
   treeMode: 'linear' | 'proximity' | 'complete'
   treeZoom: number
+  designZoom: number
   hideRight: boolean
   activeDatabases: string[] | null // null = use activeByDefault from db/index.json
 }
@@ -50,6 +51,7 @@ export const DEFAULT_SETTINGS: Settings = {
   hideLeft: false,
   treeMode: 'proximity',
   treeZoom: 1,
+  designZoom: 1.2,
   hideRight: false,
   activeDatabases: null,
 }

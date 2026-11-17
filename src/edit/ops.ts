@@ -207,3 +207,19 @@ export function describePosition(g: Graph, key: string): string | null {
   }
   return null
 }
+
+/** Makes the last move of `path` the first variation (main line) in the target database's file. */
+export function promote(ws: Workspace, path: Step[], target: string): boolean {
+  const e = path[path.length - 1].edge
+  if (!e) return false
+  let done = false
+  for (const c of e.contribs.filter((c) => c.db === target)) {
+    const f = fileOf(ws, c.file)
+    const parent = findParent(f.roots, c.node)
+    if (!parent || parent.children[0] === c.node) continue
+    parent.children = [c.node, ...parent.children.filter((x) => x !== c.node)]
+    touch(ws, f)
+    done = true
+  }
+  return done
+}

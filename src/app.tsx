@@ -27,16 +27,16 @@ import { ExportDialog, NewDatabaseDialog, NewEntryDialog, SaveLinesDialog, type 
 import { FindMode } from './ui/FindMode'
 import { QuizMode } from './ui/QuizMode'
 import { changeCount, createWorkspace, discardDrafts, restoreDrafts, saveDrafts, type Workspace } from './edit/workspace'
-import { checkMove, createDatabase, createEntry, deleteMove, locate, setProps } from './edit/ops'
+import { checkMove, createDatabase, createEntry, deleteMove, locate, promote, setProps } from './edit/ops'
 import { sgfPoint } from './edit/sgfio'
-import { previewName } from './storage'
+import { previewName, storageKey } from './storage'
 import { decodeLine, linkFor, readUrl } from './share'
 import { erase, loadPosition, loadSession, record, remove, savePosition, saveSession, sameStart, type Line } from './session'
 
 // Distinct colors for "always show" references (SPEC §11.2).
 const REF_PALETTE = ['#d81b60', '#1e88e5', '#00897b', '#f4511e', '#8e24aa', '#6d4c41', '#3949ab', '#c0ca33']
 
-type Mode = 'explore' | 'find' | 'quiz'
+type Mode = 'explore' | 'design' | 'find' | 'quiz'
 type Tool = 'move' | 'TR' | 'SQ' | 'CR' | 'MA' | 'LB' | 'XCUT' | 'XWALL' | 'XINF' | 'AR' | 'AB' | 'AW' | 'AE'
 /** Edit tools: id, button text, explanation (shown on hover and long-press). */
 const TOOLS: [Tool, string, string][] = [
@@ -86,6 +86,28 @@ export function App() {
   const [refType, setRefType] = useState<string | null>(null)
   const [phoneTab, setPhoneTab] = useState<'next' | 'pos' | 'tree' | 'about' | 'edit'>('next')
   const [toast, setToast] = useState<string | null>(null)
+  // Design tab (SPEC §8.10)
+  const [designFrom, setDesignFrom] = useState<'start' | 'selection'>('start')
+  const [designTab, setDesignTab] = useState<'move' | 'pos' | 'name'>('move')
+  const [infoFolded, setInfoFolded] = useState(false)
+  const [showFolded, setShowFolded] = useState(false)
+  const [ctxMenu, setCtxMenu] = useState<{ line: Step[]; x: number; y: number } | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<Step[] | null>(null)
+  const [folded, setFoldedState] = useState<Set<string>>(() => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem(storageKey('baduk-notebook.design.folded')) ?? '[]'))
+    } catch {
+      return new Set()
+    }
+  })
+  const setFolded = (f: Set<string>) => {
+    setFoldedState(f)
+    try {
+      localStorage.setItem(storageKey('baduk-notebook.design.folded'), JSON.stringify([...f]))
+    } catch {
+      /* ignore */
+    }
+  }
   const lastText = useRef<HTMLTextAreaElement | null>(null)
   // Board clicks that arrive before the screen caught up with the previous one wait for the next render.
   const settling = useRef(false)
@@ -190,7 +212,7 @@ export function App() {
   // The address bar always holds the link to what is on the board (explore mode).
   // Layout effect: updated in the same step as the screen, so a reload never reads an older link.
   useLayoutEffect(() => {
-    if (!ctx || !path.length || mode !== 'explore') return
+    if (!ctx || !path.length || (mode !== 'explore' && mode !== 'design')) return
     const url = linkFor(ctx, start, path, settings.display)
     try {
       history.replaceState(null, '', url ?? location.pathname)
@@ -274,7 +296,7 @@ export function App() {
         if (e.key === 'Escape') el.blur()
         return
       }
-      if (!ctx || mode !== 'explore' || dialog) return
+      if (!ctx || (mode !== 'explore' && mode !== 'design') || dialog) return
       const nav: Record<string, () => void> = { ArrowLeft: back, ArrowRight: forward, Home: toStart, End: toEnd }
       if (nav[e.key]) {
         e.preventDefault()
@@ -340,7 +362,11 @@ export function App() {
   }
 
   function writeNode(values: Record<string, string[] | null>, msg?: string) {
-    const loc = locate(w, ctx!, path, target, label, true)!
+    writeAt(path, values, msg)
+  }
+  /** Writes properties on the move/position at the end of `at` (saving the line up to it). */
+  function writeAt(at: Step[], values: Record<string, string[] | null>, msg?: string) {
+    const loc = locate(w, ctx!, at, target, primaryLabel(ctx!, at), true)!
     if (values.XCAT) {
       const c = values.XCAT[0]
       Object.assign(values, {
@@ -549,9 +575,9 @@ export function App() {
   )
   const modes = (
     <div class="seg modes" role="group" aria-label="Mode">
-      {(['explore', 'find', 'quiz'] as Mode[]).map((m) => (
-        <button key={m} class={mode === m ? 'on' : ''} onClick={() => { setMode(m); setDrawer(false); if (m !== 'explore') setEdit(false) }}>
-          {{ explore: 'Explore', find: 'Find', quiz: 'Quiz' }[m]}
+      {(['explore', 'design', 'find', 'quiz'] as Mode[]).map((m) => (
+        <button key={m} class={mode === m ? 'on' : ''} title={m === 'design' ? 'Build and annotate trees of moves' : undefined} onClick={() => { setMode(m); setDrawer(false); setEdit(m === 'design'); setCtxMenu(null) }}>
+          {{ explore: 'Explore', design: 'Design', find: 'Find', quiz: 'Quiz' }[m]}
         </button>
       ))}
     </div>
@@ -796,6 +822,211 @@ export function App() {
     </div>
   )
 
+  /* ---- Design tab (SPEC §8.10): board | big tree | info of the selected node ---- */
+  const fromSel = designFrom === 'selection'
+  const designPath = fromSel ? path.slice(-1) : path
+  const prefix = fromSel ? path.slice(0, -1) : []
+  const designZoom = settings.designZoom
+  const setDesignZoom = (z: number) => setSettings({ ...settings, designZoom: Math.max(0.5, Math.min(2, Math.round(z * 100) / 100)) })
+  const designTree = (
+    <Tree
+      ctx={ctx}
+      path={designPath}
+      forward={[]}
+      mode="complete"
+      zoom={designZoom}
+      labels="coord"
+      first={prefix.length}
+      defaultDb={databases[0]?.id ?? ''}
+      onSelect={(l) => {
+        go([...prefix, ...l])
+        setCtxMenu(null)
+      }}
+      extra={(keys) => extraChildren([...prefix.map((x) => x.key), ...keys])}
+      tagOf={tagOf}
+      folded={folded}
+      showFolded={showFolded}
+      onContext={(l, x, y) => {
+        go([...prefix, ...l])
+        setCtxMenu({ line: [...prefix, ...l], x, y })
+      }}
+    />
+  )
+  const fitTree = () => {
+    const box = document.querySelector('.dtree-canvas') as HTMLElement | null
+    const svg = box?.querySelector('svg')
+    if (!box || !svg) return
+    const natural = Number(svg.getAttribute('width')) / designZoom
+    setDesignZoom(Math.min(2, Math.max(0.5, (box.clientWidth - 12) / natural)))
+  }
+  const toggleFold = (key: string) => {
+    const f = new Set(folded)
+    f.has(key) ? f.delete(key) : f.add(key)
+    setFolded(f)
+  }
+  const deleteAt = (l: Step[]) => {
+    const last = l[l.length - 1]
+    if (last.free && !last.edge) {
+      setSession(erase(session, start, movesOf(l)))
+      go(l.slice(0, -1))
+      flash('Removed from the session')
+    } else setConfirmDelete(l)
+  }
+  const unsavedCount = unsaved.reduce((n, u) => n + u.steps.filter((x) => x.free && !x.edge).length, 0)
+  const cats = isShape ? SHAPE_CATEGORIES : JOSEKI_CATEGORIES
+  const ctxLast = ctxMenu ? ctxMenu.line[ctxMenu.line.length - 1] : null
+  const ctxMenuEl = ctxMenu && ctxLast && (
+    <div class="ctx-backdrop" onClick={() => setCtxMenu(null)} onContextMenu={(e) => { e.preventDefault(); setCtxMenu(null) }}>
+      <div
+        class="ctx-menu"
+        role="menu"
+        style={{ left: `${Math.min(ctxMenu.x, window.innerWidth - 260)}px`, top: `${Math.min(ctxMenu.y, window.innerHeight - 420)}px` }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {ctxMenu.line.length > 1 && (
+          <>
+            <div class="ctx-h">This move is…</div>
+            <div class="ctx-cats">
+              {cats.map((c, i) => (
+                <button key={c} role="menuitem" title={`${CATEGORIES[c].label} (key ${i + 1})`} onClick={() => { writeAt(ctxMenu.line, { XCAT: [c] }, `Saved as ${CATEGORIES[c].label.toLowerCase()} in ${target}`); setCtxMenu(null) }}>
+                  <CategoryDot cat={c} /> {CATEGORIES[c].label}
+                </button>
+              ))}
+            </div>
+            <hr />
+          </>
+        )}
+        <button role="menuitem" onClick={() => { writeAt(ctxMenu.line, { XST: ['end'] }, 'Marked as joseki end'); setCtxMenu(null) }}>▣ Mark as joseki end</button>
+        <button role="menuitem" onClick={() => { writeAt(ctxMenu.line, { XST: ['end-mistake'] }, 'Marked as end after a mistake'); setCtxMenu(null) }}>▣ Mark as end after a mistake</button>
+        <button role="menuitem" onClick={() => { setDesignTab('pos'); setInfoFolded(false); setCtxMenu(null); setTimeout(() => document.getElementById('f-XPB')?.focus(), 50) }}>Set the result…</button>
+        <button role="menuitem" onClick={() => { setDesignTab('move'); setInfoFolded(false); setCtxMenu(null); setTimeout(() => document.getElementById('f-node-XMW')?.focus(), 50) }}>Edit why…</button>
+        <hr />
+        <button role="menuitem" onClick={() => { setDesignTab('name'); setInfoFolded(false); setCtxMenu(null); setTimeout(() => document.getElementById('f-name-new')?.focus(), 50) }}>⚑ Name a joseki from here…</button>
+        {ctxLast.edge && (
+          <button role="menuitem" onClick={() => { if (promote(w, ctxMenu.line, target)) commit('This is now the main line'); else flash(`Only moves stored in ${target} can be reordered here.`); setCtxMenu(null) }}>Make this the main line</button>
+        )}
+        <button role="menuitem" onClick={() => { copyLink(linkFor(ctx, start, ctxMenu.line, settings.display), 'this position'); setCtxMenu(null) }}>Copy link</button>
+        <hr />
+        <button role="menuitem" onClick={() => { toggleFold(ctxLast.key); setCtxMenu(null) }}>{folded.has(ctxLast.key) ? 'Unfold this branch' : 'Fold this branch (only in Design)'}</button>
+        {ctxMenu.line.length > 1 && (
+          <button role="menuitem" class="danger-text" onClick={() => { setCtxMenu(null); deleteAt(ctxMenu.line) }}>Delete this move and what follows…</button>
+        )}
+      </div>
+    </div>
+  )
+  const designControls = (
+    <div class="grp edit-controls">
+      <label class="target">
+        <span class="grp-label">into</span>
+        <select value={target} onChange={(e) => {
+          const v = (e.target as HTMLSelectElement).value
+          if (v === '__new') setDialog('new-db')
+          else setTarget(v)
+        }} aria-label="Database that receives the edits">
+          {databases.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+          <option value="__new">+ New database…</option>
+        </select>
+      </label>
+      <button class={unsavedCount ? 'save-lines' : ''} disabled={!unsavedCount} onClick={() => saveLines(unsaved.map((_, i) => i), target)} title="Store every move of this tree that is only in the browser cache">
+        <Save size={15} /> Save to database{unsavedCount ? ` (${unsavedCount})` : ''}
+      </button>
+      <button class={nChanges ? 'changes' : ''} onClick={() => setDialog('export')} title="Download a patch or propose the changes on GitHub">
+        <Upload size={15} /> Export / pull request{nChanges ? ` (${nChanges})` : ''}
+      </button>
+    </div>
+  )
+  const design = (
+    <div class={`design ${infoFolded ? 'info-folded' : ''}`}>
+      <section class="card design-board" aria-label="Board">
+        {status}
+        {sideSwitch}
+        {boardEl}
+        <div class="nav">{navButtons}</div>
+        {editToolbar}
+      </section>
+      <section class="card design-tree" aria-label="Tree of moves">
+        <div class="dtree-bar">
+          <div class="seg" role="group" aria-label="Tree starts at">
+            <button class={!fromSel ? 'on' : ''} onClick={() => setDesignFrom('start')}>From the start</button>
+            <button class={fromSel ? 'on' : ''} onClick={() => setDesignFrom('selection')}>From selection</button>
+          </div>
+          <div class="zoom" role="group" aria-label="Tree size">
+            <button class="icon" onClick={() => setDesignZoom(designZoom - 0.15)} aria-label="Smaller tree">−</button>
+            <span class="zoom-val">{Math.round(designZoom * 100)}%</span>
+            <button class="icon" onClick={() => setDesignZoom(designZoom + 0.15)} aria-label="Bigger tree">+</button>
+            <button onClick={fitTree}>Fit</button>
+          </div>
+          {folded.size > 0 && (
+            <button class={showFolded ? 'on' : ''} onClick={() => setShowFolded(!showFolded)} aria-pressed={showFolded}>Show folded ({folded.size})</button>
+          )}
+        </div>
+        <div class="dtree-canvas">{designTree}</div>
+        <div class="legend">
+          <span><MoveMark cat="main" />joseki</span>
+          <span><MoveMark cat="mistake" />mistake</span>
+          <span><MoveMark cat="punish" />punishment</span>
+          <span>⚑ name starts</span>
+          <span class="unsaved">◌ only in the browser cache</span>
+          <span>+n folded</span>
+          <span>right-click a move for more</span>
+        </div>
+        <div class="dtree-save">
+          <span>⚑ <b>{label ? entryName(label) : 'Unnamed line'}</b> · {unsavedCount ? `${unsavedCount} move${unsavedCount === 1 ? '' : 's'} only in the browser cache` : 'everything stored in the database'}</span>
+          <span class="spacer" />
+          <button class={unsavedCount ? 'on' : ''} disabled={!unsavedCount} onClick={() => saveLines(unsaved.map((_, i) => i), target)}>Save to {target}</button>
+        </div>
+      </section>
+      <section class="card design-info" aria-label="Selected move and position">
+        {infoFolded ? (
+          <button class="info-rail" onClick={() => setInfoFolded(false)} aria-label="Show the info panel">Selected move ▸</button>
+        ) : (
+          <>
+            <div class="info-head">
+              <div class="seg" role="tablist">
+                {(['move', 'pos', 'name'] as const).map((t) => (
+                  <button key={t} role="tab" aria-selected={designTab === t} class={designTab === t ? 'on' : ''} onClick={() => setDesignTab(t)}>
+                    {{ move: 'Move', pos: 'Position', name: 'Name' }[t]}
+                  </button>
+                ))}
+              </div>
+              <button class="hide-btn" onClick={() => setInfoFolded(true)} aria-label="Fold the info panel"><PanelRightClose size={16} /></button>
+            </div>
+            <EditPanel
+              ws={w}
+              ctx={ctx}
+              path={path}
+              target={target}
+              shapes={isShape}
+              commit={commit}
+              only={designTab}
+              onFocusText={(el) => (lastText.current = el)}
+              onDeleteMove={() => deleteAt(path)}
+            />
+          </>
+        )}
+      </section>
+      {ctxMenuEl}
+      {confirmDelete && (
+        <div class="modal" onClick={(e) => e.target === e.currentTarget && setConfirmDelete(null)}>
+          <div class="box" role="dialog" aria-label="Delete">
+            <h2>Delete from {target}?</h2>
+            <p class="text">This removes the move and everything after it from {target}. Moves stored in other databases stay.</p>
+            <div class="actions">
+              <button onClick={() => setConfirmDelete(null)}>Cancel</button>
+              <button class="danger" onClick={() => {
+                if (deleteMove(w, confirmDelete, target)) {
+                  setLine({ path: confirmDelete.slice(0, -1), future: [] })
+                  commit(`Deleted from ${target}`)
+                } else flash(`That move is not stored in ${target}.`)
+                setConfirmDelete(null)
+              }}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
   const phoneTabs: [typeof phoneTab, string][] = edit
     ? [['edit', 'Edit'], ['next', 'Next'], ['tree', 'Tree'], ['about', 'About']]
     : [['next', 'Next'], ['pos', 'Position'], ['tree', 'Tree'], ['about', 'About']]
@@ -879,6 +1110,7 @@ export function App() {
           </button>
         )}
         {!phone && mode === 'explore' && editControls}
+        {mode === 'design' && designControls}
         {phone && nChanges > 0 && <button class="icon ghost changes" onClick={() => setDialog('export')} aria-label={`Export ${nChanges} changes`}><Upload size={20} /></button>}
         <button class={phone ? 'icon ghost' : ''} onClick={() => setDialog('settings')} aria-label="Settings"><SettingsIcon size={phone ? 20 : 16} />{!phone && ' Settings'}</button>
       </header>
@@ -908,6 +1140,7 @@ export function App() {
       )}
 
       {mode === 'explore' && explore}
+      {mode === 'design' && design}
       {mode === 'find' && (
         <FindMode
           ctx={ctx}

@@ -514,6 +514,22 @@ Any joseki, shape or position can be opened from a link:
 - A link wins over the last position. If its joseki is in a database that is switched off, that database is switched on. An unknown id, or a move that cannot be played, is reported and the rest is ignored.
 - Positions set up by hand have no link yet.
 
+### 8.10 Design tab
+
+A workspace to build and annotate trees of moves (good joseki and "mistake joseki" alike), next to Explore, Find and Quiz.
+
+- **Three panels:** board (with navigation and drawing tools) | **tree** (the widest) | **info** of the selected node. Under 1200 px the info panel moves under the tree; on a phone the panels stack. The info panel folds into a rail.
+- **Tree:** the whole tree "From the start" or "From selection", stones labelled with coordinates, zoom − / + and Fit. Moves only in the browser cache are dashed red; a flag marks where a name starts.
+- **Info tabs:** **Move** (category buttons, why, style, purpose, conditions, note), **Position** (result in points, evaluation, status, explanation, sente, outcome, tenuki, watch out, note), **Name** (name this position; name, family, difficulty, summary, aliases, tags, sources).
+- **Right-click** (or long-press) a move: category, mark as joseki end / end after a mistake, set the result, edit why, name a joseki from here, make this the main line (moves stored in the target database), copy link, fold / unfold the branch, delete the move and what follows (session moves at once; stored moves after confirmation).
+- **Folding** is only a view of the Design tab, kept in the browser; it is not stored.
+- **Saving:** every move is kept in the browser cache at once. **Save to database** stores all of them in the chosen database; classifying or describing a move stores its line. **Export / pull request** offers the patch, a zip, and **Propose on GitHub** (opens GitHub with each new file filled in, ready for "Create a new branch and start a pull request").
+- Moves use their category color only; everything is called a joseki.
+
+### 8.11 Good and mistake joseki in the library
+
+A joseki whose first move is a mistake, overplay or trick is a **mistake joseki**: shown in red. The library has **Good only** (default) / **All** / **Mistakes**; the joseki currently open is always listed.
+
 ## 9. Quiz mode
 
 - **Cards**: one card is (entry, position, side to play), for every position that has a `main` move, an `alt` move or a `punish` move.

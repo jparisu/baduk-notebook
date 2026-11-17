@@ -5,7 +5,7 @@
  * - complete:  the whole tree from the start of the line.
  */
 import { CATEGORIES, type Category } from '../core/fields'
-import { applySign, ptName } from '../core/geometry'
+import { apply, applySign, ptName, type Pt } from '../core/geometry'
 import { candidates, frame, moveOf, type Candidate, type Ctx, type Step } from '../view'
 
 export type TreeMode = 'linear' | 'proximity' | 'complete'
@@ -27,6 +27,9 @@ interface Placed {
   tag: string | null
   more: boolean
   ahead: boolean // part of the line after the current move
+  pt: Pt | null
+  /** Folded in Design: number of moves hidden below. */
+  folded: number
 }
 
 const DX = 34, DY = 30, OX = 18, OY = 24, MAX_NODES = 800
@@ -45,6 +48,15 @@ interface Props {
   extra?: (keys: string[]) => Step[]
   /** Short name of the label that starts at a position, if any. */
   tagOf?: (key: string) => string | null
+  /** Design tab: positions whose branch is folded (view only), and whether to show them anyway. */
+  folded?: Set<string>
+  showFolded?: boolean
+  /** Design tab: right-click / long-press on a node. */
+  onContext?: (line: Step[], x: number, y: number) => void
+  /** Text inside the stones: move number (default) or coordinate. */
+  labels?: 'number' | 'coord'
+  /** Number of the first move drawn (when the tree starts at the selection). */
+  first?: number
 }
 
 export function Tree(props: Props) {
@@ -55,19 +67,31 @@ export function Tree(props: Props) {
     const c = (cands ?? candidates(ctx, parent)).find((x) => x.step.key === child.key && (!child.edge || x.edge === child.edge))
     const m = moveOf(child)
     const sign = c ? c.sign : m ? applySign(frame(ctx, parent), m.sign) : 0
-    const pt = c ? c.pt : null
+    const pt = c ? c.pt : m?.pt ? apply(frame(ctx, parent), m.pt) : null
     const session = !c
     const label = session
       ? 'Your move — not in the databases'
       : `${sign === 1 ? 'Black' : 'White'} ${pt ? ptName(pt) : 'tenuki'}${c!.cat ? ' — ' + CATEGORIES[c!.cat].label : ''}${c!.dbs.some((d) => d !== props.defaultDb) ? ` (${c!.dbs.join(', ')})` : ''}`
-    return { cat: c?.cat ?? null, sign, pass: m ? !m.pt : false, session, label, extraDb: !!c && !c.dbs.includes(props.defaultDb) }
+    return { cat: c?.cat ?? null, sign, pass: m ? !m.pt : false, session, label, extraDb: !!c && !c.dbs.includes(props.defaultDb), pt }
   }
 
   const placed: Placed[] = []
-  const add = (p: Omit<Placed, 'tag' | 'more' | 'transposition' | 'ahead'> & Partial<Placed>) =>
-    placed.push({ tag: props.tagOf?.(p.step.key) ?? null, more: false, transposition: false, ahead: false, ...p }) - 1
+  const add = (p: Omit<Placed, 'tag' | 'more' | 'transposition' | 'ahead' | 'folded'> & Partial<Placed>) =>
+    placed.push({ tag: props.tagOf?.(p.step.key) ?? null, more: false, transposition: false, ahead: false, folded: 0, ...p }) - 1
   const root = path[0]
-  add({ step: root, line: [root], parent: -1, x: 0, y: 0, cat: null, sign: 0, pass: false, label: 'Start of the line', extraDb: false, session: false })
+  add({ step: root, line: [root], parent: -1, x: 0, y: 0, cat: null, sign: 0, pass: false, label: 'Start of the line', extraDb: false, session: false, pt: null })
+  /** Moves below a position (capped), for the badge of a folded branch. */
+  const countBelow = (step: Step, base: Step[], seen = new Set<string>()): number => {
+    let n = 0
+    const known = candidates(ctx, step)
+    const kids = [...known.map((c) => c.step), ...(props.extra?.([...base.map((s) => s.key)]) ?? []).filter((s) => !known.some((c) => c.step.key === s.key))]
+    for (const k of kids) {
+      if (seen.has(k.key) || n > 200) continue
+      seen.add(k.key)
+      n += 1 + countBelow(k, [...base, k], seen)
+    }
+    return n
+  }
   let cur = 0
   let rows = 1
 
@@ -87,7 +111,12 @@ export function Tree(props: Props) {
         seen.add(child.key)
         const d = describe(placed[i].step, child, cands)
         const j = add({ step: child, line: [...placed[i].line, child], parent: i, x: depth + 1, y, ...d, transposition })
-        if (!transposition) place(j, depth + 1, y)
+        if (transposition) return
+        if (props.folded?.has(child.key) && !props.showFolded) {
+          placed[j].folded = countBelow(child, placed[j].line)
+          return
+        }
+        place(j, depth + 1, y)
       })
     }
     place(0, 0, 0)
@@ -164,7 +193,19 @@ export function Tree(props: Props) {
         const ink = p.sign === 1 ? '#fff' : '#111'
         const dashed = p.transposition || p.session || (p.tag && !p.pass && p.parent >= 0)
         return (
-          <g key={'n' + i} class={`tree-node ${i === cur ? 'cur' : ''} ${p.ahead ? 'ahead' : ''}`} onClick={() => select(i)} role="button" aria-label={p.label}>
+          <g
+            key={'n' + i}
+            class={`tree-node ${i === cur ? 'cur' : ''} ${p.ahead ? 'ahead' : ''}`}
+            data-key={p.step.key}
+            onClick={() => select(i)}
+            onContextMenu={(e) => {
+              if (!props.onContext) return
+              e.preventDefault()
+              props.onContext(p.line, e.clientX, e.clientY)
+            }}
+            role="button"
+            aria-label={p.label}
+          >
             <title>{p.label}{p.tag ? ` — start of ${p.tag}` : ''}</title>
             {i === cur && <rect x={x - 14} y={y - 14} width="28" height="28" rx="5" fill="none" stroke="var(--accent)" stroke-width="2.4" />}
             {p.parent < 0 ? (
@@ -177,11 +218,19 @@ export function Tree(props: Props) {
             ) : (
               <>
                 <circle cx={x} cy={y} r="9" fill={fill} stroke={ring} stroke-width="3" stroke-dasharray={dashed ? '3 2' : undefined} />
-                <text x={x} y={y + 3.5} font-size="9" text-anchor="middle" fill={ink}>{p.transposition ? '⇄' : p.line.length - 1}</text>
+                <text x={x} y={y + 3.5} font-size={props.labels === 'coord' ? 7.5 : 9} text-anchor="middle" fill={ink}>
+                  {p.transposition ? '⇄' : props.labels === 'coord' && p.pt ? ptName(p.pt) : (props.first ?? 0) + p.line.length - 1}
+                </text>
               </>
             )}
             {p.extraDb && <circle cx={x + 9} cy={y - 9} r="3.5" fill="var(--db-extra)" />}
-            {p.more && <text x={x + 13} y={y + 4} font-size="12" fill="var(--muted)" aria-hidden>›</text>}
+            {p.more && !p.folded && <text x={x + 13} y={y + 4} font-size="12" fill="var(--muted)" aria-hidden>›</text>}
+            {p.folded > 0 && (
+              <g class="fold-badge">
+                <rect x={x + 12} y={y - 7} width={p.folded > 9 ? 26 : 20} height="14" rx="7" fill="var(--chip)" stroke="var(--muted)" />
+                <text x={x + 12 + (p.folded > 9 ? 13 : 10)} y={y + 3.5} font-size="9" text-anchor="middle" fill="var(--chip-fg)">+{p.folded}</text>
+              </g>
+            )}
             {p.tag && (
               <g class="tree-tag">
                 <path d={`M${x - 3} ${y - 11} L${x - 3} ${y - 21}`} stroke="var(--accent)" stroke-width="1.5" />
