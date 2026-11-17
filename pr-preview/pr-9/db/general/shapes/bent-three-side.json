@@ -1,0 +1,104 @@
+{
+  "positions": [
+    {
+      "id": "life & death/Bent three · side · enclosed",
+      "stones": "B:qd,qe,qf,rc,rd,rf,sc,sf W:pc,pd,pe,pf,pg,qb,qc,qg,rb,rg,sb,sg",
+      "toPlay": "B",
+      "free": "horizontal",
+      "name": "Bent three · side · enclosed",
+      "tags": [
+        "eye shape",
+        "killable eye shape"
+      ],
+      "notes": "{{SQ:T16,T15,S15|The 3-point eye space}}. {{CR:T15|The bend}} is the vital point.",
+      "eval": {
+        "difficulty": "25k"
+      },
+      "extra": {
+        "XALIAS": "曲三",
+        "XSUM": "Three points with a bend. Like straight three, the point in the middle of the bend decides the result.",
+        "XSRC": "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search.",
+        "XSB": "alive",
+        "XSW": "dead",
+        "XRESB": "alive",
+        "XRESW": "dead",
+        "XEYE": "One eye space of 3 points",
+        "XLIB": "0 outside liberties",
+        "XSIZE": "3",
+        "XSURR": "full",
+        "XOLIB": "0",
+        "XINSIDE": "0",
+        "XARR": "connected",
+        "XVITAL": "se",
+        "XREG": "pb:sg"
+      },
+      "moves": [
+        {
+          "move": "se",
+          "to": "life & death/Bent three · side · enclosed:1",
+          "status": "correct",
+          "why": "Takes the vital point. {{SQ:T16}} and {{SQ:S15}} become two separate eyes."
+        },
+        {
+          "move": "tenuki",
+          "to": "life & death/Bent three · side · enclosed:1b"
+        },
+        {
+          "move": "re",
+          "to": "life & death/Bent three · side · enclosed:1c",
+          "status": "wrong",
+          "why": "Leaves {{SQ:T16,T15|a two-point space}}, which is only one eye."
+        }
+      ]
+    },
+    {
+      "id": "life & death/Bent three · side · enclosed:1",
+      "stones": "B:qd,qe,qf,rc,rd,rf,sc,se,sf W:pc,pd,pe,pf,pg,qb,qc,qg,rb,rg,sb,sg",
+      "toPlay": "W",
+      "free": "horizontal",
+      "extra": {
+        "XSB": "alive",
+        "XSW": "alive",
+        "XEYE": "Two eyes"
+      },
+      "moves": []
+    },
+    {
+      "id": "life & death/Bent three · side · enclosed:2",
+      "stones": "B:qd,qe,qf,rc,rd,rf,sc,sf W:pc,pd,pe,pf,pg,qb,qc,qg,rb,rg,sb,se,sg",
+      "toPlay": "B",
+      "free": "horizontal",
+      "extra": {
+        "XSB": "dead",
+        "XSW": "dead",
+        "XEYE": "One eye"
+      },
+      "moves": []
+    },
+    {
+      "id": "life & death/Bent three · side · enclosed:1b",
+      "stones": "B:qd,qe,qf,rc,rd,rf,sc,sf W:pc,pd,pe,pf,pg,qb,qc,qg,rb,rg,sb,sg",
+      "toPlay": "W",
+      "free": "horizontal",
+      "moves": [
+        {
+          "move": "se",
+          "to": "life & death/Bent three · side · enclosed:2",
+          "status": "correct",
+          "why": "Takes the vital point. Black can make only one eye."
+        }
+      ]
+    },
+    {
+      "id": "life & death/Bent three · side · enclosed:1c",
+      "stones": "B:qd,qe,qf,rc,rd,re,rf,sc,sf W:pc,pd,pe,pf,pg,qb,qc,qg,rb,rg,sb,sg",
+      "toPlay": "W",
+      "free": "horizontal",
+      "extra": {
+        "XSB": "dead",
+        "XSW": "dead"
+      },
+      "moves": []
+    }
+  ]
+}

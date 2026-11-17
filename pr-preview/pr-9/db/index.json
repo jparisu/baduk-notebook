@@ -5,7 +5,13 @@
       "name": "General",
       "description": "Main collection of joseki and shapes.",
       "color": "#3c7fbb",
-      "activeByDefault": true
+      "activeByDefault": true,
+      "commonTags": [
+        "joseki",
+        "life & death",
+        "opening",
+        "ko"
+      ]
     },
     {
       "id": "jparisu",

@@ -1,0 +1,92 @@
+{
+  "positions": [
+    {
+      "id": "joseki",
+      "stones": "",
+      "toPlay": "B",
+      "name": "Empty corner",
+      "tags": [
+        "opening",
+        "first move"
+      ],
+      "notes": "An empty corner. The first stone decides the balance between corner territory and influence toward the sides.",
+      "eval": {
+        "difficulty": "25k"
+      },
+      "extra": {
+        "XSUM": "Choose where to play first in an empty corner. Each first move leads into the joseki that start from it. Example notes, to verify.",
+        "XST": "start"
+      },
+      "moves": [
+        {
+          "move": "pd",
+          "to": "joseki/4-4 point",
+          "status": "main",
+          "why": "4-4 point (hoshi): takes the corner in one move and faces both sides. The {{CR:R17|3-3 point}} stays open for an invasion.",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": "influence"
+          }
+        },
+        {
+          "move": "qd",
+          "to": "joseki/3-4 point",
+          "status": "main",
+          "why": "3-4 point (komoku): a firmer corner that points toward one side. The opponent usually approaches from {{TR:R14,P17|the open side}}.",
+          "extra": {
+            "XSTY": "solid",
+            "XPUR": "territory"
+          }
+        },
+        {
+          "move": "qc",
+          "to": "joseki/3-3 point",
+          "status": "alt",
+          "why": "3-3 point (san-san): a secure corner in one move, but low and slow toward the center.",
+          "extra": {
+            "XSTY": "solid",
+            "XPUR": "territory"
+          }
+        },
+        {
+          "move": "od",
+          "to": "joseki:1",
+          "status": "situational",
+          "why": "5-4 point (takamoku): faces the outside and the side. The opponent can still take the corner with a move {{SQ:R16,Q17,R17|deeper in the corner}}.",
+          "extra": {
+            "XSTY": "aggressive",
+            "XPUR": "influence"
+          }
+        },
+        {
+          "move": "oc",
+          "to": "joseki:1b",
+          "status": "situational",
+          "why": "5-3 point (mokuhazushi): aims along the side. The opponent can still take the corner with a move {{SQ:R16,Q17,R17|deeper in the corner}}.",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": "influence"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki:1",
+      "stones": "B:od",
+      "toPlay": "W",
+      "extra": {
+        "XST": "start"
+      },
+      "moves": []
+    },
+    {
+      "id": "joseki:1b",
+      "stones": "B:oc",
+      "toPlay": "W",
+      "extra": {
+        "XST": "start"
+      },
+      "moves": []
+    }
+  ]
+}

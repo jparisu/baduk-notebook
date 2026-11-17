@@ -1,0 +1,92 @@
+{
+  "positions": [
+    {
+      "id": "life & death/Crossed five · side · enclosed",
+      "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,rg,sc,sd,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,rh,sb,sh",
+      "toPlay": "B",
+      "free": "horizontal",
+      "name": "Crossed five · side · enclosed",
+      "tags": [
+        "eye shape",
+        "killable eye shape"
+      ],
+      "notes": "{{SQ:S14,S15,S16,R15,T15|The crossed five}}. {{CR:S15|The center}} touches all four other points.",
+      "eval": {
+        "difficulty": "20k"
+      },
+      "extra": {
+        "XALIAS": [
+          "Flower five",
+          "Plus five",
+          "Hanago",
+          "花五"
+        ],
+        "XSUM": "Five points in a plus shape. The center is the vital point.",
+        "XSRC": "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search.",
+        "XSB": "alive",
+        "XSW": "dead",
+        "XRESB": "alive",
+        "XRESW": "dead",
+        "XEYE": "One eye space of 5 points",
+        "XLIB": "0 outside liberties",
+        "XSIZE": "5",
+        "XSURR": "full",
+        "XOLIB": "0",
+        "XINSIDE": "0",
+        "XARR": "connected",
+        "XVITAL": "re",
+        "XREG": "ob:sh"
+      },
+      "moves": [
+        {
+          "move": "re",
+          "to": "life & death/Crossed five · side · enclosed:1",
+          "status": "correct",
+          "why": "Takes the center: four single-point eyes."
+        },
+        {
+          "move": "tenuki",
+          "to": "life & death/Crossed five · side · enclosed:1b"
+        }
+      ]
+    },
+    {
+      "id": "life & death/Crossed five · side · enclosed:1",
+      "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,re,rg,sc,sd,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,rh,sb,sh",
+      "toPlay": "W",
+      "free": "horizontal",
+      "extra": {
+        "XSB": "alive",
+        "XSW": "alive",
+        "XEYE": "Four eyes"
+      },
+      "moves": []
+    },
+    {
+      "id": "life & death/Crossed five · side · enclosed:2",
+      "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,rg,sc,sd,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,re,rh,sb,sh",
+      "toPlay": "B",
+      "free": "horizontal",
+      "extra": {
+        "XSB": "dead",
+        "XSW": "dead",
+        "XEYE": "One eye"
+      },
+      "moves": []
+    },
+    {
+      "id": "life & death/Crossed five · side · enclosed:1b",
+      "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,rg,sc,sd,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,rh,sb,sh",
+      "toPlay": "W",
+      "free": "horizontal",
+      "moves": [
+        {
+          "move": "re",
+          "to": "life & death/Crossed five · side · enclosed:2",
+          "status": "correct",
+          "why": "Takes the center. Black can make only one eye."
+        }
+      ]
+    }
+  ]
+}

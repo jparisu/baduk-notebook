@@ -1,0 +1,119 @@
+{
+  "positions": [
+    {
+      "id": "life & death/Straight four · side · enclosed",
+      "stones": "B:rc,rd,re,rf,rg,rh,sc,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,si",
+      "toPlay": "B",
+      "free": "horizontal",
+      "name": "Straight four · side · enclosed",
+      "tags": [
+        "eye shape"
+      ],
+      "notes": "{{SQ:T13,T14,T15,T16|The 4-point eye space}} has {{CR:T14,T15|two middle points}}. White can take only one of them.",
+      "eval": {
+        "difficulty": "25k"
+      },
+      "extra": {
+        "XSUM": "Four points in a row. Alive even if White plays first: Black always answers on the other middle point.",
+        "XSB": "alive",
+        "XSW": "alive",
+        "XRESB": "alive",
+        "XRESW": "alive",
+        "XEYE": "One eye space of 4 points",
+        "XLIB": "0 outside liberties",
+        "XSIZE": "4",
+        "XSURR": "full",
+        "XOLIB": "0",
+        "XINSIDE": "0",
+        "XARR": "connected",
+        "XREG": "qb:si"
+      },
+      "moves": [
+        {
+          "move": "tenuki",
+          "to": "life & death/Straight four · side · enclosed:1"
+        }
+      ]
+    },
+    {
+      "id": "life & death/Straight four · side · enclosed:2",
+      "stones": "B:rc,rd,re,rf,rg,rh,sc,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,sf,si",
+      "toPlay": "B",
+      "free": "horizontal",
+      "extra": {
+        "XSB": "alive",
+        "XSW": "alive"
+      },
+      "moves": [
+        {
+          "move": "se",
+          "to": "life & death/Straight four · side · enclosed:3",
+          "status": "correct",
+          "why": "Takes the other middle point. Two eyes."
+        }
+      ]
+    },
+    {
+      "id": "life & death/Straight four · side · enclosed:1",
+      "stones": "B:rc,rd,re,rf,rg,rh,sc,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,si",
+      "toPlay": "W",
+      "free": "horizontal",
+      "moves": [
+        {
+          "move": "sf",
+          "to": "life & death/Straight four · side · enclosed:2",
+          "status": "wrong",
+          "why": "Takes one middle point."
+        },
+        {
+          "move": "se",
+          "to": "life & death/Straight four · side · enclosed:2b",
+          "status": "wrong",
+          "why": "Takes the other middle point."
+        }
+      ]
+    },
+    {
+      "id": "life & death/Straight four · side · enclosed:3",
+      "stones": "B:rc,rd,re,rf,rg,rh,sc,se,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,sf,si",
+      "toPlay": "W",
+      "free": "horizontal",
+      "extra": {
+        "XSB": "alive",
+        "XSW": "alive",
+        "XEYE": "Two eyes"
+      },
+      "moves": []
+    },
+    {
+      "id": "life & death/Straight four · side · enclosed:2b",
+      "stones": "B:rc,rd,re,rf,rg,rh,sc,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,se,si",
+      "toPlay": "B",
+      "free": "horizontal",
+      "extra": {
+        "XSB": "alive",
+        "XSW": "alive"
+      },
+      "moves": [
+        {
+          "move": "sf",
+          "to": "life & death/Straight four · side · enclosed:3b",
+          "status": "correct",
+          "why": "Takes the remaining middle point. Two eyes."
+        }
+      ]
+    },
+    {
+      "id": "life & death/Straight four · side · enclosed:3b",
+      "stones": "B:rc,rd,re,rf,rg,rh,sc,sf,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,se,si",
+      "toPlay": "W",
+      "free": "horizontal",
+      "extra": {
+        "XSB": "alive",
+        "XSW": "alive",
+        "XEYE": "Two eyes"
+      },
+      "moves": []
+    }
+  ]
+}

@@ -1,0 +1,806 @@
+{
+  "positions": [
+    {
+      "id": "joseki/4-4 point/Low approach",
+      "stones": "B:pd W:nc",
+      "toPlay": "B",
+      "name": "4-4 point · low approach",
+      "tags": [
+        "approach",
+        "basic joseki"
+      ],
+      "notes": "{{TR:O17|White's low approach}} to {{TR:Q16|the 4-4 stone}}, along the top. The approach from the other side is the same position mirrored. Small knight approach (keima kakari). It threatens to slide into the corner at {{CR:Q18}} or to extend along the top, and it is the approach that strong players and AI programs prefer.",
+      "eval": {
+        "difficulty": "20k"
+      },
+      "extra": {
+        "XALIAS": [
+          "Small knight approach",
+          "Keima kakari",
+          "Kogeima kakari",
+          "小ゲイマガカリ"
+        ],
+        "XSUM": "White approaches the 4-4 stone with a small knight's move, the most common star point approach. Black answers by extending (small knight or one-space high), pincering, kicking, attaching, or playing elsewhere. Sources: 44PointLowApproach, 44PointLowApproachLowExtensionSlide33, 44PointLowApproachHighExtension, 44PointLowApproachAttach, 44PointOneSpaceLowPincerInvasionBlock.",
+        "XSRC": "Sensei's Library (senseis.xmp.net), joseki pages listed in XSUM. Sequences copied from its diagrams and mirrored to the top-right corner.",
+        "XERA": [
+          "classic",
+          "modern",
+          "ai"
+        ],
+        "XST": "start",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "qf",
+          "to": "joseki/4-4 point/Low approach/Small knight extension",
+          "status": "main",
+          "why": "Small knight extension: the most common answer. It is solid, builds a base on the left side and keeps the initiative.",
+          "extra": {
+            "XSTY": "solid",
+            "XPUR": [
+              "defend",
+              "territory"
+            ]
+          }
+        },
+        {
+          "move": "pf",
+          "to": "joseki/4-4 point/Low approach/One-space high extension",
+          "status": "alt",
+          "why": "One-space high extension: favors influence over the corner.",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": "influence"
+          }
+        },
+        {
+          "move": "lc",
+          "to": "joseki/4-4 point/Low approach/One-space low pincer",
+          "status": "alt",
+          "why": "One-space low pincer: the most popular pincer. It takes the top side and stops White's extension.",
+          "extra": {
+            "XSTY": "aggressive",
+            "XPUR": [
+              "attack",
+              "territory"
+            ]
+          }
+        },
+        {
+          "move": "oc",
+          "to": "joseki/4-4 point/Low approach/Kick",
+          "status": "situational",
+          "why": "The kick (diagonal attachment): greedy and sente, but it leaves weaknesses behind.",
+          "extra": {
+            "XSTY": "solid",
+            "XPUR": "territory"
+          }
+        },
+        {
+          "move": "nd",
+          "to": "joseki/4-4 point/Low approach/Attachment",
+          "status": "alt",
+          "why": "Attaches on top of the approach stone. Leads to the attach-extend and attach-block joseki.",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": "influence"
+          }
+        },
+        {
+          "move": "kd",
+          "to": "joseki/4-4 point/Low approach:3",
+          "status": "situational",
+          "why": "Two-space high pincer: looser than the low pincer and aimed at influence. Continuations are not entered yet.",
+          "extra": {
+            "XSTY": "aggressive",
+            "XPUR": [
+              "attack",
+              "influence"
+            ]
+          }
+        },
+        {
+          "move": "tenuki",
+          "to": "joseki/4-4 point/Low approach:3b",
+          "status": "alt",
+          "why": "Tenuki is a modern favorite: approaching or enclosing elsewhere is slightly bigger, if Black accepts a double approach later.",
+          "extra": {
+            "XSTY": "balanced"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/Small knight extension",
+      "stones": "B:pd,qf W:nc",
+      "toPlay": "W",
+      "name": "4-4 point · low approach · small knight extension",
+      "notes": "White can ask for the corner with the slide at {{CR:Q18}}, extend along the top, or play elsewhere.",
+      "eval": {
+        "difficulty": "20k"
+      },
+      "extra": {
+        "XSUM": "The most common answer to the low approach: solid, keeps a base on the side and usually keeps sente.",
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "pb",
+          "to": "joseki/4-4 point/Low approach/Slide",
+          "status": "main",
+          "why": "The slide: White takes part of the corner and gets a base. The basic beginner joseki.",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": [
+              "eye",
+              "territory"
+            ]
+          }
+        },
+        {
+          "move": "tenuki",
+          "to": "joseki/4-4 point/Low approach/Small knight extension:4",
+          "status": "alt",
+          "why": "Tenuki is common today: the approach stone is light, and White can come back to it later.",
+          "extra": {
+            "XSTY": "balanced"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/Slide",
+      "stones": "B:pd,qf W:nc,pb",
+      "toPlay": "B",
+      "name": "4-4 point · slide joseki",
+      "eval": {
+        "difficulty": "25k"
+      },
+      "extra": {
+        "XSUM": "White slides under the 4-4 stone, Black blocks at the 3-3 point and White extends. One of the first joseki beginners learn.",
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "qc",
+          "to": "joseki/4-4 point/Low approach/Slide:5",
+          "status": "main",
+          "why": "Blocks at the 3-3 point so the corner stays Black's.",
+          "extra": {
+            "XSTY": "solid",
+            "XPUR": [
+              "defend",
+              "territory"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/Slide:5",
+      "stones": "B:pd,qc,qf W:nc,pb",
+      "toPlay": "W",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "kc",
+          "to": "joseki/4-4 point/Low approach/Slide:6",
+          "status": "main",
+          "why": "Two-space extension along the top to complete a base.",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": "eye"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/Slide:6",
+      "stones": "B:pd,qc,qf W:kc,nc,pb",
+      "toPlay": "B",
+      "extra": {
+        "XST": "end",
+        "XEV": "=",
+        "XSEN": "B",
+        "XRES": "Both sides have stable bases. Black keeps sente."
+      },
+      "moves": []
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/Small knight extension:4",
+      "stones": "B:pd,qf W:nc",
+      "toPlay": "B",
+      "extra": {
+        "XST": "end",
+        "XEV": "=",
+        "XSEN": "B",
+        "XTEN": "Fine for White, but Black can later attack the approach stone, for example with a pincer."
+      },
+      "moves": []
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/One-space high extension",
+      "stones": "B:pd,pf W:nc",
+      "toPlay": "W",
+      "name": "4-4 point · low approach · one-space high extension",
+      "notes": "The main continuation is the slide, followed by extensions for both sides.",
+      "eval": {
+        "difficulty": "20k"
+      },
+      "extra": {
+        "XSUM": "Black extends high, favoring influence. White slides and both sides extend; Black ends in gote.",
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "pb",
+          "to": "joseki/4-4 point/Low approach/One-space high extension:4",
+          "status": "main",
+          "why": "Slides into the corner.",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": [
+              "eye",
+              "territory"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/One-space high extension:4",
+      "stones": "B:pd,pf W:nc,pb",
+      "toPlay": "B",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "qc",
+          "to": "joseki/4-4 point/Low approach/One-space high extension:5",
+          "status": "main",
+          "why": "Blocks at the 3-3 point.",
+          "extra": {
+            "XSTY": "solid",
+            "XPUR": "defend"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/One-space high extension:5",
+      "stones": "B:pd,pf,qc W:nc,pb",
+      "toPlay": "W",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "kc",
+          "to": "joseki/4-4 point/Low approach/One-space high extension:6",
+          "status": "main",
+          "why": "Extends along the top to settle.",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": "eye"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/One-space high extension:6",
+      "stones": "B:pd,pf,qc W:kc,nc,pb",
+      "toPlay": "B",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "qj",
+          "to": "joseki/4-4 point/Low approach/One-space high extension:7",
+          "status": "main",
+          "why": "Extends along the left side; Black builds a framework but ends in gote.",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": [
+              "territory",
+              "influence"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/One-space high extension:7",
+      "stones": "B:pd,pf,qc,qj W:kc,nc,pb",
+      "toPlay": "W",
+      "extra": {
+        "XST": "end",
+        "XEV": "=",
+        "XSEN": "W",
+        "XRES": "White settled on top; Black has a framework on the left side in gote."
+      },
+      "moves": []
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/One-space low pincer",
+      "stones": "B:lc,pd W:nc",
+      "toPlay": "W",
+      "name": "4-4 point · low approach · one-space low pincer",
+      "notes": "White often jumps into the 3-3 point, trading the approach stone for the corner.",
+      "eval": {
+        "difficulty": "15k"
+      },
+      "extra": {
+        "XSUM": "The most popular pincer. White usually answers with the 3-3 invasion; Black blocks so the wall works with the pincer stone.",
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "qc",
+          "to": "joseki/4-4 point/Low approach/One-space low pincer:4",
+          "status": "main",
+          "why": "3-3 invasion: White takes the corner instead of running with the approach stone.",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": [
+              "territory",
+              "sabaki"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/One-space low pincer:4",
+      "stones": "B:lc,pd W:nc,qc",
+      "toPlay": "B",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "qd",
+          "to": "joseki/4-4 point/Low approach/One-space low pincer:5",
+          "status": "main",
+          "why": "Blocks on the left side, so the wall works with {{TR:M17|the pincer stone}}.",
+          "extra": {
+            "XSTY": "solid",
+            "XPUR": "influence"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/One-space low pincer:5",
+      "stones": "B:lc,pd,qd W:nc,qc",
+      "toPlay": "W",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "pc",
+          "to": "joseki/4-4 point/Low approach/One-space low pincer:6",
+          "status": "main",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": "eye"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/One-space low pincer:6",
+      "stones": "B:lc,pd,qd W:nc,pc,qc",
+      "toPlay": "B",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "od",
+          "to": "joseki/4-4 point/Low approach/One-space low pincer:7",
+          "status": "main",
+          "extra": {
+            "XSTY": "solid",
+            "XPUR": "influence"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/One-space low pincer:7",
+      "stones": "B:lc,od,pd,qd W:nc,pc,qc",
+      "toPlay": "W",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "nb",
+          "to": "joseki/4-4 point/Low approach/One-space low pincer:8",
+          "status": "main",
+          "why": "Links the corner to {{TR:O17|the approach stone}} along the second line.",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": "eye"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/One-space low pincer:8",
+      "stones": "B:lc,od,pd,qd W:nb,nc,pc,qc",
+      "toPlay": "B",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "me",
+          "to": "joseki/4-4 point/Low approach/One-space low pincer:9",
+          "status": "main",
+          "why": "Black takes the outside and seals White in.",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": "influence"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/One-space low pincer:9",
+      "stones": "B:lc,me,od,pd,qd W:nb,nc,pc,qc",
+      "toPlay": "W",
+      "extra": {
+        "XST": "end",
+        "XEV": "=",
+        "XSEN": "W",
+        "XRES": "Traditional joseki: White lives in the corner and top; Black gets a strong outside position."
+      },
+      "moves": []
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/Kick",
+      "stones": "B:oc,pd W:nc",
+      "toPlay": "W",
+      "name": "4-4 point · kick",
+      "eval": {
+        "difficulty": "20k"
+      },
+      "extra": {
+        "XALIAS": [
+          "Diagonal attachment",
+          "Kosumi-tsuke"
+        ],
+        "XSUM": "Black kicks the approach stone and takes the corner in sente, but leaves weaknesses behind.",
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "nd",
+          "to": "joseki/4-4 point/Low approach/Kick:4",
+          "status": "main",
+          "why": "Stands up.",
+          "extra": {
+            "XSTY": "solid",
+            "XPUR": "connect"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/Kick:4",
+      "stones": "B:oc,pd W:nc,nd",
+      "toPlay": "B",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "pf",
+          "to": "joseki/4-4 point/Low approach/Kick:5",
+          "status": "main",
+          "why": "Extends down the side, keeping the corner.",
+          "extra": {
+            "XSTY": "solid",
+            "XPUR": [
+              "territory",
+              "defend"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/Kick:5",
+      "stones": "B:oc,pd,pf W:nc,nd",
+      "toPlay": "W",
+      "extra": {
+        "XST": "end",
+        "XEV": "=",
+        "XSEN": "W",
+        "XRES": "Black takes the corner; White has a light shape facing the top.",
+        "XAJI": "Black's shape has several weak points, so White may come back to invade later."
+      },
+      "moves": []
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/Attachment",
+      "stones": "B:nd,pd W:nc",
+      "toPlay": "W",
+      "name": "4-4 point · low approach · attachment",
+      "eval": {
+        "difficulty": "15k"
+      },
+      "extra": {
+        "XSUM": "Black attaches on top of the approach stone. After the hane, Black chooses between extending and blocking.",
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "md",
+          "to": "joseki/4-4 point/Low approach/Attachment:4",
+          "status": "main",
+          "why": "Hane.",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": "sabaki"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/Attachment:4",
+      "stones": "B:nd,pd W:md,nc",
+      "toPlay": "B",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "ne",
+          "to": "joseki/4-4 point/Low approach/Attach-extend",
+          "status": "main",
+          "why": "Extends (tsuke-nobi, attach-and-extend).",
+          "extra": {
+            "XSTY": "solid",
+            "XPUR": "influence"
+          }
+        },
+        {
+          "move": "oc",
+          "to": "joseki/4-4 point/Low approach/Attach-block",
+          "status": "alt",
+          "why": "Blocks underneath (tsuke-osae, attach-and-block).",
+          "extra": {
+            "XSTY": "solid",
+            "XPUR": "territory"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/Attach-extend",
+      "stones": "B:nd,ne,pd W:md,nc",
+      "toPlay": "W",
+      "name": "4-4 point · attach-extend",
+      "eval": {
+        "difficulty": "15k"
+      },
+      "extra": {
+        "XALIAS": "Tsuke-nobi",
+        "XSUM": "Black keeps the corner and builds a wall facing down; White settles on the top side.",
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "oc",
+          "to": "joseki/4-4 point/Low approach/Attach-extend:6",
+          "status": "main",
+          "why": "Takes a share of the corner.",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": "eye"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/Attach-extend:6",
+      "stones": "B:nd,ne,pd W:md,nc,oc",
+      "toPlay": "B",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "pc",
+          "to": "joseki/4-4 point/Low approach/Attach-extend:7",
+          "status": "main",
+          "why": "Blocks so the corner stays Black's.",
+          "extra": {
+            "XSTY": "solid",
+            "XPUR": "defend"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/Attach-extend:7",
+      "stones": "B:nd,ne,pc,pd W:md,nc,oc",
+      "toPlay": "W",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "lc",
+          "to": "joseki/4-4 point/Low approach/Attach-extend:8",
+          "status": "main",
+          "why": "Extends along the top to settle.",
+          "extra": {
+            "XSTY": "balanced",
+            "XPUR": "eye"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/Attach-extend:8",
+      "stones": "B:nd,ne,pc,pd W:lc,md,nc,oc",
+      "toPlay": "B",
+      "extra": {
+        "XST": "end",
+        "XEV": "=",
+        "XSEN": "B",
+        "XRES": "Attach-and-extend: Black has the corner and a wall facing down; White settles on top."
+      },
+      "moves": []
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/Attach-block",
+      "stones": "B:nd,oc,pd W:md,nc",
+      "toPlay": "W",
+      "name": "4-4 point · attach-block",
+      "eval": {
+        "difficulty": "15k"
+      },
+      "extra": {
+        "XALIAS": "Tsuke-osae",
+        "XSUM": "Black blocks underneath and keeps the corner; White gets outside strength.",
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "ne",
+          "to": "joseki/4-4 point/Low approach/Attach-block:6",
+          "status": "main",
+          "extra": {
+            "XSTY": "aggressive",
+            "XPUR": "cut"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/Attach-block:6",
+      "stones": "B:nd,oc,pd W:md,nc,ne",
+      "toPlay": "B",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "od",
+          "to": "joseki/4-4 point/Low approach/Attach-block:7",
+          "status": "main",
+          "extra": {
+            "XSTY": "solid",
+            "XPUR": "connect"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/Attach-block:7",
+      "stones": "B:nd,oc,od,pd W:md,nc,ne",
+      "toPlay": "W",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "me",
+          "to": "joseki/4-4 point/Low approach/Attach-block:8",
+          "status": "main",
+          "extra": {
+            "XSTY": "solid",
+            "XPUR": "connect"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/Attach-block:8",
+      "stones": "B:nd,oc,od,pd W:md,me,nc,ne",
+      "toPlay": "B",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": [
+        {
+          "move": "pf",
+          "to": "joseki/4-4 point/Low approach/Attach-block:9",
+          "status": "main",
+          "why": "Secures the corner and left side.",
+          "extra": {
+            "XSTY": "solid",
+            "XPUR": "territory"
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/4-4 point/Low approach/Attach-block:9",
+      "stones": "B:nd,oc,od,pd,pf W:md,me,nc,ne",
+      "toPlay": "W",
+      "extra": {
+        "XST": "end",
+        "XEV": "=",
+        "XSEN": "W",
+        "XRES": "Attach-and-block: Black has the corner; White has outside strength facing the top."
+      },
+      "moves": []
+    },
+    {
+      "id": "joseki/4-4 point/Low approach:3",
+      "stones": "B:kd,pd W:nc",
+      "toPlay": "W",
+      "extra": {
+        "XST": "progress",
+        "XEV": "="
+      },
+      "moves": []
+    },
+    {
+      "id": "joseki/4-4 point/Low approach:3b",
+      "stones": "B:pd W:nc",
+      "toPlay": "W",
+      "extra": {
+        "XST": "progress",
+        "XEV": "=",
+        "XTEN": "Playable, but White can double approach or take the 3-3 point."
+      },
+      "moves": []
+    }
+  ]
+}
