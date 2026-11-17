@@ -29,6 +29,7 @@ import { QuizMode } from './ui/QuizMode'
 import { changeCount, createWorkspace, discardDrafts, restoreDrafts, saveDrafts, type Workspace } from './edit/workspace'
 import { checkMove, createDatabase, createEntry, deleteMove, locate, setProps } from './edit/ops'
 import { sgfPoint } from './edit/sgfio'
+import { previewName } from './storage'
 import { erase, loadPosition, loadSession, record, remove, savePosition, saveSession, sameStart, type Line } from './session'
 
 // Distinct colors for "always show" references (SPEC §11.2).
@@ -782,6 +783,7 @@ export function App() {
       <header class="top">
         {phone && <button class="icon ghost" onClick={() => setDrawer(true)} aria-label="Open library and menu"><Menu size={20} /></button>}
         <h1><span class="logo" aria-hidden />Baduk Notebook</h1>
+        {previewName && <span class="preview-pill" title="Preview of a pull request: changes here do not affect the main site">Preview · {previewName}</span>}
         {!phone && modes}
         {!phone && (
           <div class="grp dbs">

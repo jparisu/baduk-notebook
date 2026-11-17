@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Pull request previews
+- Every pull request is published at its own address (`/pr-preview/pr-<number>/`) with the link posted in the pull request, so changes can be checked before merging. The main site is now published from the `gh-pages` branch.
+- Previews use their own browser storage and show a "Preview · pr-N" label.
+
+
 ### Layout v3
 - Left: foldable **Search** and **This joseki** cards (title, path of names, go to its first move, family, tags, foldable description and details).
 - Center: title with move and side to play, board, navigation, view options.

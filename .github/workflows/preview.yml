@@ -1,0 +1,41 @@
+name: Pull request preview
+
+# Builds every pull request (app changes and database updates) and publishes it at
+# https://jparisu.github.io/baduk-notebook/pr-preview/pr-<number>/
+# A comment with the link is added to the pull request; the preview is removed when it closes.
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: preview-${{ github.event.number }}
+  cancel-in-progress: false
+
+jobs:
+  preview:
+    # Branches of this repository only (secrets and write access are not given to forks).
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - if: github.event.action != 'closed'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - if: github.event.action != 'closed'
+        run: npm ci
+      - if: github.event.action != 'closed'
+        run: npm run build
+        env:
+          BASE_PATH: /baduk-notebook/pr-preview/pr-${{ github.event.number }}/
+      - uses: rossjrw/pr-preview-action@v1
+        with:
+          source-dir: dist
+          preview-branch: gh-pages
+          umbrella-dir: pr-preview
+          action: auto

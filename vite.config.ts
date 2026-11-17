@@ -26,7 +26,7 @@ function databases(): Plugin {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const url = (req.url ?? '').split('?')[0]
-        const m = url.match(/^(?:\/baduk-notebook)?\/db\/(.+)$/)
+        const m = url.match(/\/db\/(.+)$/)
         if (!m) return next()
         if (m[1] === 'files.json') {
           res.setHeader('Content-Type', 'application/json')
@@ -46,7 +46,8 @@ function databases(): Plugin {
 }
 
 export default defineConfig({
-  base: '/baduk-notebook/',
+  // BASE_PATH is set by the pull request preview workflow, e.g. /baduk-notebook/pr-preview/pr-7/
+  base: process.env.BASE_PATH || '/baduk-notebook/',
   plugins: [preact(), databases()],
   test: { include: ['src/**/*.test.ts'] },
   resolve: {

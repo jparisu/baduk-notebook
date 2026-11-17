@@ -9,7 +9,10 @@
     <script>
       // Apply the saved theme before the first paint, so the page never flashes the wrong colors.
       try {
-        var s = JSON.parse(localStorage.getItem('baduk-notebook.settings') || '{}')
+        // Pull request previews use their own storage names (see src/storage.ts).
+        var base = '%BASE_URL%'
+        var key = 'baduk-notebook.settings' + (base === '/baduk-notebook/' || base === '/' ? '' : '@' + base)
+        var s = JSON.parse(localStorage.getItem(key) || '{}')
         document.documentElement.dataset.style = s.theme || 'modern'
         document.documentElement.dataset.mode = s.colorMode || 'auto'
       } catch (e) {

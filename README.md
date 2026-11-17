@@ -68,6 +68,10 @@ npm run test:e2e
 | `npm run test:e2e` | Browser tests (desktop and phone) with Playwright |
 | `npm run build` | Production build into `dist/` |
 
+### Previews of pull requests
+
+Every pull request (app changes and database updates) gets its own copy of the site at `https://jparisu.github.io/baduk-notebook/pr-preview/pr-<number>/`. The link is posted as a comment in the pull request and refreshed on every push, so you can check the result before merging. Previews keep their own settings, drafts and quiz progress, separate from the main site.
+
 GitHub Actions runs type checks, unit tests, database validation and browser tests on every pull request, and deploys `main` to GitHub Pages.
 
 ### Layout

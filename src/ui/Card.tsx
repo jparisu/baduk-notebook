@@ -2,8 +2,9 @@
 import type { ComponentChildren } from 'preact'
 import { useState } from 'preact/hooks'
 import { ChevronDown } from 'lucide-preact'
+import { storageKey } from '../storage'
 
-const KEY = 'baduk-notebook.folds.v1'
+const KEY = storageKey('baduk-notebook.folds.v1')
 function loadFolds(): Record<string, boolean> {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? '{}')
