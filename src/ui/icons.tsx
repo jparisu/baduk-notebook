@@ -41,8 +41,10 @@ export const STATUS_ICONS: Record<string, [Icon, string]> = {
   link: [ExternalLink, 'Continues in another entry'],
 }
 export const SHAPE_ICONS: Record<string, [Icon, string]> = {
-  alive: [Heart, 'Alive'],
-  dead: [CircleX, 'Dead'],
+  'B-alive': [Heart, 'Black lives'],
+  'B-dead': [CircleX, 'Black dies'],
+  'W-alive': [Heart, 'White lives'],
+  'W-dead': [CircleX, 'White dies'],
   ko: [Zap, 'Ko'],
   seki: [Equal, 'Seki'],
   unsettled: [CircleQuestionMark, 'Unsettled'],

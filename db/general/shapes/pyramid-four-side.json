@@ -15,7 +15,11 @@
         "inside stones/0",
         "arrangement/connected"
       ],
-      "notes": "{{SQ:T14,T15,T16,S15|The pyramid}}. {{CR:T15|The center point}} touches the other three.",
+      "notes": [
+        "{{SQ:T14,T15,T16,S15|The pyramid}}. {{CR:T15|The center point}} touches the other three.",
+        "One eye space of 4 points",
+        "0 outside liberties"
+      ],
       "eval": {
         "difficulty": "20k"
       },
@@ -28,17 +32,17 @@
         ],
         "XSUM": "Four points in a T shape. The point touching the other three is the vital point: whoever plays it decides the result.",
         "XSRC": "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search.",
-        "XSB": "alive",
-        "XSW": "dead",
-        "XEYE": "One eye space of 4 points",
-        "XLIB": "0 outside liberties"
+        "XSB": "B-alive",
+        "XSW": "B-dead"
       },
       "moves": [
         {
           "move": "se",
           "to": "life & death/Pyramid four/Side, enclosed/Black vital point",
           "status": "main",
-          "why": "Takes the vital point: three separate single-point eyes."
+          "notes": [
+            "Takes the vital point: three separate single-point eyes."
+          ]
         },
         {
           "move": "tenuki",
@@ -52,10 +56,12 @@
       "toPlay": "W",
       "free": "horizontal",
       "name": "Black vital point",
+      "notes": [
+        "Two or more eyes"
+      ],
       "extra": {
-        "XSB": "alive",
-        "XSW": "alive",
-        "XEYE": "Two or more eyes"
+        "XSB": "B-alive",
+        "XSW": "B-alive"
       },
       "moves": []
     },
@@ -65,10 +71,12 @@
       "toPlay": "B",
       "free": "horizontal",
       "name": "White vital point",
+      "notes": [
+        "One eye"
+      ],
       "extra": {
-        "XSB": "dead",
-        "XSW": "dead",
-        "XEYE": "One eye"
+        "XSB": "B-dead",
+        "XSW": "B-dead"
       },
       "moves": []
     },
@@ -83,13 +91,17 @@
           "move": "se",
           "to": "life & death/Pyramid four/Side, enclosed/White first/White vital point",
           "status": "main",
-          "why": "Takes the vital point. {{Black}} can make only one eye."
+          "notes": [
+            "Takes the vital point. {{Black}} can make only one eye."
+          ]
         },
         {
           "move": "re",
           "to": "life & death/Pyramid four/Side, enclosed/White first/White S15",
           "status": "mistake",
-          "why": "Misses the vital point."
+          "notes": [
+            "Misses the vital point."
+          ]
         }
       ]
     },
@@ -100,15 +112,17 @@
       "free": "horizontal",
       "name": "White S15",
       "extra": {
-        "XSB": "alive",
-        "XSW": "dead"
+        "XSB": "B-alive",
+        "XSW": "B-dead"
       },
       "moves": [
         {
           "move": "se",
           "to": "life & death/Pyramid four/Side, enclosed/Black vital point",
           "status": "main",
-          "why": "{{Black}} takes it and lives."
+          "notes": [
+            "{{Black}} takes it and lives."
+          ]
         }
       ]
     }

@@ -851,3 +851,8 @@ button.link.small { font-size: 12px; display: inline-flex; align-items: center; 
 .tag-bar .chip.on svg { color: currentColor; fill: none; }
 .tag-bar .chip.more { background: none; border: 1px dashed var(--line); color: var(--muted); }
 .tag-chips.all-tags { max-height: 120px; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.notes-f .fv { display: flex; flex-direction: column; gap: 4px; }
+.note-item { display: flex; gap: 4px; align-items: flex-start; }
+.note-item textarea { flex: 1; }
+.note-item .icon { padding: 2px 6px; }
+.notes-f textarea.note-new { min-height: 2.6em; }

@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Data model (docs/MODEL.md)
+- **Notes**: positions and moves have one list of notes (add as many as you like). Explanation, Outcome, Tenuki here, Watch out, Note, Eyes, Liberties and the rules note became notes with their lead word; a move's Why and note became its notes. Notes from a personal database show as cards in its color.
+- Life & death results name the color: "Black plays first: Black lives / Black dies / White lives / White dies / Ko / Seki / Unsettled"; Swap colors flips them.
 - One set of move categories for everything: Main move, Alternative, Situational, Slack, Mistake, Overplay, Trick play, Punishment (shape moves: correct → main, wrong → mistake, ko → situational). The editor shows the same fields for every position.
 - Each shape is one family, and its variations are named sequences inside it: `life & death/Bent four/Corner`, `…/Corner/Black vital point`, `…/Corner/White first`, `…/Corner/White first/White vital point`.
 - No shape-only fields remain: "Black first / White first" are the general *If Black / White plays next* results, the vital point is the named main move, and size, surroundings, liberties, inside stones, arrangement and ko type became nested tags (`eye space/4 points`, `ko/direct`…). Joseki and life & death differ only by the first part of their id.

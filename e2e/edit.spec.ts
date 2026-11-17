@@ -93,3 +93,24 @@ test('the eye mark is drawn on the board', async ({ page }) => {
   await clickPoint(page, 'R17')
   await expect(page.locator('svg.board .mark-eye')).toHaveCount(1)
 })
+
+test('a position and a move can have several notes', async ({ page }) => {
+  await clickPoint(page, 'Q16')
+  await clickPoint(page, 'R13') // not in the databases
+  await page.getByRole('button', { name: 'Edit' }).click()
+  await page.locator('#f-node-XMW').fill('First note on the move.')
+  await page.locator('#f-node-XMW').blur()
+  await page.locator('#f-node-XMW-new').fill('Second note on the move.')
+  await page.locator('#f-node-XMW-new').blur()
+  await expect(page.locator('#f-node-XMW')).toHaveValue('First note on the move.')
+  await expect(page.locator('#f-node-XMW-1')).toHaveValue('Second note on the move.')
+  await page.locator('.note-item').first().getByRole('button', { name: 'Remove this note' }).click()
+  await expect(page.locator('#f-node-XMW')).toHaveValue('Second note on the move.')
+})
+
+test('life & death results name the color, and Swap colors flips them', async ({ page }) => {
+  await openEntry(page, 'Straight three', 'Side, enclosed')
+  await expect(page.locator('.pos-eval')).toContainText('Black plays first: Black lives')
+  await page.getByRole('button', { name: /Swap colors/ }).click()
+  await expect(page.locator('.pos-eval')).toContainText('White plays first: White lives')
+})

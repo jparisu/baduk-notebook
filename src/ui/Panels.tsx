@@ -4,7 +4,7 @@
  * right — position evaluation, last move (the "why"), next moves.
  */
 import type { ComponentChildren } from 'preact'
-import { CATEGORIES, EVAL_LABELS, type Category } from '../core/fields'
+import { CATEGORIES, EVAL_LABELS, RESULT_LABELS, type Category } from '../core/fields'
 import { apply, ptName } from '../core/geometry'
 import { labelsAt } from '../core/graph'
 import type { Msg } from '../messages'
@@ -139,11 +139,10 @@ export function JosekiInfo(p: Common & { onOpenLabel: (id: string) => void; onCo
           {ef.text('XSUM').map((t, i) => <p key={i} class="desc"><Rich segments={t.segments} h={p.refs} /></p>)}
         </Fold>
       )}
-      {(ef.list('XALIAS').length > 0 || ef.list('XERA').length > 0 || ef.list('XSRC').length > 0 || ef.text('XRULE').length > 0) && (
+      {(ef.list('XALIAS').length > 0 || ef.list('XERA').length > 0 || ef.list('XSRC').length > 0) && (
         <Fold id="joseki-details" title="More details · also called, era, sources" defaultOpen={false}>
           {ef.list('XALIAS').length > 0 && <Row label="Also called">{ef.list('XALIAS').join(', ')}</Row>}
           {ef.list('XERA').length > 0 && <Row label="Era">{ef.list('XERA').join(', ')}</Row>}
-          {ef.text('XRULE').length > 0 && <Row label="Rules">{ef.text('XRULE').map((t, i) => <div key={i}><Rich segments={t.segments} h={p.refs} /></div>)}</Row>}
           {ef.list('XSRC').length > 0 && <Row label="Sources">{ef.list('XSRC').join('; ')}</Row>}
         </Fold>
       )}
@@ -196,13 +195,17 @@ export function PositionEval(p: Common) {
         {score && <span class="score">{score}</span>}
         {pf.one('XST') && <span class="chip"><IconLabel map={STATUS_ICONS} value={pf.one('XST')!.value} show={icons} /></span>}
         {sente && sente !== 'none' && <span class="chip">Sente: {colorWord(sente === 'B' ? 1 : -1)}</span>}
-        {shape('XSB') && <span class="chip">Black next: {shape('XSB')}</span>}
-        {shape('XSW') && <span class="chip">White next: {shape('XSW')}</span>}
-        {pf.one('XEYE') && <span class="chip">{pf.one('XEYE')!.value}</span>}
+        {shape('XSB') && <span class="chip">Black plays first: <b>{RESULT_LABELS[shape('XSB')!] ?? shape('XSB')}</b></span>}
+        {shape('XSW') && <span class="chip">White plays first: <b>{RESULT_LABELS[shape('XSW')!] ?? shape('XSW')}</b></span>}
       </div>
-      {pf.text('XRES').map((t, i) => <p key={'r' + i} class="pos-text"><b>Outcome:</b> <Rich segments={t.segments} h={p.refs} /></p>)}
-      {here.filter((m) => m.kind === 'pos').map((m, i) => <p key={'p' + i} class="pos-text"><Rich segments={m.segments} h={p.refs} /></p>)}
-      {pf.text('XTEN').map((t, i) => <p key={'t' + i} class="pos-text"><b>Tenuki:</b> <Rich segments={t.segments} h={p.refs} /></p>)}
+      {/* Notes: the first database's as plain text, other databases' (your own notes) as cards with their color. */}
+      {here.filter((m) => m.kind === 'pos').map((m, i) =>
+        m.db === ctx.order[0] ? (
+          <p key={'p' + i} class="pos-text"><Rich segments={m.segments} h={p.refs} /></p>
+        ) : (
+          <NoteCard key={'p' + i} who={m.db} color={p.dbColor(m.db)}><Rich segments={m.segments} h={p.refs} /></NoteCard>
+        ),
+      )}
       {here.filter((m) => m.kind === 'warn').map((m, i) => (
         <WarnCard key={'w' + i} db={m.db} color={p.dbColor(m.db)}><Rich segments={m.segments} h={p.refs} /></WarnCard>
       ))}

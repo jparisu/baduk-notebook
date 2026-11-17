@@ -8,7 +8,9 @@
       "tags": [
         "corner start"
       ],
-      "notes": "{{TR:R16|The 3-4 stone}} holds the corner firmly and points along one side.",
+      "notes": [
+        "{{TR:R16|The 3-4 stone}} holds the corner firmly and points along one side."
+      ],
       "eval": {
         "difficulty": "25k"
       },

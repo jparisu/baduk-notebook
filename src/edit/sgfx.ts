@@ -6,6 +6,7 @@ import * as sgf from '@sabaki/sgf'
 import type { SgfNode } from '@sabaki/sgf'
 import { parseSgfPt, parseSgfPtList, type Pt, type Sign } from '../core/geometry'
 import { MOVE_PROPS } from '../core/fields'
+import { mergeNotes } from '../core/model'
 import { playerWords } from '../core/refs'
 import { candidates, displayBoard, frame, moveFields, playFree, positionFields, startStep, toMove, type Ctx, type Step } from '../view'
 import { newNode, sgfPoint, writeSgf } from './sgfio'
@@ -13,8 +14,8 @@ import { locate, setProps } from './ops'
 import { buildGraph } from '../core/graph'
 import type { Workspace } from './workspace'
 
-const KEEP_POS = ['XNAME', 'XTAG', 'XPW', 'XPN', 'XPB', 'XDIFF', 'XEV', 'XST', 'XSB', 'XSW']
-const KEEP_MOVE = ['XCAT', 'XMW', 'XMN', 'XSTY', 'XPUR']
+const KEEP_POS = ['XNAME', 'XTAG', 'XPW', 'XPB', 'XDIFF', 'XEV', 'XST', 'XSB', 'XSW']
+const KEEP_MOVE = ['XCAT', 'XMW', 'XSTY', 'XPUR']
 
 /** The position on the board (as set-up stones) and every database move after it, as an SGF game. */
 export function toSgf(ctx: Ctx, step: Step, maxNodes = 2000): string {
@@ -72,7 +73,14 @@ export function importSgf(ws: Workspace, ctxOf: () => Ctx, text: string, target:
     const write = (path: Step[], data: Record<string, string[]>) => {
       const vals: Record<string, string[]> = {}
       for (const [k, v] of Object.entries(data)) if (KEEP_POS.includes(k) || KEEP_MOVE.includes(k)) vals[k] = v
-      if (data.C) vals[path.length > 1 ? 'XMN' : 'XPN'] = data.C
+      // Comments and older note fields become notes.
+      // A comment on a move node describes the move; on the first node, the position.
+      const pos: Record<string, string[]> = { ...data }, mv: Record<string, string[]> = { ...data }
+      if (path.length > 1) delete pos.C
+      mergeNotes(pos, 'XPW')
+      mergeNotes(mv, 'XMW')
+      if (pos.XPW?.length) vals.XPW = pos.XPW
+      if (path.length > 1 && mv.XMW?.length) vals.XMW = mv.XMW
       const loc = locate(ws, fresh(), path, target, null, true)
       if (loc && Object.keys(vals).length) setProps(ws, loc, vals)
     }

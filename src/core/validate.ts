@@ -2,7 +2,7 @@
 import type { DbFile } from './model'
 import { buildGraph } from './graph'
 import { playerWords } from './refs'
-import { CATEGORIES } from './fields'
+import { CATEGORIES, RESULT_VALUES } from './fields'
 import { parsePt, parseSgfPt, parseSgfPtList } from './geometry'
 
 export interface Issue {
@@ -25,8 +25,8 @@ const ENUMS: Record<string, string[]> = {
   XARR: ['connected', 'separated'],
   XRESB: ['alive', 'dead', 'ko', 'seki', 'unsettled'],
   XRESW: ['alive', 'dead', 'ko', 'seki', 'unsettled'],
-  XSB: ['alive', 'dead', 'ko', 'seki', 'unsettled'],
-  XSW: ['alive', 'dead', 'ko', 'seki', 'unsettled'],
+  XSB: RESULT_VALUES,
+  XSW: RESULT_VALUES,
   XKOT: ['direct', 'approach1', 'approach2', '10000year'],
   XPUR: ['territory', 'influence', 'sente', 'attack', 'defend', 'sabaki', 'probe', 'reduce', 'connect', 'cut', 'eye', 'kill'],
   XERA: ['classic', 'modern', 'ai'],

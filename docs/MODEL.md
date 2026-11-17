@@ -16,9 +16,9 @@ A position is the stones on a local area of the board plus **who plays next**.
 | `tags` | Free nested tags for searching: `3-3`, `life & death/corner`, `ko`, `beginner`… |
 | `free` | Placement: `corner` (default), `horizontal`, `vertical` or `anywhere` (§4). |
 | `name` | Optional display name. Defaults to the last part of the sequence ("3-3 invasion"). |
-| `eval` | Optional: `balance` (points, from Black's view, local), `difficulty` (kyu/dan), `status` for life & death (`alive`, `dead`, `ko`, `seki`, `unsettled`). |
-| `notes` | Free text, with board marks (triangles, arrows, influence…). |
-| `extra` | Other details, with their SGF-style names: summary (`XSUM`), aliases, sources, evaluation symbol (`XEV`), status (`XST`), results if Black / White plays next (`XSB`, `XSW`), eyes, liberties, rules note, board marks (`TR`, `SQ`, `AR`…). The same fields exist for every position: joseki and life & death differ only by the first part of their id. |
+| `eval` | Optional: `balance` (points, from Black's view, local), `difficulty` (kyu/dan). |
+| `notes` | A list of notes (free text with board marks): what the position means, the outcome, what tenuki gives, what to watch out for… |
+| `extra` | Other details, with their SGF-style names: summary (`XSUM`), aliases, sources, evaluation symbol (`XEV`), status (`XST`), life & death results if Black / White plays first (`XSB`, `XSW`: `B-alive`, `B-dead`, `W-alive`, `W-dead`, `ko`, `seki`, `unsettled`, shown as "Black plays first: Black lives"), sente (`XSEN`), board marks (`TR`, `SQ`, `AR`…). The same fields exist for every position: joseki and life & death differ only by the first part of their id. |
 | `moves` | The moves from this position (§2). |
 
 **Inherited fields:** a position without its own value shows the value of the closest earlier position of
@@ -48,8 +48,7 @@ lead to. The app checks that playing the move really gives that position.
 | `move` | A point (`qc`) or `tenuki` (play elsewhere: same stones, the other player to move). |
 | `to` | Id of the position it leads to. |
 | `status` | One set for every position: `main`, `alt`, `situational`, `slack`, `mistake`, `overplay`, `trick`, `punish`. |
-| `why` | Why the move is good or bad. |
-| `notes` | Free text with board marks. |
+| `notes` | A list of notes: why the move is good or bad, and anything else about it. The first one is the short reason shown in Next moves. |
 | `extra` | Other details: style (`XSTY`), purpose (`XPUR`), conditions, board marks. |
 
 Rules:

@@ -68,18 +68,22 @@ export const STATUS_LABELS: Record<string, string> = {
   end: 'Joseki end',
   'end-mistake': 'End after a mistake',
 }
-export const SHAPE_STATUS_LABELS: Record<string, string> = {
-  alive: 'Alive', dead: 'Dead', ko: 'Ko', seki: 'Seki', unsettled: 'Unsettled',
+/** Life & death result, naming the color of the group (if Black or White plays first). */
+export const RESULT_LABELS: Record<string, string> = {
+  'B-alive': 'Black lives', 'B-dead': 'Black dies', 'W-alive': 'White lives', 'W-dead': 'White dies',
+  ko: 'Ko', seki: 'Seki', unsettled: 'Unsettled',
 }
+export const RESULT_VALUES = Object.keys(RESULT_LABELS)
 
 /** Flips color-dependent values when the display swaps colors. */
 export function flipValue(prop: string, v: string): string {
   if (prop === 'XEV') return v.replace(/^B/, '§').replace(/^W/, 'B').replace(/^§/, 'W')
   if (prop === 'XSEN') return v === 'B' ? 'W' : v === 'W' ? 'B' : v
+  if (prop === 'XSB' || prop === 'XSW') return v.replace(/^B-/, '§-').replace(/^W-/, 'B-').replace(/^§-/, 'W-')
   if (prop === 'XPB') {
     const n = Number(v)
     return Number.isFinite(n) ? String(-n) : v
   }
   return v
 }
-export const COLOR_PROPS = new Set(['XEV', 'XSEN', 'XPB'])
+export const COLOR_PROPS = new Set(['XEV', 'XSEN', 'XPB', 'XSB', 'XSW'])

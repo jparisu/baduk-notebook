@@ -9,7 +9,9 @@
         "approach",
         "basic joseki"
       ],
-      "notes": "{{TR:P16|{{White}}'s high approach}} to {{TR:R16|the 3-4 stone}}. High approach on the 5-4 point: faces the center more than the low approach and leaves the corner to {{Black}}.",
+      "notes": [
+        "{{TR:P16|{{White}}'s high approach}} to {{TR:R16|the 3-4 stone}}. High approach on the 5-4 point: faces the center more than the low approach and leaves the corner to {{Black}}."
+      ],
       "eval": {
         "difficulty": "20k"
       },
@@ -36,7 +38,9 @@
           "move": "oc",
           "to": "joseki/3-4 point/High approach/Attach-drawback",
           "status": "main",
-          "why": "Inside attachment underneath the approach stone: {{Black}} takes a large corner.",
+          "notes": [
+            "Inside attachment underneath the approach stone: {{Black}} takes a large corner."
+          ],
           "extra": {
             "XSTY": "solid",
             "XPUR": "territory"
@@ -63,7 +67,9 @@
           "move": "nc",
           "to": "joseki/3-4 point/High approach/Attach-drawback:4",
           "status": "main",
-          "why": "Hane, stopping {{Black}} from moving along the top.",
+          "notes": [
+            "Hane, stopping {{Black}} from moving along the top."
+          ],
           "extra": {
             "XSTY": "balanced",
             "XPUR": "influence"
@@ -84,7 +90,9 @@
           "move": "pc",
           "to": "joseki/3-4 point/High approach/Attach-drawback:5",
           "status": "main",
-          "why": "Draws back, leaving {{White}} a cutting point at {{CUT:O16}}.",
+          "notes": [
+            "Draws back, leaving {{White}} a cutting point at {{CUT:O16}}."
+          ],
           "extra": {
             "XSTY": "solid",
             "XPUR": [
@@ -99,7 +107,9 @@
       "id": "joseki/3-4 point/High approach/Attach-drawback:5",
       "stones": "B:oc,pc,qd W:nc,od",
       "toPlay": "W",
-      "notes": "{{White}} must protect the cutting point: a solid connection or a hanging connection.",
+      "notes": [
+        "{{White}} must protect the cutting point: a solid connection or a hanging connection."
+      ],
       "extra": {
         "XST": "progress",
         "XEV": "="
@@ -109,7 +119,9 @@
           "move": "nd",
           "to": "joseki/3-4 point/High approach/Attach-drawback:6",
           "status": "main",
-          "why": "Solid connection: the stronger move, slightly preferred by AI and modern professionals.",
+          "notes": [
+            "Solid connection: the stronger move, slightly preferred by AI and modern professionals."
+          ],
           "extra": {
             "XSTY": "solid",
             "XPUR": "connect"
@@ -119,7 +131,9 @@
           "move": "md",
           "to": "joseki/3-4 point/High approach/Attach-drawback:6b",
           "status": "alt",
-          "why": "Hanging connection (tiger's mouth): lets {{White}} extend one space further, but leaves more weaknesses.",
+          "notes": [
+            "Hanging connection (tiger's mouth): lets {{White}} extend one space further, but leaves more weaknesses."
+          ],
           "extra": {
             "XSTY": "balanced",
             "XPUR": "connect"
@@ -140,7 +154,9 @@
           "move": "qf",
           "to": "joseki/3-4 point/High approach/Attach-drawback:7",
           "status": "main",
-          "why": "Extends along the left side to complete the corner.",
+          "notes": [
+            "Extends along the left side to complete the corner."
+          ],
           "extra": {
             "XSTY": "balanced",
             "XPUR": "eye"
@@ -161,7 +177,9 @@
           "move": "jc",
           "to": "joseki/3-4 point/High approach/Attach-drawback:8",
           "status": "main",
-          "why": "Three-space extension along the top.",
+          "notes": [
+            "Three-space extension along the top."
+          ],
           "extra": {
             "XSTY": "balanced",
             "XPUR": "eye"
@@ -173,11 +191,13 @@
       "id": "joseki/3-4 point/High approach/Attach-drawback:8",
       "stones": "B:oc,pc,qd,qf W:jc,nc,nd,od",
       "toPlay": "B",
+      "notes": [
+        "Outcome: {{Black}} has the corner and left side; {{White}} has a base on the top."
+      ],
       "extra": {
         "XST": "end",
         "XEV": "=",
-        "XSEN": "B",
-        "XRES": "{{Black}} has the corner and left side; {{White}} has a base on the top."
+        "XSEN": "B"
       },
       "moves": []
     },
@@ -194,7 +214,9 @@
           "move": "qf",
           "to": "joseki/3-4 point/High approach/Attach-drawback:7b",
           "status": "main",
-          "why": "Extends along the left side.",
+          "notes": [
+            "Extends along the left side."
+          ],
           "extra": {
             "XSTY": "balanced",
             "XPUR": "eye"
@@ -215,7 +237,9 @@
           "move": "ic",
           "to": "joseki/3-4 point/High approach/Attach-drawback:8b",
           "status": "main",
-          "why": "Extends one space further than after the solid connection.",
+          "notes": [
+            "Extends one space further than after the solid connection."
+          ],
           "extra": {
             "XSTY": "balanced",
             "XPUR": "eye"
@@ -227,12 +251,14 @@
       "id": "joseki/3-4 point/High approach/Attach-drawback:8b",
       "stones": "B:oc,pc,qd,qf W:ic,md,nc,od",
       "toPlay": "B",
+      "notes": [
+        "Outcome: As after the solid connection, but {{White}}'s side is wider and thinner.",
+        "Watch out: {{Black}} can later invade the top side, for example at {{CR:M17}}."
+      ],
       "extra": {
         "XST": "end",
         "XEV": "=",
-        "XSEN": "B",
-        "XRES": "As after the solid connection, but {{White}}'s side is wider and thinner.",
-        "XAJI": "{{Black}} can later invade the top side, for example at {{CR:M17}}."
+        "XSEN": "B"
       },
       "moves": []
     }

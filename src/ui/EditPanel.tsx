@@ -3,7 +3,7 @@
  * Writing anything on a move played freely saves the line up to it.
  */
 import { useState } from 'preact/hooks'
-import { CATEGORIES, MOVE_CATEGORIES, flipValue, type Category } from '../core/fields'
+import { CATEGORIES, MOVE_CATEGORIES, RESULT_LABELS, flipValue, type Category } from '../core/fields'
 import { apply, compose, inverse, parsePt, parseSgfPtList, ptName, type Pt } from '../core/geometry'
 import { sgfPoint } from '../edit/sgfio'
 import { locate, nameSequence, setProps, type Location } from '../edit/ops'
@@ -11,7 +11,7 @@ import { isStartId, seqOf } from '../core/model'
 import type { Workspace } from '../edit/workspace'
 import { INHERITED, frame, lineFields, primaryLabel, type Ctx, type Step } from '../view'
 
-const COLOR_PROPS = new Set(['XEV', 'XSEN', 'XPB'])
+const COLOR_PROPS = new Set(['XEV', 'XSEN', 'XPB', 'XSB', 'XSW'])
 const SWAP_PAIRS: Record<string, string> = { XSB: 'XSW', XSW: 'XSB' }
 const POINT_PROPS = new Set<string>()
 const LIST_PROPS = new Set(['XALIAS', 'XTAG', 'XSRC', 'XCOND'])
@@ -114,6 +114,37 @@ export function EditPanel(p: EditApi) {
       </label>
     )
   }
+  /** Several notes: one box each (empty it or press × to remove), plus an empty box to add one. */
+  const notes = (prop: 'XPW' | 'XMW', label: string, hint: string) => {
+    const own = readList(prop)
+    const src = own.length ? null : lf.source(prop)
+    const inh = prop === 'XPW' && src !== null && src < path.length - 1 ? lf.list(prop) : []
+    const other = others(prop)
+    const firstId = prop === 'XMW' ? 'f-node-XMW' : 'f-XPW'
+    const save = (list: string[]) => write(prop, list.map((x) => x.trim()).filter(Boolean))
+    return (
+      <div class="f edit-f notes-f" key={prop + own.join('\u0001')}>
+        <span class="fl">{label}</span>
+        <span class="fv">
+          {own.map((t, i) => (
+            <div class="note-item" key={i}>
+              <textarea id={i === 0 ? firstId : `${firstId}-${i}`} defaultValue={t} onFocus={(e) => p.onFocusText(e.currentTarget)} onBlur={(e) => e.currentTarget.value !== t && save(own.map((x, j) => (j === i ? e.currentTarget.value : x)))} />
+              <button class="icon ghost" title="Remove this note" aria-label="Remove this note" onClick={() => save(own.filter((_, j) => j !== i))}>×</button>
+            </div>
+          ))}
+          <textarea
+            id={own.length ? `${firstId}-new` : firstId}
+            class="note-new"
+            placeholder={own.length ? 'Add another note…' : inh.length ? `Inherited from ${fromText(src!)}: ${inh.join(' · ')}` : hint}
+            onFocus={(e) => p.onFocusText(e.currentTarget)}
+            onBlur={(e) => e.currentTarget.value.trim() && save([...own, e.currentTarget.value])}
+          />
+          {inh.length > 0 && <small class="hint inherited">↑ Inherited from {fromText(src!)}. Write a note here to replace them from this move on.</small>}
+          {other && <small class="hint">{other}</small>}
+        </span>
+      </div>
+    )
+  }
   const select = (prop: string, label: string, options: [string, string][]) => (
     <label class="f edit-f">
       <span class="fl">{label}</span>
@@ -140,7 +171,7 @@ export function EditPanel(p: EditApi) {
     )
   }
 
-  const status: [string, string][] = [['alive', 'Alive'], ['dead', 'Dead'], ['ko', 'Ko'], ['seki', 'Seki'], ['unsettled', 'Unsettled']]
+  const status: [string, string][] = Object.entries(RESULT_LABELS)
   const cats: Category[] = MOVE_CATEGORIES
   const hasMove = path.length > 1
   const step = path[path.length - 1]
@@ -177,13 +208,12 @@ export function EditPanel(p: EditApi) {
               </button>
             ))}
           </div>
-          {field('XMW', 'Why', { area: true, id: 'f-node-XMW', placeholder: 'Why this move is good or bad. {{Player}} = who played it, {{Opponent}} = the other.' })}
+          {notes('XMW', 'Notes', 'Why this move is good or bad. {{Player}} = who played it, {{Opponent}} = the other.')}
           {p.only === 'move' && (
             <>
               {select('XSTY', 'Style', [['aggressive', 'Aggressive'], ['balanced', 'Balanced'], ['solid', 'Solid']])}
               {chips('XPUR', 'Purpose', ['territory', 'influence', 'sente', 'attack', 'defend', 'sabaki', 'probe', 'reduce', 'connect', 'cut', 'eye', 'kill'])}
               {field('XCOND', 'Conditions', { placeholder: 'ladder, needs-support…' })}
-              {field('XMN', 'Note on the move', { area: true })}
             </>
           )}
         </section>
@@ -194,21 +224,10 @@ export function EditPanel(p: EditApi) {
         {field('XPB', 'Points', { placeholder: '+3 = Black ahead by 3, -2 = White ahead by 2' })}
         {select('XEV', 'Evaluation', [['B++', 'Black clearly better'], ['B+', 'Black slightly better'], ['=', 'Even'], ['W+', 'White slightly better'], ['W++', 'White clearly better']])}
         {select('XST', 'Status', [['progress', 'In progress'], ['end', 'Joseki end'], ['end-mistake', 'End after a mistake']])}
-        {select('XSB', 'If Black plays next', status)}
-        {select('XSW', 'If White plays next', status)}
-        {field('XPW', 'Explanation', { area: true, placeholder: '{{Player}} = who plays next, {{Opponent}} = the other; {{Black}} / {{White}} follow Swap colors.' })}
-        {p.only === 'pos' && (
-          <>
-            {field('XPBS', 'Points source', { placeholder: 'katago / book / estimate' })}
-            {select('XSEN', 'Sente', [['B', 'Black'], ['W', 'White'], ['none', 'None']])}
-            {field('XRES', 'Outcome', { area: true, placeholder: 'Who got what' })}
-            {field('XTEN', 'Tenuki here', { area: true })}
-            {field('XAJI', 'Watch out (aji)', { area: true })}
-            {field('XPN', 'Note', { area: true })}
-            {field('XEYE', 'Eyes')}
-            {field('XLIB', 'Liberties')}
-          </>
-        )}
+        {select('XSB', 'Black plays first', status)}
+        {select('XSW', 'White plays first', status)}
+        {select('XSEN', 'Sente', [['B', 'Black'], ['W', 'White'], ['none', 'None']])}
+        {notes('XPW', 'Notes', 'What this position means: the result, what tenuki gives, what to watch out for… {{Player}} = who plays next.')}
       </section>}
 
       {show('name') && <section>
@@ -259,15 +278,6 @@ export function EditPanel(p: EditApi) {
           {hasMove && select('XSTY', 'Style', [['aggressive', 'Aggressive'], ['balanced', 'Balanced'], ['solid', 'Solid']])}
           {hasMove && chips('XPUR', 'Purpose', ['territory', 'influence', 'sente', 'attack', 'defend', 'sabaki', 'probe', 'reduce', 'connect', 'cut', 'eye', 'kill'])}
           {hasMove && field('XCOND', 'Conditions', { placeholder: 'ladder, needs-support…' })}
-          {hasMove && field('XMN', 'Note on the move', { area: true })}
-          {field('XPBS', 'Points source', { placeholder: 'katago / book / estimate' })}
-          {select('XSEN', 'Sente', [['B', 'Black'], ['W', 'White'], ['none', 'None']])}
-          {field('XRES', 'Outcome', { area: true, placeholder: 'Who got what' })}
-          {field('XTEN', 'Tenuki here', { area: true })}
-          {field('XAJI', 'Watch out (aji)', { area: true })}
-          {field('XPN', 'Note', { area: true })}
-          {field('XEYE', 'Eyes')}
-          {field('XLIB', 'Liberties')}
           {definesHere && (
             <>
               {field('XALIAS', 'Also called', { placeholder: 'comma separated' })}

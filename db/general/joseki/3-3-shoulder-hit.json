@@ -9,7 +9,9 @@
         "influence",
         "basic joseki"
       ],
-      "notes": "{{TR:Q16|{{White}}'s shoulder hit}} on {{TR:R17|the 3-3 stone}}. The corner is already secure, so {{White}} plays on the outside. Shoulder hit: keeps {{Black}} low and builds influence.",
+      "notes": [
+        "{{TR:Q16|{{White}}'s shoulder hit}} on {{TR:R17|the 3-3 stone}}. The corner is already secure, so {{White}} plays on the outside. Shoulder hit: keeps {{Black}} low and builds influence."
+      ],
       "eval": {
         "difficulty": "15k"
       },
@@ -29,7 +31,9 @@
           "move": "qd",
           "to": "joseki/3-3 point/Shoulder hit:3",
           "status": "main",
-          "why": "Pushes along the side. Push on the side where {{White}}'s wall would work worse.",
+          "notes": [
+            "Pushes along the side. Push on the side where {{White}}'s wall would work worse."
+          ],
           "extra": {
             "XSTY": "solid",
             "XPUR": "territory"
@@ -50,7 +54,9 @@
           "move": "pe",
           "to": "joseki/3-3 point/Shoulder hit:4",
           "status": "main",
-          "why": "Stretches.",
+          "notes": [
+            "Stretches."
+          ],
           "extra": {
             "XSTY": "balanced",
             "XPUR": "influence"
@@ -71,7 +77,9 @@
           "move": "ob",
           "to": "joseki/3-3 point/Shoulder hit:5",
           "status": "main",
-          "why": "Keima slide: the most common move, taking territory along the top.",
+          "notes": [
+            "Keima slide: the most common move, taking territory along the top."
+          ],
           "extra": {
             "XSTY": "balanced",
             "XPUR": "territory"
@@ -92,7 +100,9 @@
           "move": "md",
           "to": "joseki/3-3 point/Shoulder hit:6",
           "status": "main",
-          "why": "Jumps, keeping the emphasis on the outside.",
+          "notes": [
+            "Jumps, keeping the emphasis on the outside."
+          ],
           "extra": {
             "XSTY": "balanced",
             "XPUR": "influence"
@@ -102,7 +112,9 @@
           "move": "qe",
           "to": "joseki/3-3 point/Shoulder hit:6b",
           "status": "alt",
-          "why": "Blocks, taking the left side instead of the center.",
+          "notes": [
+            "Blocks, taking the left side instead of the center."
+          ],
           "extra": {
             "XSTY": "solid",
             "XPUR": "territory"
@@ -123,7 +135,9 @@
           "move": "rf",
           "to": "joseki/3-3 point/Shoulder hit:7",
           "status": "main",
-          "why": "Correct shape on the left side.",
+          "notes": [
+            "Correct shape on the left side."
+          ],
           "extra": {
             "XSTY": "solid",
             "XPUR": "territory"
@@ -144,7 +158,9 @@
           "move": "ph",
           "to": "joseki/3-3 point/Shoulder hit:8",
           "status": "main",
-          "why": "Nice shape, but slow: {{White}} often plays elsewhere instead.",
+          "notes": [
+            "Nice shape, but slow: {{White}} often plays elsewhere instead."
+          ],
           "extra": {
             "XSTY": "balanced",
             "XPUR": "influence"
@@ -156,11 +172,13 @@
       "id": "joseki/3-3 point/Shoulder hit:8",
       "stones": "B:ob,qc,qd,rf W:md,pd,pe,ph",
       "toPlay": "B",
+      "notes": [
+        "Outcome: {{Black}} has the corner and some side territory; {{White}} has influence toward the center."
+      ],
       "extra": {
         "XST": "end",
         "XEV": "=",
-        "XSEN": "B",
-        "XRES": "{{Black}} has the corner and some side territory; {{White}} has influence toward the center."
+        "XSEN": "B"
       },
       "moves": []
     },
@@ -177,7 +195,9 @@
           "move": "nd",
           "to": "joseki/3-3 point/Shoulder hit:7b",
           "status": "main",
-          "why": "Plays in the direction {{White}} neglected.",
+          "notes": [
+            "Plays in the direction {{White}} neglected."
+          ],
           "extra": {
             "XSTY": "aggressive",
             "XPUR": "attack"
@@ -198,7 +218,9 @@
           "move": "qi",
           "to": "joseki/3-3 point/Shoulder hit:8b",
           "status": "main",
-          "why": "Extends to stabilize.",
+          "notes": [
+            "Extends to stabilize."
+          ],
           "extra": {
             "XSTY": "solid",
             "XPUR": "eye"
@@ -210,11 +232,13 @@
       "id": "joseki/3-3 point/Shoulder hit:8b",
       "stones": "B:nd,ob,qc,qd W:pd,pe,qe,qi",
       "toPlay": "B",
+      "notes": [
+        "Outcome: {{White}} takes the left side; {{Black}} presses along the top."
+      ],
       "extra": {
         "XST": "end",
         "XEV": "=",
-        "XSEN": "B",
-        "XRES": "{{White}} takes the left side; {{Black}} presses along the top."
+        "XSEN": "B"
       },
       "moves": []
     }

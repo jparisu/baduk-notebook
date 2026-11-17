@@ -34,16 +34,12 @@ function forStep(ctx: Ctx, path: Step[], i: number, current: boolean, settings: 
     const mf = moveFields(ctx, path[i - 1], step.edge)
     const place = current ? 'move' : 'history'
     for (const t of mf.text('XMW')) out.push({ kind: 'move', title: `${name} · why`, db: t.db, segments: t.segments, step: i, place })
-    if (current) for (const t of mf.text('XMN')) out.push({ kind: 'note', title: 'Note on the move', db: t.db, segments: t.segments, step: i, place: 'move' })
   }
   // The current position shows inherited texts too; earlier positions only their own (no repeats).
   const pf = current ? lineFields(ctx, path.slice(0, i + 1)) : positionFields(ctx, step)
   const place = current ? 'position' : 'history'
   for (const t of pf.text('XPW')) out.push({ kind: 'pos', title: current ? 'Position' : `${name} · position`, db: t.db, segments: t.segments, step: i, place })
   if (current) {
-    for (const t of pf.text('XAJI')) out.push({ kind: 'warn', title: 'Watch out', db: t.db, segments: t.segments, step: i, place })
-    for (const t of pf.text('XPN')) out.push({ kind: 'note', title: 'Note', db: t.db, segments: t.segments, step: i, place })
-    for (const t of pf.text('C')) out.push({ kind: 'note', title: 'Comment', db: t.db, segments: t.segments, step: i, place })
   }
   return out
 }

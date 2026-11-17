@@ -227,7 +227,7 @@ export function isList(prop: string) {
  * value (docs/MODEL.md §1). Inheritance stops at the start of a sequence. Names, the joseki-end status,
  * board marks and every move field are never inherited.
  */
-export const INHERITED = new Set(['XPB', 'XPBS', 'XEV', 'XSEN', 'XPW', 'XRES', 'XTEN', 'XAJI', 'XPN', 'XTAG', 'XDIFF', 'XSB', 'XSW', 'XEYE', 'XLIB'])
+export const INHERITED = new Set(['XPB', 'XEV', 'XSEN', 'XPW', 'XTAG', 'XDIFF', 'XSB', 'XSW'])
 
 const startsSequence = (ctx: Ctx, step: Step) => node(ctx, step).contribs.some((c) => ctx.active.has(c.db) && isStartId(c.pos.id))
 

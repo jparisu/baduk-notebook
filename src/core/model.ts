@@ -100,17 +100,32 @@ export const moveText = (pt: Pt | null) => (pt ? sgfPt(pt) : 'tenuki')
 const POS_FIELDS: [string, string, 'one' | 'list' | 'num'][] = [
   ['name', 'XNAME', 'one'],
   ['tags', 'XTAG', 'list'],
-  ['notes', 'XPW', 'one'],
+  ['notes', 'XPW', 'list'],
 ]
 const EVAL_FIELDS: [string, string, 'one' | 'num'][] = [
   ['balance', 'XPB', 'num'],
   ['difficulty', 'XDIFF', 'one'],
 ]
-const MOVE_FIELDS: [string, string][] = [
-  ['status', 'XCAT'],
-  ['why', 'XMW'],
-  ['notes', 'XMN'],
+const MOVE_FIELDS: [string, string, 'one' | 'list'][] = [
+  ['status', 'XCAT', 'one'],
+  ['notes', 'XMW', 'list'],
 ]
+
+/**
+ * Older separate texts that are now notes (docs/MODEL.md §1): each becomes one more note, with its lead word.
+ * Applied when reading, so old files, drafts and imports convert the same way.
+ */
+const OLD_POS_NOTES: [string, string][] = [
+  ['XRES', 'Outcome: '], ['XTEN', 'Tenuki: '], ['XAJI', 'Watch out: '], ['XPN', ''], ['XEYE', ''], ['XLIB', ''], ['XRULE', 'Rules: '], ['C', ''],
+]
+const OLD_MOVE_NOTES: [string, string][] = [['XMN', ''], ['C', '']]
+export function mergeNotes(data: Props, into: 'XPW' | 'XMW') {
+  for (const [k, lead] of into === 'XPW' ? OLD_POS_NOTES : OLD_MOVE_NOTES) {
+    if (!data[k]?.length) continue
+    data[into] = [...(data[into] ?? []), ...data[k].filter((t) => t.trim()).map((t) => lead + t)]
+    delete data[k]
+  }
+}
 const EXTRA_ORDER = [
   'XALIAS', 'XSUM', 'XSRC', 'XERA', 'XST', 'XEV', 'XPBS', 'XSEN', 'XSB', 'XSW', 'XRESB', 'XRESW', 'XEYE', 'XLIB', 'XRES', 'XTEN', 'XAJI', 'XPN',
   'XSIZE', 'XSURR', 'XOLIB', 'XINSIDE', 'XARR', 'XVITAL', 'XKOT', 'XRULE', 'XREG',
@@ -149,7 +164,7 @@ export function positionToJson(p: PosRec): Json {
   if (extra) out.extra = extra
   out.moves = p.moves.map((m) => {
     const mo: Json = { move: m.move, to: m.to }
-    for (const [name, prop] of MOVE_FIELDS) if (m.data[prop]?.length) mo[name] = m.data[prop][0]
+    for (const [name, prop, kind] of MOVE_FIELDS) if (m.data[prop]?.length) mo[name] = kind === 'list' ? m.data[prop] : m.data[prop][0]
     const ex = extraOf(m.data, new Set(MOVE_FIELDS.map((f) => f[1])))
     if (ex) mo.extra = ex
     return mo
@@ -169,13 +184,19 @@ export function positionFromJson(j: Json): PosRec {
     if (v.length) data[prop] = v
   }
   for (const [k, v] of Object.entries((j.extra ?? {}) as Json)) data[k] = unpack(v)
+  mergeNotes(data, 'XPW')
+  // Older life & death results did not name the color; every stored shape is a Black group.
+  for (const k of ['XSB', 'XSW']) if (data[k]?.[0] === 'alive' || data[k]?.[0] === 'dead') data[k] = ['B-' + data[k][0]]
   const moves = ((j.moves ?? []) as Json[]).map((m) => {
     const md: Props = {}
     for (const [name, prop] of MOVE_FIELDS) {
       const v = unpack(m[name])
       if (v.length) md[prop] = v
     }
+    // Older files: "why" and a separate "notes" text; both become notes, the why first.
+    if (m.why !== undefined) md.XMW = [...unpack(m.why), ...unpack(m.notes)]
     for (const [k, v] of Object.entries((m.extra ?? {}) as Json)) md[k] = unpack(v)
+    mergeNotes(md, 'XMW')
     return { move: String(m.move), to: String(m.to), data: md }
   })
   const free = FREE_VALUES.includes(j.free as Free) ? (j.free as Free) : 'corner'
