@@ -9,7 +9,7 @@
       "tags": [
         "eye shape"
       ],
-      "notes": "{{SQ:T16,T15,T14,S14|The 4-point eye space}} has {{CR:T15,T14|two middle points}}. White can take only one of them.",
+      "notes": "{{SQ:T16,T15,T14,S14|The 4-point eye space}} has {{CR:T15,T14|two middle points}}. {{White}} can take only one of them.",
       "eval": {
         "difficulty": "25k"
       },
@@ -106,7 +106,7 @@
           "move": "se",
           "to": "life & death/Bent four · side · enclosed:3b",
           "status": "correct",
-          "why": "Takes the remaining middle point. {{TR:T14|The white stone}} is in atari, and {{SQ:T16}} is already an eye."
+          "why": "Takes the remaining middle point. {{TR:T14|The {{white}} stone}} is in atari, and {{SQ:T16}} is already an eye."
         }
       ]
     },

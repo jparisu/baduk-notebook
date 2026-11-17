@@ -9,7 +9,7 @@
         "influence",
         "basic joseki"
       ],
-      "notes": "{{TR:Q16|White's shoulder hit}} on {{TR:R17|the 3-3 stone}}. The corner is already secure, so White plays on the outside. Shoulder hit: keeps Black low and builds influence.",
+      "notes": "{{TR:Q16|{{White}}'s shoulder hit}} on {{TR:R17|the 3-3 stone}}. The corner is already secure, so {{White}} plays on the outside. Shoulder hit: keeps {{Black}} low and builds influence.",
       "eval": {
         "difficulty": "15k"
       },
@@ -18,7 +18,7 @@
           "San-san katatsuki",
           "三々肩ツキ"
         ],
-        "XSUM": "White presses on the 3-3 stone from the outside. Black pushes and slides along the side for territory; White builds influence and then jumps out or blocks. Source: 33PointShoulderHit.",
+        "XSUM": "{{White}} presses on the 3-3 stone from the outside. {{Black}} pushes and slides along the side for territory; {{White}} builds influence and then jumps out or blocks. Source: 33PointShoulderHit.",
         "XSRC": "Sensei's Library (senseis.xmp.net), joseki pages listed in XSUM. Sequences copied from its diagrams and mirrored to the top-right corner.",
         "XERA": "classic",
         "XST": "start",
@@ -29,7 +29,7 @@
           "move": "qd",
           "to": "joseki/3-3 point/Shoulder hit:3",
           "status": "main",
-          "why": "Pushes along the side. Push on the side where White's wall would work worse.",
+          "why": "Pushes along the side. Push on the side where {{White}}'s wall would work worse.",
           "extra": {
             "XSTY": "solid",
             "XPUR": "territory"
@@ -144,7 +144,7 @@
           "move": "ph",
           "to": "joseki/3-3 point/Shoulder hit:8",
           "status": "main",
-          "why": "Nice shape, but slow: White often plays elsewhere instead.",
+          "why": "Nice shape, but slow: {{White}} often plays elsewhere instead.",
           "extra": {
             "XSTY": "balanced",
             "XPUR": "influence"
@@ -160,7 +160,7 @@
         "XST": "end",
         "XEV": "=",
         "XSEN": "B",
-        "XRES": "Black has the corner and some side territory; White has influence toward the center."
+        "XRES": "{{Black}} has the corner and some side territory; {{White}} has influence toward the center."
       },
       "moves": []
     },
@@ -177,7 +177,7 @@
           "move": "nd",
           "to": "joseki/3-3 point/Shoulder hit:7b",
           "status": "main",
-          "why": "Plays in the direction White neglected.",
+          "why": "Plays in the direction {{White}} neglected.",
           "extra": {
             "XSTY": "aggressive",
             "XPUR": "attack"
@@ -214,7 +214,7 @@
         "XST": "end",
         "XEV": "=",
         "XSEN": "B",
-        "XRES": "White takes the left side; Black presses along the top."
+        "XRES": "{{White}} takes the left side; {{Black}} presses along the top."
       },
       "moves": []
     }

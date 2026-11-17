@@ -9,7 +9,7 @@
         "approach",
         "basic joseki"
       ],
-      "notes": "{{TR:P17|White's low approach}} to {{TR:R16|the 3-4 stone}}, from the open side. Low approach (small knight approach) on the 5-3 point. It stops Black from enclosing the corner and aims to settle along the top.",
+      "notes": "{{TR:P17|{{White}}'s low approach}} to {{TR:R16|the 3-4 stone}}, from the open side. Low approach (small knight approach) on the 5-3 point. It stops {{Black}} from enclosing the corner and aims to settle along the top.",
       "eval": {
         "difficulty": "20k"
       },
@@ -19,7 +19,7 @@
           "Kogeima kakari",
           "小目小ゲイマガカリ"
         ],
-        "XSUM": "White approaches the 3-4 stone low, on the 5-3 point. Black's main answers are the diagonal (Shusaku's kosumi), the small knight, the kick and the pincers. Sources: 34PointLowApproach, 34PointLowApproachDiagonal, 34PointLowApproachKeima, 34PointLowApproachKick, 34PointLowApproachOneSpaceLowPincer.",
+        "XSUM": "{{White}} approaches the 3-4 stone low, on the 5-3 point. {{Black}}'s main answers are the diagonal (Shusaku's kosumi), the small knight, the kick and the pincers. Sources: 34PointLowApproach, 34PointLowApproachDiagonal, 34PointLowApproachKeima, 34PointLowApproachKick, 34PointLowApproachOneSpaceLowPincer.",
         "XSRC": "Sensei's Library (senseis.xmp.net), joseki pages listed in XSUM. Sequences copied from its diagrams and mirrored to the top-right corner.",
         "XERA": [
           "classic",
@@ -34,7 +34,7 @@
           "move": "pe",
           "to": "joseki/3-4 point/Low approach/Diagonal",
           "status": "main",
-          "why": "The diagonal (Shusaku's kosumi): steady, strengthens the corner and stops White from pressing at {{CR:P16}}. AI programs rate it highly.",
+          "why": "The diagonal (Shusaku's kosumi): steady, strengthens the corner and stops {{White}} from pressing at {{CR:P16}}. AI programs rate it highly.",
           "extra": {
             "XSTY": "solid",
             "XPUR": [
@@ -60,7 +60,7 @@
           "move": "pc",
           "to": "joseki/3-4 point/Low approach/Kick",
           "status": "alt",
-          "why": "The kick: Black presses White up and takes the corner.",
+          "why": "The kick: {{Black}} presses {{White}} up and takes the corner.",
           "extra": {
             "XSTY": "solid",
             "XPUR": "territory"
@@ -70,7 +70,7 @@
           "move": "mc",
           "to": "joseki/3-4 point/Low approach/One-space low pincer",
           "status": "alt",
-          "why": "One-space low pincer: denies White the top side.",
+          "why": "One-space low pincer: denies {{White}} the top side.",
           "extra": {
             "XSTY": "aggressive",
             "XPUR": "attack"
@@ -92,13 +92,13 @@
       "stones": "B:pe,qd W:oc",
       "toPlay": "W",
       "name": "3-4 point · low approach · diagonal",
-      "notes": "White usually extends along the top or plays elsewhere.",
+      "notes": "{{White}} usually extends along the top or plays elsewhere.",
       "eval": {
         "difficulty": "20k"
       },
       "extra": {
         "XALIAS": "Shusaku's kosumi",
-        "XSUM": "The strongest local answer: it strengthens the corner and stops White from pressing.",
+        "XSUM": "The strongest local answer: it strengthens the corner and stops {{White}} from pressing.",
         "XST": "progress",
         "XEV": "="
       },
@@ -163,7 +163,7 @@
       "extra": {
         "XST": "progress",
         "XEV": "=",
-        "XTEN": "Possible, but a Black pincer on the top side is strong."
+        "XTEN": "Possible, but a {{Black}} pincer on the top side is strong."
       },
       "moves": []
     },
@@ -213,7 +213,7 @@
         "difficulty": "20k"
       },
       "extra": {
-        "XSUM": "Black presses White up and takes the corner.",
+        "XSUM": "{{Black}} presses {{White}} up and takes the corner.",
         "XST": "progress",
         "XEV": "="
       },
@@ -262,7 +262,7 @@
         "XST": "end",
         "XEV": "=",
         "XSEN": "W",
-        "XRES": "Black has the corner; White has a light shape facing the top."
+        "XRES": "{{Black}} has the corner; {{White}} has a light shape facing the top."
       },
       "moves": []
     },
@@ -275,7 +275,7 @@
         "difficulty": "15k"
       },
       "extra": {
-        "XSUM": "Black denies White the top side; White pushes in and builds outside while Black takes the corner.",
+        "XSUM": "{{Black}} denies {{White}} the top side; {{White}} pushes in and builds outside while {{Black}} takes the corner.",
         "XST": "progress",
         "XEV": "="
       },
@@ -346,7 +346,7 @@
           "move": "qg",
           "to": "joseki/3-4 point/Low approach/One-space low pincer:7",
           "status": "main",
-          "why": "Black takes the corner and left side; White builds outside. Continuations are not entered yet.",
+          "why": "{{Black}} takes the corner and left side; {{White}} builds outside. Continuations are not entered yet.",
           "extra": {
             "XSTY": "solid",
             "XPUR": "territory"
@@ -371,7 +371,7 @@
       "extra": {
         "XST": "progress",
         "XEV": "=",
-        "XTEN": "White can take the corner with a move at {{CR:Q17}} or press with {{CR:Q15}}."
+        "XTEN": "{{White}} can take the corner with a move at {{CR:Q17}} or press with {{CR:Q15}}."
       },
       "moves": []
     }

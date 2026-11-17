@@ -10,7 +10,7 @@
         "eye shape",
         "dead shape"
       ],
-      "notes": "{{SQ:T15,T16,S15,S16|The square}} is a single eye. Black has no move that splits it.",
+      "notes": "{{SQ:T15,T16,S15,S16|The square}} is a single eye. {{Black}} has no move that splits it.",
       "eval": {
         "difficulty": "25k"
       },
@@ -21,7 +21,7 @@
           "集四",
           "方四"
         ],
-        "XSUM": "Four points in a 2×2 block. Dead even if Black plays first: any move inside leaves a bent three, and White kills it at the bend.",
+        "XSUM": "Four points in a 2×2 block. Dead even if {{Black}} plays first: any move inside leaves a bent three, and {{White}} kills it at the bend.",
         "XSRC": "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search.",
         "XSB": "dead",
         "XSW": "dead",
@@ -41,7 +41,7 @@
           "move": "rd",
           "to": "life & death/Square four · side · enclosed:1",
           "status": "wrong",
-          "why": "Any Black move inside leaves a bent three."
+          "why": "Any {{Black}} move inside leaves a bent three."
         }
       ]
     },

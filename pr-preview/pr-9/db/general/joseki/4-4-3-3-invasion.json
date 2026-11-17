@@ -9,7 +9,7 @@
         "invasion",
         "territory vs thickness"
       ],
-      "notes": "Black chooses the direction of the wall with the block.",
+      "notes": "{{Black}} chooses the direction of the wall with the block.",
       "eval": {
         "difficulty": "15k"
       },
@@ -18,7 +18,7 @@
           "San-san invasion",
           "三々入り"
         ],
-        "XSUM": "White takes the corner and Black's base. Black chooses which side gets the wall, then picks a sente variation (extend, knight's move) or the territorial double hane. Sources: 33PointInvasion, 44Point33InvasionJoseki, 44Point33InvasionHaneExtend, 44Point33InvasionExtendSmallKnight, 44Point33InvasionDoubleHane.",
+        "XSUM": "{{White}} takes the corner and {{Black}}'s base. {{Black}} chooses which side gets the wall, then picks a sente variation (extend, knight's move) or the territorial double hane. Sources: 33PointInvasion, 44Point33InvasionJoseki, 44Point33InvasionHaneExtend, 44Point33InvasionExtendSmallKnight, 44Point33InvasionDoubleHane.",
         "XSRC": "Sensei's Library (senseis.xmp.net), joseki pages listed in XSUM. Sequences copied from its diagrams and mirrored to the top-right corner.",
         "XERA": [
           "classic",
@@ -42,7 +42,7 @@
           "move": "tenuki",
           "to": "joseki/4-4 point/3-3 invasion:3b",
           "status": "slack",
-          "why": "Tenuki here lets White live easily, and Black's 4-4 stone loses its base.",
+          "why": "Tenuki here lets {{White}} live easily, and {{Black}}'s 4-4 stone loses its base.",
           "extra": {
             "XSTY": "balanced"
           }
@@ -83,7 +83,7 @@
           "move": "qe",
           "to": "joseki/4-4 point/3-3 invasion/Hane",
           "status": "main",
-          "why": "Hane at the head of {{TR:R17,R16|White's two stones}}.",
+          "why": "Hane at the head of {{TR:R17,R16|{{White}}'s two stones}}.",
           "extra": {
             "XSTY": "aggressive",
             "XPUR": "influence"
@@ -93,7 +93,7 @@
           "move": "pe",
           "to": "joseki/4-4 point/3-3 invasion/Extend",
           "status": "alt",
-          "why": "Extends instead of the hane: the simplest way for Black to take sente.",
+          "why": "Extends instead of the hane: the simplest way for {{Black}} to take sente.",
           "extra": {
             "XSTY": "solid",
             "XPUR": [
@@ -106,7 +106,7 @@
           "move": "qf",
           "to": "joseki/4-4 point/3-3 invasion/Knight's move",
           "status": "alt",
-          "why": "Knight's move: puts more pressure on White than the extension and usually keeps sente. Continuations are not entered yet.",
+          "why": "Knight's move: puts more pressure on {{White}} than the extension and usually keeps sente. Continuations are not entered yet.",
           "extra": {
             "XSTY": "balanced",
             "XPUR": [
@@ -126,7 +126,7 @@
         "difficulty": "15k"
       },
       "extra": {
-        "XSUM": "Black hanes at the head of the two stones. White hanes back, then Black chooses the hane-extend line or the double hane.",
+        "XSUM": "{{Black}} hanes at the head of the two stones. {{White}} hanes back, then {{Black}} chooses the hane-extend line or the double hane.",
         "XST": "progress",
         "XEV": "="
       },
@@ -176,7 +176,7 @@
           "move": "rf",
           "to": "joseki/4-4 point/3-3 invasion/Double hane",
           "status": "alt",
-          "why": "Double hane: Black keeps the corner territory and lets White take the outside.",
+          "why": "Double hane: {{Black}} keeps the corner territory and lets {{White}} take the outside.",
           "extra": {
             "XSTY": "aggressive",
             "XPUR": [
@@ -221,7 +221,7 @@
           "move": "qg",
           "to": "joseki/4-4 point/3-3 invasion/Hane:9",
           "status": "main",
-          "why": "Extends again. {{TR:Q17,Q16,R15,R14,R13|Black's wall}} faces the bottom.",
+          "why": "Extends again. {{TR:Q17,Q16,R15,R14,R13|{{Black}}'s wall}} faces the bottom.",
           "extra": {
             "XSTY": "solid",
             "XPUR": "influence"
@@ -233,7 +233,7 @@
       "id": "joseki/4-4 point/3-3 invasion/Hane:9",
       "stones": "B:pc,pd,qe,qf,qg W:qc,qd,re,rf",
       "toPlay": "W",
-      "notes": "The standard joseki. White often plays elsewhere now and finishes the corner later.",
+      "notes": "The standard joseki. {{White}} often plays elsewhere now and finishes the corner later.",
       "extra": {
         "XST": "progress",
         "XEV": "="
@@ -279,7 +279,7 @@
       "extra": {
         "XST": "progress",
         "XEV": "=",
-        "XAJI": "White must take care of the cutting point at {{CUT:R18}}."
+        "XAJI": "{{White}} must take care of the cutting point at {{CUT:R18}}."
       },
       "moves": [
         {
@@ -307,7 +307,7 @@
           "move": "nc",
           "to": "joseki/4-4 point/3-3 invasion/Hane:13",
           "status": "main",
-          "why": "Protects the cutting point in Black's wall at {{CUT:P17}}.",
+          "why": "Protects the cutting point in {{Black}}'s wall at {{CUT:P17}}.",
           "extra": {
             "XSTY": "solid",
             "XPUR": "defend"
@@ -323,7 +323,7 @@
         "XST": "end",
         "XEV": "=",
         "XSEN": "W",
-        "XRES": "White lives in the corner; Black has a solid wall facing the bottom."
+        "XRES": "{{White}} lives in the corner; {{Black}} has a solid wall facing the bottom."
       },
       "moves": []
     },
@@ -336,7 +336,7 @@
         "difficulty": "12k"
       },
       "extra": {
-        "XSUM": "Black keeps the corner in gote; White gets a ponnuki on the outside and sente.",
+        "XSUM": "{{Black}} keeps the corner in gote; {{White}} gets a ponnuki on the outside and sente.",
         "XST": "progress",
         "XEV": "="
       },
@@ -447,7 +447,7 @@
           "move": "rc",
           "to": "joseki/4-4 point/3-3 invasion/Double hane:13",
           "status": "main",
-          "why": "Atari on {{TR:R17,R16|the invading stones}}. They cannot escape, so the corner is Black's.",
+          "why": "Atari on {{TR:R17,R16|the invading stones}}. They cannot escape, so the corner is {{Black}}'s.",
           "extra": {
             "XSTY": "solid",
             "XPUR": "kill"
@@ -463,7 +463,7 @@
         "XST": "end",
         "XEV": "=",
         "XSEN": "W",
-        "XRES": "Black keeps the corner in gote; White gets outside strength and sente."
+        "XRES": "{{Black}} keeps the corner in gote; {{White}} gets outside strength and sente."
       },
       "moves": []
     },
@@ -474,7 +474,7 @@
       "extra": {
         "XST": "progress",
         "XEV": "=",
-        "XAJI": "Black can cut at {{CUT:R18}} later."
+        "XAJI": "{{Black}} can cut at {{CUT:R18}} later."
       },
       "moves": [
         {
@@ -503,11 +503,11 @@
       "id": "joseki/4-4 point/3-3 invasion/Hane:7b",
       "stones": "B:ob,pc,pd,qe W:pb,qc,qd",
       "toPlay": "W",
-      "notes": "White must take care of the cutting point before playing elsewhere. The connection is shown in the main line.",
+      "notes": "{{White}} must take care of the cutting point before playing elsewhere. The connection is shown in the main line.",
       "extra": {
         "XST": "progress",
         "XEV": "=",
-        "XAJI": "Black {{MA:R18}} would be atari on {{TR:Q18|the hane stone}}."
+        "XAJI": "{{Black}} {{MA:R18}} would be atari on {{TR:Q18|the hane stone}}."
       },
       "moves": [
         {
@@ -534,7 +534,7 @@
           "move": "qb",
           "to": "joseki/4-4 point/3-3 invasion/Hane:9b",
           "status": "punish",
-          "why": "Atari on {{TR:Q18|the hane stone}}. It cannot escape, and White's corner shrinks.",
+          "why": "Atari on {{TR:Q18|the hane stone}}. It cannot escape, and {{White}}'s corner shrinks.",
           "extra": {
             "XSTY": "aggressive",
             "XPUR": "cut"
@@ -549,7 +549,7 @@
       "extra": {
         "XST": "end-mistake",
         "XEV": "B+",
-        "XRES": "White loses the hane stone and the corner becomes small."
+        "XRES": "{{White}} loses the hane stone and the corner becomes small."
       },
       "moves": []
     },
@@ -581,7 +581,7 @@
       "extra": {
         "XST": "end-mistake",
         "XEV": "W+",
-        "XRES": "Black loses the cutting stone and White's corner is safe and bigger."
+        "XRES": "{{Black}} loses the cutting stone and {{White}}'s corner is safe and bigger."
       },
       "moves": []
     },
@@ -594,7 +594,7 @@
         "difficulty": "15k"
       },
       "extra": {
-        "XSUM": "The simplest way for Black to take sente: a three-stone wall with few weaknesses.",
+        "XSUM": "The simplest way for {{Black}} to take sente: a three-stone wall with few weaknesses.",
         "XST": "progress",
         "XEV": "="
       },
@@ -619,7 +619,7 @@
         "XST": "end",
         "XEV": "=",
         "XSEN": "B",
-        "XRES": "White lives small; Black has a three-stone wall and sente."
+        "XRES": "{{White}} lives small; {{Black}} has a three-stone wall and sente."
       },
       "moves": []
     },
@@ -632,7 +632,7 @@
         "difficulty": "12k"
       },
       "extra": {
-        "XSUM": "More pressure on White than the extension; usually ends in sente for Black.",
+        "XSUM": "More pressure on {{White}} than the extension; usually ends in sente for {{Black}}.",
         "XST": "progress",
         "XEV": "="
       },

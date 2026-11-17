@@ -8,7 +8,7 @@
       "tags": [
         "influence"
       ],
-      "notes": "{{TR:P16|White's knight's move approach}} to {{TR:R17|the 3-3 stone}}. Knight's move approach on the fourth line.",
+      "notes": "{{TR:P16|{{White}}'s knight's move approach}} to {{TR:R17|the 3-3 stone}}. Knight's move approach on the fourth line.",
       "eval": {
         "difficulty": "15k"
       },
@@ -18,7 +18,7 @@
           "San-san keima kakari",
           "三々ケイマガカリ"
         ],
-        "XSUM": "White approaches the 3-3 stone with a knight's move on the fourth line. Black pushes along the side and White builds a wall. Source: 33PointHighApproach.",
+        "XSUM": "{{White}} approaches the 3-3 stone with a knight's move on the fourth line. {{Black}} pushes along the side and {{White}} builds a wall. Source: 33PointHighApproach.",
         "XSRC": "Sensei's Library (senseis.xmp.net), joseki pages listed in XSUM. Sequences copied from its diagrams and mirrored to the top-right corner.",
         "XERA": "classic",
         "XST": "start",
@@ -29,7 +29,7 @@
           "move": "pe",
           "to": "joseki/3-3 point/High approach:3",
           "status": "main",
-          "why": "Pushes underneath White's stone.",
+          "why": "Pushes underneath {{White}}'s stone.",
           "extra": {
             "XSTY": "balanced",
             "XPUR": "territory"
@@ -110,7 +110,7 @@
           "move": "pg",
           "to": "joseki/3-3 point/High approach:7",
           "status": "main",
-          "why": "Black has territory on the side; White has a wall. White now finishes the top.",
+          "why": "{{Black}} has territory on the side; {{White}} has a wall. {{White}} now finishes the top.",
           "extra": {
             "XSTY": "solid",
             "XPUR": "territory"
@@ -192,7 +192,7 @@
         "XST": "end",
         "XEV": "=",
         "XSEN": "B",
-        "XRES": "Black has the corner and left side; White has a wall and the top side."
+        "XRES": "{{Black}} has the corner and left side; {{White}} has a wall and the top side."
       },
       "moves": []
     }

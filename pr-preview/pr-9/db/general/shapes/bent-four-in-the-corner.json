@@ -21,7 +21,7 @@
           "盘角曲四",
           "귀곡사"
         ],
-        "XSUM": "Bent four with the bend on the 1-1 point. Normally bent four is alive, but in the corner it is unsettled: Black lives by playing first, and if White plays first it becomes a ko.",
+        "XSUM": "Bent four with the bend on the 1-1 point. Normally bent four is alive, but in the corner it is unsettled: {{Black}} lives by playing first, and if {{White}} plays first it becomes a ko.",
         "XSRC": "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search.",
         "XSB": "alive",
         "XSW": "ko",
@@ -76,7 +76,7 @@
           "move": "sa",
           "to": "life & death/Bent four in the corner:3",
           "status": "ko",
-          "why": "Black's best: it puts {{TR:S19|the white stone}} in atari."
+          "why": "{{Black}}'s best: it puts {{TR:S19|the {{white}} stone}} in atari."
         }
       ]
     },
@@ -89,7 +89,7 @@
           "move": "ra",
           "to": "life & death/Bent four in the corner:2",
           "status": "correct",
-          "why": "Takes the vital point. Black cannot make two eyes without a ko."
+          "why": "Takes the vital point. {{Black}} cannot make two eyes without a ko."
         },
         {
           "move": "sa",
@@ -112,7 +112,7 @@
           "move": "sb",
           "to": "life & death/Bent four in the corner:4",
           "status": "ko",
-          "why": "Captures {{TR:T19}} and takes the ko first. Black needs a ko threat."
+          "why": "Captures {{TR:T19}} and takes the ko first. {{Black}} needs a ko threat."
         }
       ]
     },
@@ -120,7 +120,7 @@
       "id": "life & death/Bent four in the corner:4",
       "stones": "B:pa,pb,qb,rb,rc,sc W:oa,ob,oc,pc,qc,qd,ra,rd,sb,sd",
       "toPlay": "B",
-      "notes": "Ko: White has taken first. If Black wins the ko, Black lives.",
+      "notes": "Ko: {{White}} has taken first. If {{Black}} wins the ko, {{Black}} lives.",
       "extra": {
         "XSB": "ko",
         "XSW": "dead"
@@ -140,7 +140,7 @@
           "move": "ra",
           "to": "life & death/Bent four in the corner:3b",
           "status": "correct",
-          "why": "Black lives: White cannot approach from either side."
+          "why": "{{Black}} lives: {{White}} cannot approach from either side."
         }
       ]
     },
