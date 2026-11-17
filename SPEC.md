@@ -332,19 +332,25 @@ The main object is **the position on the board**, not a joseki entry.
 ### 8.1 Layout
 
 ```
-┌───────────────┬───────────────────────────┬──────────────────────┐
-│ Empty corner  │ "3-3 invasion · Move 4 ·   │ Unsaved lines / save │
-│ Start of label│  Black to play"            │──────────────────────│
-│ Library search│                            │ Last move            │
-│───────────────│          BOARD             │  category, why       │
-│ Tree (moves)  │                            │  (Edit: category     │
-│───────────────│                            │   buttons, result,   │
-│ This position │  ⏮ ◀  Tenuki  ▶ ⏭           │   name, more fields) │
-│  label info,  │  edit tools (Edit mode)    │──────────────────────│
-│  result, notes│  view options              │ Next moves           │
-│               │                            │  [Black | White]     │
-└───────────────┴───────────────────────────┴──────────────────────┘
+┌──────────────────┬──────────────────────────────┬──────────────────────┐
+│ ⚑ Empty corner  ⟨│  3-3 invasion · hane         │⟩ (unsaved lines)     │
+│ ▾ Search         │  Move 6: White S15 · ● Black │ ▾ Position evaluation│
+│   search, tabs,  │                              │   Even ▬▬▬|▬▬▬       │
+│   filters, list  │          BOARD               │   explanation, watch │
+│ ▾ This joseki    │                              │   out, sticky notes  │
+│   title, path of │                              │ ▾ Last move ("why")  │
+│   names, go to   │  ⏮ ◀  Tenuki  ▶ ⏭             │ ▾ Tree of moves      │
+│   first move,    │  edit tools (Edit mode)      │ ▾ Next moves         │
+│   family, tags   │  view options                │   Joseki · Variations│
+│   ▸ Description  │                              │   · Mistakes & traps │
+│   ▸ More details │                              │                      │
+└──────────────────┴──────────────────────────────┴──────────────────────┘
 ```
+
+- Every card (▾) folds; "Description" and "More details" fold inside "This joseki". Open/closed state is remembered.
+- ⟨ and ⟩ hide the left and right panels; a thin rail brings them back and the board grows.
+- In Edit mode the right panel shows the edit card (category buttons, why, result, name) instead of "Position evaluation" and "Last move".
+- Message shapes: the "why" card is the largest, with a stripe in the move's category color, stone and coordinate, category pill and large text; "Watch out" is an amber card with a "!" badge; notes are yellow sticky notes.
 
 Responsive behavior: under 1100 px wide the info panel moves below the board.
 
@@ -353,7 +359,7 @@ Responsive behavior: under 1100 px wide the info panel moves below the board.
 - The menu button (or tapping the entry name above the board) opens a **drawer** with the modes, the library and the database switches.
 - The board fills the width. Orientation and view options are folded behind a "View" button.
 - A **bottom bar** holds the navigation (start, back, tenuki, forward, end) with 44 px touch targets, above the phone's safe area.
-- Below the board, tabs: **Next · Why (Edit) · Info · Tree**.
+- Below the board, the "why" card is always visible, then tabs: **Next · Position · Tree · About** (in Edit mode: **Edit · Next · Tree · About**).
 - **Swipe** on the board: left = forward, right = back.
 - Settings open as a bottom sheet.
 
@@ -556,6 +562,7 @@ The databases are filled by hand by the user, which is also how they practice, s
 | Category | Color | Symbol |
 |---|---|---|
 | main | green `#1e9e4a` | ● |
+| any good move that starts another named variation | its category color, **dashed ring** | ◌ |
 | alt | teal `#138f8c` | ● |
 | situational | yellow `#e0b000` | ◆ |
 | slack | gray `#7d858f` | ▼ |

@@ -124,7 +124,7 @@ export function Tree(props: {
               </>
             ) : (
               <>
-                <circle cx={x} cy={y} r="9" fill={fill} stroke={ring} stroke-width="3" stroke-dasharray={p.transposition || p.session ? '3 2' : undefined} />
+                <circle cx={x} cy={y} r="9" fill={fill} stroke={ring} stroke-width="3" stroke-dasharray={p.transposition || p.session || (p.tag && !p.pass && p.parent >= 0) ? '3 2' : undefined} />
                 <text x={x} y={y + 3.5} font-size="9" text-anchor="middle" fill={ink}>{p.transposition ? '⇄' : p.x}</text>
               </>
             )}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import {
-  ArrowLeftRight, BookOpen, ChevronLeft, ChevronRight, Contrast, Flag, Menu, Pencil, Plus, RotateCcw, Save,
+  ArrowLeftRight, ArrowRight, BookOpen, GitBranch, Grid3x3, MessageSquare, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Search, ChevronLeft, ChevronRight, Contrast, Flag, Menu, Pencil, Plus, RotateCcw, Save,
   Settings as SettingsIcon, SkipBack, SkipForward, SlidersHorizontal, Trash2, Upload, X,
 } from 'lucide-preact'
 import { loadDatabases, type DatabaseInfo } from './data/load'
@@ -16,7 +16,8 @@ import {
 import { collectMessages } from './messages'
 import { Board } from './ui/Board'
 import { Tree } from './ui/Tree'
-import { CategoryDot, LastMove, NextMoves, PositionInfo } from './ui/Panels'
+import { CategoryDot, JosekiInfo, LastMove, MoveMark, NextMoves, PositionEval, isVariation } from './ui/Panels'
+import { Card } from './ui/Card'
 import { type RefHandlers } from './ui/Rich'
 import { SettingsDialog } from './ui/SettingsDialog'
 import { Library } from './ui/Library'
@@ -81,7 +82,7 @@ export function App() {
   const [tool, setTool] = useState<Tool>('move')
   const [pending, setPending] = useState<Pt[]>([])
   const [refType, setRefType] = useState<string | null>(null)
-  const [phoneTab, setPhoneTab] = useState<'next' | 'why' | 'info' | 'tree'>('next')
+  const [phoneTab, setPhoneTab] = useState<'next' | 'pos' | 'tree' | 'about' | 'edit'>('next')
   const [toast, setToast] = useState<string | null>(null)
   const lastText = useRef<HTMLTextAreaElement | null>(null)
   // Board clicks that arrive before the screen caught up with the previous one wait for the next render.
@@ -485,11 +486,6 @@ export function App() {
       <button class={start.kind === 'empty' && path.length === 1 ? 'on' : ''} onClick={() => openStart({ kind: 'empty' })} title="Start again from an empty corner">
         <Flag size={15} /> Empty corner
       </button>
-      {label && labelStart(ctx, path, label) < path.length - 1 && (
-        <button onClick={() => openStart({ kind: 'label', id: label })} title="Go to the first move of this joseki">
-          <SkipBack size={15} /> Start of {entryName(label)}
-        </button>
-      )}
     </div>
   )
   const library = (
@@ -603,16 +599,18 @@ export function App() {
       </div>
     </div>
   )
-  const tree = (
-    <section class="tree-sec">
-      <h2>Moves</h2>
-      <div class="tree-box">
-        <Tree ctx={ctx} root={path[0]} path={path} defaultDb={databases[0]?.id ?? ''} onSelect={go} extra={extraChildren} tagOf={tagOf} />
-      </div>
-    </section>
+  const treeView = <Tree ctx={ctx} root={path[0]} path={path} defaultDb={databases[0]?.id ?? ''} onSelect={go} extra={extraChildren} tagOf={tagOf} />
+  const treeLegend = (
+    <div class="legend">
+      <span><MoveMark cat="main" />joseki</span>
+      <span><MoveMark cat="main" variation />new variation</span>
+      <span><MoveMark cat="mistake" />mistake</span>
+      <span>⚑ name starts</span>
+      <span class="unsaved">◌ unsaved</span>
+    </div>
   )
-  const positionInfo = <PositionInfo {...common} onOpenLabel={(id) => openStart({ kind: 'label', id })} />
-  const lastMovePanel = edit ? (
+  const onOpenLabel = (id: string) => openStart({ kind: 'label', id })
+  const editPanel = (
     <EditPanel
       ws={w}
       ctx={ctx}
@@ -628,22 +626,65 @@ export function App() {
         }
       }}
     />
-  ) : (
-    <LastMove {...common} onGoTo={(n) => go(path.slice(0, n + 1))} />
   )
-  const nextMoves = (
-    <NextMoves {...common} side={side} setSide={setSide} highlighted={highlighted} onHighlight={setHighlighted} onPlay={playCandidate} />
+  const nextSide = bothSides ? side : toPlay === -1 ? -1 : 1
+  const nextTitle = `Next moves${toPlay || bothSides ? ` · ${nextSide === 1 ? 'Black' : 'White'}` : ''}`
+  const lastCat = (() => {
+    const p0 = path.length > 1 ? path[path.length - 2] : null
+    const c = p0 && step.edge ? candidates(ctx, p0).find((x) => x.edge === step.edge) : undefined
+    return c?.cat ? CATEGORIES[c.cat].color : 'var(--line)'
+  })()
+  const nextMoves = <NextMoves {...common} side={side} setSide={setSide} highlighted={highlighted} onHighlight={setHighlighted} onPlay={playCandidate} />
+
+  /* Left: search + this joseki. Right: evaluation, last move, tree, next moves. Both can be hidden. */
+  const leftPanel = (
+    <aside class="side left" aria-label="Search and joseki information">
+      <div class="panel-head">
+        {startBar}
+        <button class="hide-btn" onClick={() => setSettings({ ...settings, hideLeft: true })} aria-label="Hide left panel"><PanelLeftClose size={16} /></button>
+      </div>
+      <Card id="search" title="Search positions" icon={<Search size={15} />}>{library}</Card>
+      <Card id="joseki" title={isShape ? 'This shape' : 'This joseki'} icon={<BookOpen size={15} />}>
+        <JosekiInfo {...common} onOpenLabel={onOpenLabel} />
+      </Card>
+    </aside>
+  )
+  const rightPanel = (
+    <aside class="side right" aria-label="Evaluation, last move, tree and next moves">
+      <div class="panel-head end">
+        <button class="hide-btn" onClick={() => setSettings({ ...settings, hideRight: true })} aria-label="Hide right panel"><PanelRightClose size={16} /></button>
+      </div>
+      {sessionBox}
+      {edit ? (
+        <Card id="edit" title={`Edit · into ${target}`} icon={<Pencil size={15} />} class="edit-card">{editPanel}</Card>
+      ) : (
+        <>
+          <Card id="eval" title="Position evaluation" icon={<Grid3x3 size={15} />}><PositionEval {...common} /></Card>
+          <Card id="last" title="Last move" icon={<MessageSquare size={15} />} class="why" style={{ '--cat': lastCat }}>
+            <LastMove {...common} onGoTo={(n) => go(path.slice(0, n + 1))} />
+          </Card>
+        </>
+      )}
+      <Card id="tree" title="Tree of moves" icon={<GitBranch size={15} />}>
+        <div class="tree-box">{treeView}</div>
+        {treeLegend}
+      </Card>
+      <Card id="next" title={nextTitle} icon={<ArrowRight size={15} />}>{nextMoves}</Card>
+    </aside>
   )
 
   const status = (
-    <div class="status">
+    <div class="title-row status">
       {phone ? (
         <button class="entry-title" onClick={() => setDrawer(true)}>{label ? entryName(label) : offBook ? 'Your own line' : 'Known position'}</button>
       ) : (
-        <span class="st-label">{label ? entryName(label) : offBook ? 'Your own line' : 'Known position'}</span>
+        <h2>{label ? entryName(label) : offBook ? 'Your own line' : 'Known position'}</h2>
       )}
       {offBook && <span class="offbook-pill">Free play</span>}
-      <span>{moveNo ? `Move ${moveNo}: ${lastName}` : 'Start'} · <b>{toPlay === 1 ? 'Black' : toPlay === -1 ? 'White' : bothSides ? (side === 1 ? 'Black' : 'White') : 'Either side'} to play</b></span>
+      <span class="turn">
+        {moveNo ? `Move ${moveNo}: ${lastName}` : 'Start'} · <span class={`stone-ico ${(toPlay || nextSide) === 1 ? 'b' : 'w'}`} aria-hidden />{' '}
+        <b>{toPlay === 1 ? 'Black' : toPlay === -1 ? 'White' : bothSides ? (side === 1 ? 'Black' : 'White') : 'Either side'} to play</b>
+      </span>
     </div>
   )
   const boardEl = (
@@ -661,6 +702,7 @@ export function App() {
           pt: c.pt!,
           sign: c.sign,
           showColor: false,
+          variation: isVariation(ctx, path, c, label),
           cat: c.cat,
           title: `${c.cat ? CATEGORIES[c.cat].label : 'Unclassified'}: ${c.label}`,
           highlight: highlighted === c.step.key,
@@ -676,41 +718,50 @@ export function App() {
     </div>
   )
 
+  const phoneTabs: [typeof phoneTab, string][] = edit
+    ? [['edit', 'Edit'], ['next', 'Next'], ['tree', 'Tree'], ['about', 'About']]
+    : [['next', 'Next'], ['pos', 'Position'], ['tree', 'Tree'], ['about', 'About']]
+  const tab = phoneTabs.some(([t]) => t === phoneTab) ? phoneTab : phoneTabs[0][0]
   const explore = phone ? (
     <>
-      <main class="pane center">
+      <main class="center">
         {status}
         {sideSwitch}
         {boardEl}
         {editToolbar}
+        {!edit && (
+          <section class="card why" style={{ '--cat': lastCat } as never}>
+            <div class="card-body"><LastMove {...common} onGoTo={(n) => go(path.slice(0, n + 1))} /></div>
+          </section>
+        )}
         <button class={`view-toggle ${viewOpen ? 'on' : ''}`} onClick={() => setViewOpen(!viewOpen)} aria-expanded={viewOpen}><SlidersHorizontal size={15} /> View</button>
         {viewOpen && viewOptions}
       </main>
-      <section class="pane phone-panels">
+      <section class="phone-panels">
         {sessionBox}
         <div class="seg phone-tabs" role="tablist">
-          {(['next', 'why', 'info', 'tree'] as const).map((t) => (
-            <button key={t} role="tab" aria-selected={phoneTab === t} class={phoneTab === t ? 'on' : ''} onClick={() => setPhoneTab(t)}>
-              {{ next: 'Next', why: edit ? 'Edit' : 'Why', info: 'Info', tree: 'Tree' }[t]}
-            </button>
+          {phoneTabs.map(([t, name]) => (
+            <button key={t} role="tab" aria-selected={tab === t} class={tab === t ? 'on' : ''} onClick={() => setPhoneTab(t)}>{name}</button>
           ))}
         </div>
-        {phoneTab === 'next' && nextMoves}
-        {phoneTab === 'why' && lastMovePanel}
-        {phoneTab === 'info' && positionInfo}
-        {phoneTab === 'tree' && tree}
+        <div class="card"><div class="card-body">
+          {tab === 'edit' && editPanel}
+          {tab === 'next' && nextMoves}
+          {tab === 'pos' && <PositionEval {...common} />}
+          {tab === 'tree' && <><div class="tree-box">{treeView}</div>{treeLegend}</>}
+          {tab === 'about' && <JosekiInfo {...common} onOpenLabel={onOpenLabel} />}
+        </div></div>
       </section>
       <div class="bottom-bar" role="toolbar" aria-label="Move navigation">{navButtons}</div>
     </>
   ) : (
     <>
-      <aside class="pane left">
-        {startBar}
-        {library}
-        {tree}
-        {positionInfo}
-      </aside>
-      <main class="pane center">
+      {settings.hideLeft ? (
+        <button class="rail left-rail" onClick={() => setSettings({ ...settings, hideLeft: false })} aria-label="Show left panel">
+          <PanelLeftOpen size={16} /><span>Search · Joseki</span>
+        </button>
+      ) : leftPanel}
+      <main class="center">
         {status}
         {sideSwitch}
         {boardEl}
@@ -718,16 +769,16 @@ export function App() {
         {editToolbar}
         {viewOptions}
       </main>
-      <aside class="pane right">
-        {sessionBox}
-        {lastMovePanel}
-        {nextMoves}
-      </aside>
+      {settings.hideRight ? (
+        <button class="rail right-rail" onClick={() => setSettings({ ...settings, hideRight: false })} aria-label="Show right panel">
+          <PanelRightOpen size={16} /><span>Evaluation · Moves</span>
+        </button>
+      ) : rightPanel}
     </>
   )
 
   return (
-    <div class={`layout ${phone ? 'phone' : ''} mode-${mode}`}>
+    <div class={`layout ${phone ? 'phone' : ''} mode-${mode} ${!phone && mode === 'explore' && settings.hideLeft ? 'hide-left' : ''} ${!phone && mode === 'explore' && settings.hideRight ? 'hide-right' : ''}`}>
       <header class="top">
         {phone && <button class="icon ghost" onClick={() => setDrawer(true)} aria-label="Open library and menu"><Menu size={20} /></button>}
         <h1><span class="logo" aria-hidden />Baduk Notebook</h1>

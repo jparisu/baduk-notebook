@@ -39,13 +39,13 @@ test('a transposition brings the known moves back', async ({ page }) => {
   await expect(page.locator('.offbook-pill')).toBeVisible()
   await clickPoint(page, 'R17')
   await expect(page.locator('.offbook-pill')).toHaveCount(0)
-  await expect(page.locator('.next-moves .cand').first()).toContainText('R15')
+  await expect(page.locator('.next-moves .mv').first()).toContainText('R15')
 })
 
 test('clicking a reference keeps its marks; clicking again hides them', async ({ page }) => {
   await page.locator('.item', { hasText: '3-3 invasion' }).first().click()
   for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowRight')
-  const ref = page.locator('.last-move .ref').first()
+  const ref = page.locator('.why-card .ref').first()
   const marks = () => page.locator('svg.board polygon').count()
   const base = await marks()
   await ref.click()

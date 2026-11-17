@@ -22,6 +22,8 @@ export interface Settings {
   quizRandom: boolean
   quizNewPerDay: number
   display: DisplayOptions
+  hideLeft: boolean
+  hideRight: boolean
   activeDatabases: string[] | null // null = use activeByDefault from db/index.json
 }
 
@@ -42,6 +44,8 @@ export const DEFAULT_SETTINGS: Settings = {
   quizRandom: true,
   quizNewPerDay: 10,
   display: { corner: 'tr', mirror: false, swap: false },
+  hideLeft: false,
+  hideRight: false,
   activeDatabases: null,
 }
 
