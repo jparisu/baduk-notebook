@@ -9,7 +9,7 @@ import { apply, ptName } from '../core/geometry'
 import { labelsAt } from '../core/graph'
 import type { Msg } from '../messages'
 import type { Settings } from '../settings'
-import { candidates, entryFields, frame, moveOf, inBook, labelStart, moveFields, positionFields, primaryLabel, type Candidate, type Ctx, type Step } from '../view'
+import { candidates, entryFields, frame, lineFields, moveOf, inBook, labelStart, moveFields, positionFields, primaryLabel, type Candidate, type Ctx, type Step } from '../view'
 import { CONDITION_ICONS, IconLabel, PURPOSE_ICONS, SHAPE_ICONS, STATUS_ICONS, STYLE_ICONS } from './icons'
 import { Rich, type RefHandlers } from './Rich'
 import { Fold } from './Card'
@@ -177,7 +177,7 @@ export function PositionEval(p: Common) {
   const { ctx, path } = p
   const step = path[path.length - 1]
   if (!inBook(ctx, step)) return <p class="hint">Not in your databases. Keep playing, or save your line.</p>
-  const pf = positionFields(ctx, step)
+  const pf = lineFields(ctx, path) // values inherited from earlier positions of the line count too
   const icons = p.settings.icons
   const ev = pf.one('XEV')?.value
   const pb = pf.one('XPB')?.value

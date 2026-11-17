@@ -1,7 +1,7 @@
 /** Collects the free-text messages shown for the current line (SPEC §8.5). */
 import type { Segment } from './core/refs'
 import type { Settings } from './settings'
-import { moveFields, positionFields, type Ctx, type Step } from './view'
+import { moveFields, positionFields, lineFields, type Ctx, type Step } from './view'
 import type { MessageKind } from './ui/Message'
 import { ptName, apply } from './core/geometry'
 import { frame, moveOf } from './view'
@@ -36,7 +36,8 @@ function forStep(ctx: Ctx, path: Step[], i: number, current: boolean, settings: 
     for (const t of mf.text('XMW')) out.push({ kind: 'move', title: `${name} · why`, db: t.db, segments: t.segments, step: i, place })
     if (current) for (const t of mf.text('XMN')) out.push({ kind: 'note', title: 'Note on the move', db: t.db, segments: t.segments, step: i, place: 'move' })
   }
-  const pf = positionFields(ctx, step)
+  // The current position shows inherited texts too; earlier positions only their own (no repeats).
+  const pf = current ? lineFields(ctx, path.slice(0, i + 1)) : positionFields(ctx, step)
   const place = current ? 'position' : 'history'
   for (const t of pf.text('XPW')) out.push({ kind: 'pos', title: current ? 'Position' : `${name} · position`, db: t.db, segments: t.segments, step: i, place })
   if (current) {

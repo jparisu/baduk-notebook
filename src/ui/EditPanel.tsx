@@ -9,7 +9,7 @@ import { sgfPoint } from '../edit/sgfio'
 import { locate, nameSequence, setProps, type Location } from '../edit/ops'
 import { isStartId, seqOf } from '../core/model'
 import type { Workspace } from '../edit/workspace'
-import { frame, primaryLabel, type Ctx, type Step } from '../view'
+import { INHERITED, frame, lineFields, primaryLabel, type Ctx, type Step } from '../view'
 
 const COLOR_PROPS = new Set(['XEV', 'XSEN', 'XPB'])
 const SWAP_PAIRS: Record<string, string> = { XSB: 'XSW', XSW: 'XSB', XRESB: 'XRESW', XRESW: 'XRESB' }
@@ -58,6 +58,17 @@ export function EditPanel(p: EditApi) {
   }
   const readList = (prop: string) => where(false)?.node.data[prop] ?? []
 
+  /** A value inherited from an earlier position of the line (shown greyed until you write your own). */
+  const lf = lineFields(ctx, path)
+  const inherited = (prop: string): { value: string; from: number } | null => {
+    if (!INHERITED.has(prop) || read(prop)) return null
+    const i = lf.source(prop)
+    if (i === null || i === path.length - 1) return null
+    const v = LIST_PROPS.has(prop) ? lf.list(prop).join(', ') : lf.one(prop)?.value ?? ''
+    return v ? { value: v, from: i } : null
+  }
+  const fromText = (i: number) => (i === 0 ? 'the start' : `move ${i}`)
+
   /** Values stored by other databases, shown as a hint under the field. */
   const others = (prop: string) => {
     const step = path[path.length - 1]
@@ -88,15 +99,17 @@ export function EditPanel(p: EditApi) {
     const id = opts.id ?? `f-${prop}`
     const hint = others(prop)
     const value = read(prop)
+    const inh = inherited(prop)
     return (
       <label class="f edit-f" key={id + value}>
         <span class="fl">{label}</span>
         <span class="fv">
           {opts.area ? (
-            <textarea id={id} defaultValue={value} placeholder={opts.placeholder} onFocus={(e) => p.onFocusText(e.currentTarget)} onBlur={(e) => e.currentTarget.value !== value && write(prop, e.currentTarget.value)} />
+            <textarea id={id} defaultValue={value} placeholder={inh ? `Inherited from ${fromText(inh.from)}: ${inh.value}` : opts.placeholder} onFocus={(e) => p.onFocusText(e.currentTarget)} onBlur={(e) => e.currentTarget.value !== value && write(prop, e.currentTarget.value)} />
           ) : (
-            <input id={id} type="text" defaultValue={value} placeholder={opts.placeholder} onBlur={(e) => e.currentTarget.value !== value && write(prop, e.currentTarget.value)} onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()} />
+            <input id={id} type="text" defaultValue={value} placeholder={inh ? `${inh.value} (inherited from ${fromText(inh.from)})` : opts.placeholder} onBlur={(e) => e.currentTarget.value !== value && write(prop, e.currentTarget.value)} onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()} />
           )}
+          {inh && <small class="hint inherited">↑ Inherited from {fromText(inh.from)}. Write here to change it from this move on.</small>}
           {hint && <small class="hint">{hint}</small>}
         </span>
       </label>
@@ -107,7 +120,7 @@ export function EditPanel(p: EditApi) {
       <span class="fl">{label}</span>
       <span class="fv">
         <select id={`f-${prop}`} value={read(prop)} onChange={(e) => write(prop, (e.target as HTMLSelectElement).value)}>
-          <option value="">—</option>
+          <option value="">{inherited(prop) ? `↑ ${options.find((o) => o[0] === inherited(prop)!.value)?.[1] ?? inherited(prop)!.value} (inherited from ${fromText(inherited(prop)!.from)})` : '—'}</option>
           {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
         {others(prop) && <small class="hint">{others(prop)}</small>}

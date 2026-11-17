@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Data model (docs/MODEL.md)
+- Position fields (points, evaluation, explanation, notes, tags, difficulty…) are inherited from the earlier positions of the line until a position sets its own; the editor shows where they come from. Move fields are never inherited.
 - Texts can say `{{Player}}`, `{{Opponent}}`, `{{Black}}`, `{{White}}`; they follow who moved and the Swap colors option. Every stored text now uses `{{Black}}` / `{{White}}` (scripts/player-words.ts).
 - The databases are JSON files of **positions** with a unique **id** (`joseki/4-4 point/3-3 invasion:5`); each move points to the id it leads to. A script converted the SGF files.
 - "Joseki" and "shape" are no longer separate kinds: the id (`joseki/…`, `life & death/…`) and nested **tags** organise everything.

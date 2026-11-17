@@ -3,6 +3,7 @@ import type { Graph, Contribution, Edge, PosNode } from './core/graph'
 import { edgeCategory, labelsAt, visibleEdges } from './core/graph'
 import { CATEGORY_ORDER, COLOR_PROPS, LIST_PROPS, TEXT_PROPS, flipValue, type Category } from './core/fields'
 import GoBoard from '@sabaki/go-board'
+import { isStartId } from './core/model'
 import { canonical } from './core/hash'
 import { apply, applySign, compose, inverse, parseSgfPtList, transformMap, type Pt, type Sign, type SignMap, type Transform } from './core/geometry'
 import { parseText, playerWords, propMarks, transformMarks, type Mark, type Segment } from './core/refs'
@@ -157,7 +158,7 @@ const fileToDisplay = (F: Transform, c: Contribution) => compose(F, c.toCanon)
 
 export class Fields {
   constructor(
-    private ctx: Ctx,
+    protected ctx: Ctx,
     private contribs: Contribution[],
     private F: Transform,
     private idPrefix: string,
@@ -220,6 +221,50 @@ export function isText(prop: string) {
 export function isList(prop: string) {
   return LIST_PROPS.has(prop)
 }
+
+/**
+ * Position fields that a position inherits from the earlier positions of the line until it sets its own
+ * value (docs/MODEL.md §1). Inheritance stops at the start of a sequence. Names, the joseki-end status,
+ * board marks and every move field are never inherited.
+ */
+export const INHERITED = new Set(['XPB', 'XPBS', 'XEV', 'XSEN', 'XPW', 'XRES', 'XTEN', 'XAJI', 'XPN', 'XTAG', 'XDIFF', 'XSB', 'XSW', 'XEYE', 'XLIB'])
+
+const startsSequence = (ctx: Ctx, step: Step) => node(ctx, step).contribs.some((c) => ctx.active.has(c.db) && isStartId(c.pos.id))
+
+/** Fields of the last position of `path`, with inherited values. */
+export class LineFields extends Fields {
+  constructor(ctx: Ctx, private path: Step[]) {
+    const s = path[path.length - 1]
+    super(ctx, node(ctx, s).contribs, frame(ctx, s), `p:${s.key}`, node(ctx, s).toMove)
+  }
+  /** Index in the line of the position the value comes from (the last one when it is its own), or null. */
+  source(prop: string): number | null {
+    const last = this.path.length - 1
+    for (let i = last; i >= 0; i--) {
+      const own = positionFields(this.ctx, this.path[i])
+      if (own.one(prop) || own.list(prop).length) return i
+      if (!INHERITED.has(prop) || startsSequence(this.ctx, this.path[i])) return null
+    }
+    return null
+  }
+  private at(prop: string): Fields | null {
+    const i = this.source(prop)
+    return i === null ? null : i === this.path.length - 1 ? null : positionFields(this.ctx, this.path[i])
+  }
+  one(prop: string) {
+    const f = this.at(prop)
+    return f ? f.one(prop) : super.one(prop)
+  }
+  text(prop: string) {
+    const f = this.at(prop)
+    return f ? f.text(prop) : super.text(prop)
+  }
+  list(prop: string) {
+    const f = this.at(prop)
+    return f ? f.list(prop) : super.list(prop)
+  }
+}
+export const lineFields = (ctx: Ctx, path: Step[]) => new LineFields(ctx, path)
 
 export const positionFields = (ctx: Ctx, step: Step) => new Fields(ctx, node(ctx, step).contribs, frame(ctx, step), `p:${step.key}`, node(ctx, step).toMove)
 export function moveFields(ctx: Ctx, parent: Step, edge: Edge) {

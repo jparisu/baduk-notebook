@@ -21,6 +21,13 @@ A position is the stones on a local area of the board plus **who plays next**.
 | `extra` | Other details, with their SGF-style names: summary (`XSUM`), aliases, sources, evaluation symbol (`XEV`), status (`XST`), life & death results (`XSB`, `XSW`…), board marks (`TR`, `SQ`, `AR`…). |
 | `moves` | The moves from this position (§2). |
 
+**Inherited fields:** a position without its own value shows the value of the closest earlier position of
+the line you played, until it sets its own. This holds for points, points source, evaluation, sente,
+explanation, outcome, tenuki, aji, note, tags, difficulty and the life & death results. Names, the
+joseki-end status, board marks and every move field are not inherited. Inheritance stops at the start
+of a sequence (a named variation does not inherit the notes of the joseki it leaves). Nothing is
+copied: clearing your own value brings the inherited one back.
+
 **Same position:** two positions are the same when one is a rotation or reflection of the other
 (8 symmetries), with the same colors and the same player to move. Colors are **not** swapped.
 Black to play and White to play, with the same stones, are different positions. A tenuki move

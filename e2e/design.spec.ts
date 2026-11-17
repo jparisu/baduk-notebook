@@ -82,3 +82,10 @@ test('Only new shows the start position and only the moves added in Design', asy
   await page.locator('.ctx-menu').getByRole('menuitem', { name: 'Mistake', exact: true }).click()
   await expect(page.locator('.dtree-canvas .tree-node')).toHaveCount(3) // still new after it is stored
 })
+
+test('position fields show the value inherited from earlier moves until you write your own', async ({ page }) => {
+  await openDesign(page, './?open=joseki/4-4+point')
+  await clickPoint(page, 'S12') // a new move: the position has no explanation of its own
+  await page.locator('.design-info').getByRole('tab', { name: 'Position' }).click()
+  await expect(page.locator('.design-info .hint.inherited').first()).toContainText('Inherited from the start')
+})

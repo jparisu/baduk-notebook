@@ -839,3 +839,4 @@ button.link.small { font-size: 12px; display: inline-flex; align-items: center; 
 /* The tree keeps a fixed size: moving along it scrolls inside, the panel never jumps. */
 .tree-box.fixed { height: 220px; max-height: none; overflow: auto; }
 .layout:not(.phone) .side.right .tree-box.fixed { height: 230px; }
+.hint.inherited { color: var(--accent); }
