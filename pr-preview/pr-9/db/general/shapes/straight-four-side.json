@@ -7,7 +7,12 @@
       "free": "horizontal",
       "name": "Straight four · side · enclosed",
       "tags": [
-        "eye shape"
+        "eye shape",
+        "eye space/4 points",
+        "surrounded/full",
+        "outside liberties/0",
+        "inside stones/0",
+        "arrangement/connected"
       ],
       "notes": "{{SQ:T13,T14,T15,T16|The 4-point eye space}} has {{CR:T14,T15|two middle points}}. {{White}} can take only one of them.",
       "eval": {
@@ -17,29 +22,22 @@
         "XSUM": "Four points in a row. Alive even if {{White}} plays first: {{Black}} always answers on the other middle point.",
         "XSB": "alive",
         "XSW": "alive",
-        "XRESB": "alive",
-        "XRESW": "alive",
         "XEYE": "One eye space of 4 points",
-        "XLIB": "0 outside liberties",
-        "XSIZE": "4",
-        "XSURR": "full",
-        "XOLIB": "0",
-        "XINSIDE": "0",
-        "XARR": "connected",
-        "XREG": "qb:si"
+        "XLIB": "0 outside liberties"
       },
       "moves": [
         {
           "move": "tenuki",
-          "to": "life & death/Straight four/Side, enclosed:1"
+          "to": "life & death/Straight four/Side, enclosed/White first"
         }
       ]
     },
     {
-      "id": "life & death/Straight four/Side, enclosed:2",
+      "id": "life & death/Straight four/Side, enclosed/White first/White T14",
       "stones": "B:rc,rd,re,rf,rg,rh,sc,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,sf,si",
       "toPlay": "B",
       "free": "horizontal",
+      "name": "White T14",
       "extra": {
         "XSB": "alive",
         "XSW": "alive"
@@ -47,34 +45,35 @@
       "moves": [
         {
           "move": "se",
-          "to": "life & death/Straight four/Side, enclosed:3",
+          "to": "life & death/Straight four/Side, enclosed/White first:3b",
           "status": "main",
           "why": "Takes the other middle point. Two eyes."
         }
       ]
     },
     {
-      "id": "life & death/Straight four/Side, enclosed:1",
+      "id": "life & death/Straight four/Side, enclosed/White first",
       "stones": "B:rc,rd,re,rf,rg,rh,sc,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,si",
       "toPlay": "W",
       "free": "horizontal",
+      "name": "White first",
       "moves": [
         {
           "move": "sf",
-          "to": "life & death/Straight four/Side, enclosed:2",
+          "to": "life & death/Straight four/Side, enclosed/White first/White T14",
           "status": "mistake",
           "why": "Takes one middle point."
         },
         {
           "move": "se",
-          "to": "life & death/Straight four/Side, enclosed:2b",
+          "to": "life & death/Straight four/Side, enclosed/White first/White T15",
           "status": "mistake",
           "why": "Takes the other middle point."
         }
       ]
     },
     {
-      "id": "life & death/Straight four/Side, enclosed:3",
+      "id": "life & death/Straight four/Side, enclosed/White first:3b",
       "stones": "B:rc,rd,re,rf,rg,rh,sc,se,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,sf,si",
       "toPlay": "W",
       "free": "horizontal",
@@ -86,10 +85,11 @@
       "moves": []
     },
     {
-      "id": "life & death/Straight four/Side, enclosed:2b",
+      "id": "life & death/Straight four/Side, enclosed/White first/White T15",
       "stones": "B:rc,rd,re,rf,rg,rh,sc,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,se,si",
       "toPlay": "B",
       "free": "horizontal",
+      "name": "White T15",
       "extra": {
         "XSB": "alive",
         "XSW": "alive"
@@ -97,14 +97,14 @@
       "moves": [
         {
           "move": "sf",
-          "to": "life & death/Straight four/Side, enclosed:3b",
+          "to": "life & death/Straight four/Side, enclosed/White first:3",
           "status": "main",
           "why": "Takes the remaining middle point. Two eyes."
         }
       ]
     },
     {
-      "id": "life & death/Straight four/Side, enclosed:3b",
+      "id": "life & death/Straight four/Side, enclosed/White first:3",
       "stones": "B:rc,rd,re,rf,rg,rh,sc,sf,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,se,si",
       "toPlay": "W",
       "free": "horizontal",

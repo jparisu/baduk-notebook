@@ -8,7 +8,12 @@
       "name": "Square four · side · enclosed",
       "tags": [
         "eye shape",
-        "dead shape"
+        "dead shape",
+        "eye space/4 points",
+        "surrounded/full",
+        "outside liberties/0",
+        "inside stones/0",
+        "arrangement/connected"
       ],
       "notes": "{{SQ:T15,T16,S15,S16|The square}} is a single eye. {{Black}} has no move that splits it.",
       "eval": {
@@ -25,31 +30,24 @@
         "XSRC": "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search.",
         "XSB": "dead",
         "XSW": "dead",
-        "XRESB": "dead",
-        "XRESW": "dead",
         "XEYE": "One eye space of 4 points",
-        "XLIB": "0 outside liberties",
-        "XSIZE": "4",
-        "XSURR": "full",
-        "XOLIB": "0",
-        "XINSIDE": "0",
-        "XARR": "connected",
-        "XREG": "pb:sg"
+        "XLIB": "0 outside liberties"
       },
       "moves": [
         {
           "move": "rd",
-          "to": "life & death/Square four/Side, enclosed:1",
+          "to": "life & death/Square four/Side, enclosed/Black S16",
           "status": "mistake",
           "why": "Any {{Black}} move inside leaves a bent three."
         }
       ]
     },
     {
-      "id": "life & death/Square four/Side, enclosed:1",
+      "id": "life & death/Square four/Side, enclosed/Black S16",
       "stones": "B:qc,qd,qe,qf,rc,rd,rf,sc,sf W:pb,pc,pd,pe,pf,pg,qb,qg,rb,rg,sb,sg",
       "toPlay": "W",
       "free": "horizontal",
+      "name": "Black S16",
       "extra": {
         "XSB": "alive",
         "XSW": "dead"
@@ -57,14 +55,14 @@
       "moves": [
         {
           "move": "se",
-          "to": "life & death/Square four/Side, enclosed:2",
+          "to": "life & death/Square four/Side, enclosed/Black S16:2",
           "status": "main",
           "why": "Takes the vital point of the bent three."
         }
       ]
     },
     {
-      "id": "life & death/Square four/Side, enclosed:2",
+      "id": "life & death/Square four/Side, enclosed/Black S16:2",
       "stones": "B:qc,qd,qe,qf,rc,rd,rf,sc,sf W:pb,pc,pd,pe,pf,pg,qb,qg,rb,rg,sb,se,sg",
       "toPlay": "B",
       "free": "horizontal",
