@@ -7,7 +7,7 @@
 
 
 ### Layout and data fixes
-- Tree of moves: three modes, Linear (only this line), Proximity (the line plus the alternatives to the current move and the options after it) and Complete (the whole tree), and a zoom with − / +; both remembered. Own scroll, lines with more contrast, white stones white again.
+- Tree of moves: three modes, Linear (only this line), Proximity (the line plus the other options after the current move) and Complete (the whole tree), and a zoom with − / +; both remembered. Own scroll, lines with more contrast, white stones white again.
 - "Save lines (n)" moved to the top bar; "back to the database" and "erase" sit next to the "Free play" label. The session box is gone.
 - Position evaluation moved to the left panel, under This joseki.
 - Desktop fits on one screen (tested at 1366×768, 1440×900, 1920×1080): each column scrolls on its own and the board follows the window height.

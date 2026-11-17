@@ -641,7 +641,7 @@ export function App() {
   const treeToolbar = (
     <div class="tree-toolbar">
       <div class="seg" role="group" aria-label="Tree mode">
-        {([['linear', 'Linear', 'Only this line: the moves before and ahead'], ['proximity', 'Proximity', 'This line plus the alternatives to the current move and the options after it'], ['complete', 'Complete', 'The whole tree from the start of the line']] as const).map(([m, name, help]) => (
+        {([['linear', 'Linear', 'Only this line: the moves before and ahead'], ['proximity', 'Proximity', 'This line plus the other options after the current move'], ['complete', 'Complete', 'The whole tree from the start of the line']] as const).map(([m, name, help]) => (
           <button key={m} class={settings.treeMode === m ? 'on' : ''} title={help} aria-pressed={settings.treeMode === m} onClick={() => setSettings({ ...settings, treeMode: m })}>{name}</button>
         ))}
       </div>

@@ -351,7 +351,7 @@ The main object is **the position on the board**, not a joseki entry.
 - Position evaluation sits in the left panel under This joseki. "Save lines (n)" is in the top bar; "back to the database" and "erase" sit next to the "Free play" label.
 - The tree of moves has three modes and a zoom (− / +), both remembered:
   - **Linear**: only the current line, the moves before and the moves ahead (moves you stepped back over, otherwise the main line; ahead is dashed).
-  - **Proximity** (default): the line plus the neighbours of the current move: its alternatives (below it) and the options after it (below the next column), without their own continuations.
+  - **Proximity** (default): the line plus the other options after the current move, below the next column, without their own continuations. Alternatives at the current move's depth are not shown: at E in A-B-E-F the tree shows A-B-E-F; at B it shows A-B-C/E-D.
   - **Complete**: the whole tree from the start of the line.
   It is at most 240 px tall with its own scroll, and the current move is kept in view.
 - On desktop the whole screen fits the window: each column scrolls on its own and the board follows the window height.

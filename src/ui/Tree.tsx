@@ -1,7 +1,7 @@
 /**
  * Tree of moves (SPEC §8.6) with three modes and a zoom:
  * - linear:    the current line, before and ahead, in one row;
- * - proximity: the line plus the neighbours of the current move (its alternatives and the options after it);
+ * - proximity: the line plus the other options after the current move (without their continuations);
  * - complete:  the whole tree from the start of the line.
  */
 import { CATEGORIES, type Category } from '../core/fields'
@@ -112,7 +112,6 @@ export function Tree(props: Props) {
     last.more = candidates(ctx, last.step).length > 0
 
     if (mode === 'proximity') {
-      // Alternatives to the current move (siblings), one column; options after it (children), next column.
       const branch = (parentIdx: number, parentStep: Step, base: Step[], skipKey: string | null, x: number) => {
         const cands = candidates(ctx, parentStep)
         const known = new Set(cands.map((c) => c.step.key))
@@ -126,7 +125,7 @@ export function Tree(props: Props) {
         }
         rows = Math.max(rows, y)
       }
-      if (path.length > 1) branch(cur - 1, path[path.length - 2], path.slice(0, -1), path[path.length - 1].key, cur)
+      // Only the other options after the current move; not the alternatives at its own depth.
       branch(cur, path[path.length - 1], path, props.forward[0]?.key ?? null, cur + 1)
     }
   }

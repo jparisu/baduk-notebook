@@ -130,3 +130,17 @@ test('fits on a 1366×768 screen without scrolling the page', async ({ page }) =
   await page.waitForTimeout(200)
   expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(768)
 })
+
+test('proximity shows the line and only the other options after the current move', async ({ page }) => {
+  // A-B-C… is the main line; at B the alternatives after it appear, but not their continuations.
+  await page.goto('./?line=pd.qc.pc.qd.qe')
+  await page.locator('.tree-toolbar').getByRole('button', { name: 'Proximity' }).click()
+  const col = async (n: number) => page.locator('.tree-box .tree-node', { has: page.locator(`text="${n}"`) }).count()
+  // Move 5 (B R15, hane) has one alternative at its depth in the database (W tenuki answers etc. are at 6):
+  // nothing else may appear in column 5 besides the line itself.
+  expect(await col(5)).toBe(1)
+  // Column 6: the main move (S15) and the other White options after the hane.
+  expect(await col(6)).toBeGreaterThan(1)
+  // Nothing after the alternatives: column 7 only has the line.
+  expect(await col(7)).toBe(1)
+})
