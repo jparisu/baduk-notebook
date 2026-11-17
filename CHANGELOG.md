@@ -4,7 +4,8 @@
 
 ### Data model (docs/MODEL.md)
 - One set of move categories for everything: Main move, Alternative, Situational, Slack, Mistake, Overplay, Trick play, Punishment (shape moves: correct → main, wrong → mistake, ko → situational). The editor shows the same fields for every position.
-- Each shape is one family with its variations: `life & death/Bent four/Corner`, `life & death/Bent four/Side, enclosed`.
+- Each shape is one family, and its variations are named sequences inside it: `life & death/Bent four/Corner`, `…/Corner/Black vital point`, `…/Corner/White first`, `…/Corner/White first/White vital point`.
+- No shape-only fields remain: "Black first / White first" are the general *If Black / White plays next* results, the vital point is the named main move, and size, surroundings, liberties, inside stones, arrangement and ko type became nested tags (`eye space/4 points`, `ko/direct`…). Joseki and life & death differ only by the first part of their id.
 - Position fields (points, evaluation, explanation, notes, tags, difficulty…) are inherited from the earlier positions of the line until a position sets its own; the editor shows where they come from. Move fields are never inherited.
 - Texts can say `{{Player}}`, `{{Opponent}}`, `{{Black}}`, `{{White}}`; they follow who moved and the Swap colors option. Every stored text now uses `{{Black}}` / `{{White}}` (scripts/player-words.ts).
 - The databases are JSON files of **positions** with a unique **id** (`joseki/4-4 point/3-3 invasion:5`); each move points to the id it leads to. A script converted the SGF files.

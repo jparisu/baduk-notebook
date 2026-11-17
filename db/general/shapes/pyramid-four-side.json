@@ -8,7 +8,12 @@
       "name": "Pyramid four · side · enclosed",
       "tags": [
         "eye shape",
-        "killable eye shape"
+        "killable eye shape",
+        "eye space/4 points",
+        "surrounded/full",
+        "outside liberties/0",
+        "inside stones/0",
+        "arrangement/connected"
       ],
       "notes": "{{SQ:T14,T15,T16,S15|The pyramid}}. {{CR:T15|The center point}} touches the other three.",
       "eval": {
@@ -25,36 +30,28 @@
         "XSRC": "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search.",
         "XSB": "alive",
         "XSW": "dead",
-        "XRESB": "alive",
-        "XRESW": "dead",
         "XEYE": "One eye space of 4 points",
-        "XLIB": "0 outside liberties",
-        "XSIZE": "4",
-        "XSURR": "full",
-        "XOLIB": "0",
-        "XINSIDE": "0",
-        "XARR": "connected",
-        "XVITAL": "se",
-        "XREG": "pb:sh"
+        "XLIB": "0 outside liberties"
       },
       "moves": [
         {
           "move": "se",
-          "to": "life & death/Pyramid four/Side, enclosed:1",
+          "to": "life & death/Pyramid four/Side, enclosed/Black vital point",
           "status": "main",
           "why": "Takes the vital point: three separate single-point eyes."
         },
         {
           "move": "tenuki",
-          "to": "life & death/Pyramid four/Side, enclosed:1b"
+          "to": "life & death/Pyramid four/Side, enclosed/White first"
         }
       ]
     },
     {
-      "id": "life & death/Pyramid four/Side, enclosed:1",
+      "id": "life & death/Pyramid four/Side, enclosed/Black vital point",
       "stones": "B:qd,qe,qf,rc,rd,rf,rg,sc,se,sg W:pc,pd,pe,pf,pg,qb,qc,qg,qh,rb,rh,sb,sh",
       "toPlay": "W",
       "free": "horizontal",
+      "name": "Black vital point",
       "extra": {
         "XSB": "alive",
         "XSW": "alive",
@@ -63,10 +60,11 @@
       "moves": []
     },
     {
-      "id": "life & death/Pyramid four/Side, enclosed:2",
+      "id": "life & death/Pyramid four/Side, enclosed/White first/White vital point",
       "stones": "B:qd,qe,qf,rc,rd,rf,rg,sc,sg W:pc,pd,pe,pf,pg,qb,qc,qg,qh,rb,rh,sb,se,sh",
       "toPlay": "B",
       "free": "horizontal",
+      "name": "White vital point",
       "extra": {
         "XSB": "dead",
         "XSW": "dead",
@@ -75,30 +73,32 @@
       "moves": []
     },
     {
-      "id": "life & death/Pyramid four/Side, enclosed:1b",
+      "id": "life & death/Pyramid four/Side, enclosed/White first",
       "stones": "B:qd,qe,qf,rc,rd,rf,rg,sc,sg W:pc,pd,pe,pf,pg,qb,qc,qg,qh,rb,rh,sb,sh",
       "toPlay": "W",
       "free": "horizontal",
+      "name": "White first",
       "moves": [
         {
           "move": "se",
-          "to": "life & death/Pyramid four/Side, enclosed:2",
+          "to": "life & death/Pyramid four/Side, enclosed/White first/White vital point",
           "status": "main",
           "why": "Takes the vital point. {{Black}} can make only one eye."
         },
         {
           "move": "re",
-          "to": "life & death/Pyramid four/Side, enclosed:2b",
+          "to": "life & death/Pyramid four/Side, enclosed/White first/White S15",
           "status": "mistake",
           "why": "Misses the vital point."
         }
       ]
     },
     {
-      "id": "life & death/Pyramid four/Side, enclosed:2b",
+      "id": "life & death/Pyramid four/Side, enclosed/White first/White S15",
       "stones": "B:qd,qe,qf,rc,rd,rf,rg,sc,sg W:pc,pd,pe,pf,pg,qb,qc,qg,qh,rb,re,rh,sb,sh",
       "toPlay": "B",
       "free": "horizontal",
+      "name": "White S15",
       "extra": {
         "XSB": "alive",
         "XSW": "dead"
@@ -106,7 +106,7 @@
       "moves": [
         {
           "move": "se",
-          "to": "life & death/Pyramid four/Side, enclosed:1",
+          "to": "life & death/Pyramid four/Side, enclosed/Black vital point",
           "status": "main",
           "why": "{{Black}} takes it and lives."
         }

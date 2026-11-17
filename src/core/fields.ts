@@ -7,12 +7,12 @@ export const MOVE_PROPS = new Set(['B', 'W', 'XCAT', 'XSTY', 'XPUR', 'XCOND', 'X
 /** Entry properties (root node only). */
 export const ENTRY_PROPS = new Set([
   'XID', 'XTYPE', 'XNAME', 'XALIAS', 'XDIFF', 'XTAG', 'XSUM', 'XSRC', 'XFAM', 'XERA', 'XSTART',
-  'XSIZE', 'XLOC', 'XSURR', 'XOLIB', 'XINSIDE', 'XARR', 'XRESB', 'XRESW', 'XVITAL', 'XKOT', 'XRULE', 'XREG',
+  'XRULE',
 ])
 /** Free-text fields: every database's value is shown (SPEC §3.3). */
 export const TEXT_PROPS = new Set(['XMW', 'XMN', 'XPW', 'XPN', 'XAJI', 'XTEN', 'XRES', 'XSUM', 'XRULE', 'C'])
 /** List fields: values from all databases are joined. */
-export const LIST_PROPS = new Set(['XALIAS', 'XTAG', 'XSRC', 'XPUR', 'XCOND', 'XERA', 'XVITAL'])
+export const LIST_PROPS = new Set(['XALIAS', 'XTAG', 'XSRC', 'XPUR', 'XCOND', 'XERA'])
 
 /** One set of move categories for every position (joseki and life & death alike). */
 export type Category = 'main' | 'alt' | 'situational' | 'slack' | 'mistake' | 'overplay' | 'trick' | 'punish'
@@ -80,7 +80,6 @@ export function flipValue(prop: string, v: string): string {
     const n = Number(v)
     return Number.isFinite(n) ? String(-n) : v
   }
-  if (prop === 'XRESB') return v
   return v
 }
 export const COLOR_PROPS = new Set(['XEV', 'XSEN', 'XPB'])

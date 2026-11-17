@@ -18,7 +18,7 @@ A position is the stones on a local area of the board plus **who plays next**.
 | `name` | Optional display name. Defaults to the last part of the sequence ("3-3 invasion"). |
 | `eval` | Optional: `balance` (points, from Black's view, local), `difficulty` (kyu/dan), `status` for life & death (`alive`, `dead`, `ko`, `seki`, `unsettled`). |
 | `notes` | Free text, with board marks (triangles, arrows, influence…). |
-| `extra` | Other details, with their SGF-style names: summary (`XSUM`), aliases, sources, evaluation symbol (`XEV`), status (`XST`), life & death results (`XSB`, `XSW`…), board marks (`TR`, `SQ`, `AR`…). |
+| `extra` | Other details, with their SGF-style names: summary (`XSUM`), aliases, sources, evaluation symbol (`XEV`), status (`XST`), results if Black / White plays next (`XSB`, `XSW`), eyes, liberties, rules note, board marks (`TR`, `SQ`, `AR`…). The same fields exist for every position: joseki and life & death differ only by the first part of their id. |
 | `moves` | The moves from this position (§2). |
 
 **Inherited fields:** a position without its own value shows the value of the closest earlier position of

@@ -7,7 +7,12 @@
       "free": "horizontal",
       "name": "Straight three · side · enclosed",
       "tags": [
-        "eye shape"
+        "eye shape",
+        "eye space/3 points",
+        "surrounded/full",
+        "outside liberties/0",
+        "inside stones/0",
+        "arrangement/connected"
       ],
       "notes": "{{SQ:T14,T15,T16|The 3-point eye space}}. {{CR:T15|The middle point}} is the vital point.",
       "eval": {
@@ -17,42 +22,34 @@
         "XSUM": "Three points in a row on the edge. Whoever plays the middle point decides the result.",
         "XSB": "alive",
         "XSW": "dead",
-        "XRESB": "alive",
-        "XRESW": "dead",
         "XEYE": "One eye space of 3 points",
-        "XLIB": "0 outside liberties",
-        "XSIZE": "3",
-        "XSURR": "full",
-        "XOLIB": "0",
-        "XINSIDE": "0",
-        "XARR": "connected",
-        "XVITAL": "se",
-        "XREG": "qb:sh"
+        "XLIB": "0 outside liberties"
       },
       "moves": [
         {
           "move": "se",
-          "to": "life & death/Straight three/Side, enclosed:1",
+          "to": "life & death/Straight three/Side, enclosed/Black vital point",
           "status": "main",
           "why": "Takes the vital point and splits the space into two eyes."
         },
         {
           "move": "tenuki",
-          "to": "life & death/Straight three/Side, enclosed:1b"
+          "to": "life & death/Straight three/Side, enclosed/White first"
         },
         {
           "move": "sf",
-          "to": "life & death/Straight three/Side, enclosed:1c",
+          "to": "life & death/Straight three/Side, enclosed/Black T14",
           "status": "mistake",
           "why": "{{White}} answers at {{CR:T15}} and {{Black}} has only one eye."
         }
       ]
     },
     {
-      "id": "life & death/Straight three/Side, enclosed:1",
+      "id": "life & death/Straight three/Side, enclosed/Black vital point",
       "stones": "B:rc,rd,re,rf,rg,sc,se,sg W:qb,qc,qd,qe,qf,qg,qh,rb,rh,sb,sh",
       "toPlay": "W",
       "free": "horizontal",
+      "name": "Black vital point",
       "extra": {
         "XSB": "alive",
         "XSW": "alive",
@@ -61,10 +58,11 @@
       "moves": []
     },
     {
-      "id": "life & death/Straight three/Side, enclosed:2",
+      "id": "life & death/Straight three/Side, enclosed/White first/White vital point",
       "stones": "B:rc,rd,re,rf,rg,sc,sg W:qb,qc,qd,qe,qf,qg,qh,rb,rh,sb,se,sh",
       "toPlay": "B",
       "free": "horizontal",
+      "name": "White vital point",
       "extra": {
         "XSB": "dead",
         "XSW": "dead",
@@ -73,24 +71,26 @@
       "moves": []
     },
     {
-      "id": "life & death/Straight three/Side, enclosed:1b",
+      "id": "life & death/Straight three/Side, enclosed/White first",
       "stones": "B:rc,rd,re,rf,rg,sc,sg W:qb,qc,qd,qe,qf,qg,qh,rb,rh,sb,sh",
       "toPlay": "W",
       "free": "horizontal",
+      "name": "White first",
       "moves": [
         {
           "move": "se",
-          "to": "life & death/Straight three/Side, enclosed:2",
+          "to": "life & death/Straight three/Side, enclosed/White first/White vital point",
           "status": "main",
           "why": "Takes the vital point. {{Black}} can make only one eye."
         }
       ]
     },
     {
-      "id": "life & death/Straight three/Side, enclosed:1c",
+      "id": "life & death/Straight three/Side, enclosed/Black T14",
       "stones": "B:rc,rd,re,rf,rg,sc,sf,sg W:qb,qc,qd,qe,qf,qg,qh,rb,rh,sb,sh",
       "toPlay": "W",
       "free": "horizontal",
+      "name": "Black T14",
       "extra": {
         "XSB": "dead",
         "XSW": "dead"

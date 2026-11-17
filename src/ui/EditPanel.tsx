@@ -12,8 +12,8 @@ import type { Workspace } from '../edit/workspace'
 import { INHERITED, frame, lineFields, primaryLabel, type Ctx, type Step } from '../view'
 
 const COLOR_PROPS = new Set(['XEV', 'XSEN', 'XPB'])
-const SWAP_PAIRS: Record<string, string> = { XSB: 'XSW', XSW: 'XSB', XRESB: 'XRESW', XRESW: 'XRESB' }
-const POINT_PROPS = new Set(['XVITAL'])
+const SWAP_PAIRS: Record<string, string> = { XSB: 'XSW', XSW: 'XSB' }
+const POINT_PROPS = new Set<string>()
 const LIST_PROPS = new Set(['XALIAS', 'XTAG', 'XSRC', 'XCOND'])
 const STD_MARKS = (c: string | undefined) => ({
   TE: c && ['main', 'alt', 'punish'].includes(c) ? ['1'] : null,
@@ -231,9 +231,6 @@ export function EditPanel(p: EditApi) {
                 {field('XALIAS', 'Also called', { placeholder: 'comma separated' })}
                 {field('XTAG', 'Tags', { placeholder: 'comma separated' })}
                 {field('XSRC', 'Sources', { placeholder: 'comma separated' })}
-                {select('XRESB', 'Black first', status)}
-                {select('XRESW', 'White first', status)}
-                {field('XVITAL', 'Vital points', { placeholder: 'e.g. T15' })}
               </>
             )}
           </>
@@ -277,9 +274,6 @@ export function EditPanel(p: EditApi) {
               {field('XTAG', 'Tags', { placeholder: 'comma separated' })}
               {field('XSRC', 'Sources', { placeholder: 'comma separated' })}
               {chips('XERA', 'Era', ['classic', 'modern', 'ai'])}
-              {select('XRESB', 'Black first', status)}
-              {select('XRESW', 'White first', status)}
-              {field('XVITAL', 'Vital points', { placeholder: 'e.g. T15' })}
             </>
           )}
         </section>

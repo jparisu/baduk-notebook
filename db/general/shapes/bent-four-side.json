@@ -7,7 +7,12 @@
       "free": "horizontal",
       "name": "Bent four · side · enclosed",
       "tags": [
-        "eye shape"
+        "eye shape",
+        "eye space/4 points",
+        "surrounded/full",
+        "outside liberties/0",
+        "inside stones/0",
+        "arrangement/connected"
       ],
       "notes": "{{SQ:T16,T15,T14,S14|The 4-point eye space}} has {{CR:T15,T14|two middle points}}. {{White}} can take only one of them.",
       "eval": {
@@ -24,29 +29,22 @@
         "XSRC": "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search.",
         "XSB": "alive",
         "XSW": "alive",
-        "XRESB": "alive",
-        "XRESW": "alive",
         "XEYE": "One eye space of 4 points",
-        "XLIB": "0 outside liberties",
-        "XSIZE": "4",
-        "XSURR": "full",
-        "XOLIB": "0",
-        "XINSIDE": "0",
-        "XARR": "connected",
-        "XREG": "pb:sh"
+        "XLIB": "0 outside liberties"
       },
       "moves": [
         {
           "move": "tenuki",
-          "to": "life & death/Bent four/Side, enclosed:1"
+          "to": "life & death/Bent four/Side, enclosed/White first"
         }
       ]
     },
     {
-      "id": "life & death/Bent four/Side, enclosed:2",
+      "id": "life & death/Bent four/Side, enclosed/White first/White T15",
       "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,se,sh",
       "toPlay": "B",
       "free": "horizontal",
+      "name": "White T15",
       "extra": {
         "XSB": "alive",
         "XSW": "dead"
@@ -54,34 +52,35 @@
       "moves": [
         {
           "move": "sf",
-          "to": "life & death/Bent four/Side, enclosed:3",
+          "to": "life & death/Bent four/Side, enclosed/White first:3b",
           "status": "main",
           "why": "Takes the other one. {{SQ:T16}} and {{SQ:S14}} are two eyes."
         }
       ]
     },
     {
-      "id": "life & death/Bent four/Side, enclosed:1",
+      "id": "life & death/Bent four/Side, enclosed/White first",
       "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,sh",
       "toPlay": "W",
       "free": "horizontal",
+      "name": "White first",
       "moves": [
         {
           "move": "se",
-          "to": "life & death/Bent four/Side, enclosed:2",
+          "to": "life & death/Bent four/Side, enclosed/White first/White T15",
           "status": "mistake",
           "why": "Takes one middle point."
         },
         {
           "move": "sf",
-          "to": "life & death/Bent four/Side, enclosed:2b",
+          "to": "life & death/Bent four/Side, enclosed/White first/White T14",
           "status": "mistake",
           "why": "Takes the other middle point."
         }
       ]
     },
     {
-      "id": "life & death/Bent four/Side, enclosed:3",
+      "id": "life & death/Bent four/Side, enclosed/White first:3b",
       "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,sf,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,se,sh",
       "toPlay": "W",
       "free": "horizontal",
@@ -93,10 +92,11 @@
       "moves": []
     },
     {
-      "id": "life & death/Bent four/Side, enclosed:2b",
+      "id": "life & death/Bent four/Side, enclosed/White first/White T14",
       "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,sf,sh",
       "toPlay": "B",
       "free": "horizontal",
+      "name": "White T14",
       "extra": {
         "XSB": "alive",
         "XSW": "dead"
@@ -104,14 +104,14 @@
       "moves": [
         {
           "move": "se",
-          "to": "life & death/Bent four/Side, enclosed:3b",
+          "to": "life & death/Bent four/Side, enclosed/White first:3",
           "status": "main",
           "why": "Takes the remaining middle point. {{TR:T14|The {{white}} stone}} is in atari, and {{SQ:T16}} is already an eye."
         }
       ]
     },
     {
-      "id": "life & death/Bent four/Side, enclosed:3b",
+      "id": "life & death/Bent four/Side, enclosed/White first:3",
       "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,se,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,sf,sh",
       "toPlay": "W",
       "free": "horizontal",

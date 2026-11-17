@@ -110,11 +110,6 @@ export function JosekiInfo(p: Common & { onOpenLabel: (id: string) => void; onCo
   const icons = p.settings.icons
   const crumbs = crumbsOf(ctx, path)
   const others = labelsAt(ctx.graph, path[path.length - 1].key, ctx.active).filter((l) => l !== label && ctx.graph.entries.get(l)?.defined)
-  const resSwap = (() => {
-    const c = ef.firstWith('XRESB') ?? ef.firstWith('XRESW')
-    return c ? ef.swapped(c) : false
-  })()
-  const res = (prop: 'XRESB' | 'XRESW') => one(resSwap ? (prop === 'XRESB' ? 'XRESW' : 'XRESB') : prop)
   return (
     <div class="joseki-info">
       <p class="info-title">{p.entryName(label)}</p>
@@ -138,9 +133,6 @@ export function JosekiInfo(p: Common & { onOpenLabel: (id: string) => void; onCo
         <Row label="Sequence">{entry.id.replace(/\//g, ' › ')}</Row>
         {one('XDIFF') && <Row label="Difficulty"><span class="chip">{one('XDIFF')}</span></Row>}
         {ef.list('XTAG').length > 0 && <Row label="Tags"><span class="chips">{ef.list('XTAG').map((t) => <span key={t} class="chip">{t}</span>)}</span></Row>}
-        {res('XRESB') && <Row label="Black first"><IconLabel map={SHAPE_ICONS} value={res('XRESB')!} show={icons} /></Row>}
-        {res('XRESW') && <Row label="White first"><IconLabel map={SHAPE_ICONS} value={res('XRESW')!} show={icons} /></Row>}
-        {ef.points('XVITAL').length > 0 && <Row label="Vital point">{ef.points('XVITAL').map(ptName).join(', ')}</Row>}
       </div>
       {ef.text('XSUM').length > 0 && (
         <Fold id="joseki-description" title="Description">
