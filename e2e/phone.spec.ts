@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { fresh } from './helpers'
+import { fresh, openEntry } from './helpers'
 
 test.beforeEach(async ({ page }) => fresh(page))
 
@@ -22,6 +22,7 @@ test('phone: tapping a next-move marker plays it', async ({ page }) => {
 })
 
 test('phone: tapping a reference shows its marks and tapping again hides them', async ({ page }) => {
+  await openEntry(page, '3-3 invasion')
   for (let i = 0; i < 4; i++) await page.locator('.bottom-bar').getByRole('button', { name: 'Forward (→)' }).click()
   const ref = page.locator('.msg.callout .ref').first()
   const marks = () => page.locator('svg.board polygon').count()

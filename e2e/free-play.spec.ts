@@ -5,7 +5,7 @@ test.beforeEach(async ({ page }) => fresh(page))
 
 test('plays freely outside the database, steps back and forward, and saves the line', async ({ page }) => {
   await page.locator('.item', { hasText: '3-3 invasion' }).click()
-  await clickPoint(page, 'R14') // not in the database
+  await clickPoint(page, 'R13') // not in the database
   await expect(page.locator('.offbook-pill')).toBeVisible()
   await expect(page.locator('.msg.callout')).toHaveCount(0)
   await clickPoint(page, 'O17')

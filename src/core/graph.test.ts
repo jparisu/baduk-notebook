@@ -22,9 +22,10 @@ describe('position graph', () => {
     let key = entry.root
     const root = g.nodes.get(key)!
     expect(root.contribs.map((c) => c.db).sort()).toEqual(['general', 'jparisu'])
-    // follow the main line six moves; every node must also have the jparisu contribution
+    // follow the jparisu line six moves; every move must join an edge that general also has
     for (let i = 0; i < 6; i++) {
-      const e = visibleEdges(g, key, new Set(['general', 'jparisu']))[0]
+      const e = visibleEdges(g, key, new Set(['general', 'jparisu'])).find((e) => e.contribs.some((c) => c.db === 'jparisu'))!
+      expect(e.contribs.some((c) => c.db === 'general')).toBe(true)
       key = e.child
     }
     expect(g.nodes.get(key)!.contribs.some((c) => c.db === 'jparisu' && c.props.XPN)).toBe(true)

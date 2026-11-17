@@ -23,3 +23,10 @@ export async function fresh(page: Page) {
   await page.reload()
   await page.locator('svg.board').waitFor()
 }
+
+/** Opens a library entry by (part of) its name. On a phone the library sits in the drawer. */
+export async function openEntry(page: Page, name: string) {
+  const menu = page.getByRole('button', { name: 'Open library and menu' })
+  if (await menu.isVisible()) await menu.click()
+  await page.locator('.library .item', { hasText: name }).first().click()
+}

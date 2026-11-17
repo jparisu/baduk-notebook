@@ -1,0 +1,10 @@
+(;FF[4]CA[UTF-8]GM[1]SZ[19]
+XID[crossed-five-side]XTYPE[shape]XNAME[Crossed five · side · enclosed]XALIAS[Flower five][Plus five][Hanago][花五]XDIFF[20k]
+XSIZE[5]XLOC[side]XSURR[full]XOLIB[0]XINSIDE[0]XARR[connected]XRESB[alive]XRESW[dead]XVITAL[re]
+XREG[ob:sh]XTAG[eye shape][killable eye shape]XSRC[Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search.]
+XSUM[Five points in a plus shape. The center is the vital point.]
+AB[qf][qg][rg][sf][sg][qd][sd][qc][rc][sc][pd][pe][pf]AW[pg][ph][qh][rh][sh][pc][pb][qb][rb][sb][oc][od][oe][of][og]
+XSB[alive]XSW[dead]XEYE[One eye space of 5 points]XLIB[0 outside liberties]
+XPW[{{SQ:S14,S15,S16,R15,T15|The crossed five}}. {{CR:S15|The center}} touches all four other points.]
+(;B[re]XCAT[correct]XMW[Takes the center: four single-point eyes.]XSB[alive]XSW[alive]XEYE[Four eyes])
+(;W[re]XCAT[correct]XMW[Takes the center. Black can make only one eye.]XSB[dead]XSW[dead]XEYE[One eye]))

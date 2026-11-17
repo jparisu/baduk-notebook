@@ -1,10 +1,12 @@
 import { expect, test } from '@playwright/test'
-import { clickPoint, fresh } from './helpers'
+import { clickPoint, fresh, openEntry } from './helpers'
 
 test.beforeEach(async ({ page }) => fresh(page))
 
 test('adds a move, sets its category and why, and exports a patch', async ({ page }) => {
-  for (let i = 0; i < 6; i++) await page.keyboard.press('ArrowRight')
+  await openEntry(page, '3-3 invasion')
+  for (const p of ['R17', 'Q17', 'R16', 'R15', 'Q18', 'P18']) await clickPoint(page, p) // the line of the jparisu notes
+  await expect(page.locator('.status')).toContainText('Move 6')
   await page.getByRole('button', { name: 'Edit' }).click()
   await expect(page.locator('.edit-panel')).toContainText('Editing jparisu')
   await clickPoint(page, 'R18')
@@ -27,6 +29,7 @@ test('adds a move, sets its category and why, and exports a patch', async ({ pag
 })
 
 test('drafts survive a reload and can be discarded', async ({ page }) => {
+  await openEntry(page, '3-3 invasion')
   for (let i = 0; i < 6; i++) await page.keyboard.press('ArrowRight')
   await page.getByRole('button', { name: 'Edit' }).click()
   await clickPoint(page, 'R18')
@@ -48,19 +51,20 @@ test('creates a database and a new shape with set-up stones', async ({ page }) =
   await expect(page.locator('.toast')).toContainText('Created database My shapes')
   await page.locator('.library .seg').getByText('Shapes').click()
   await page.getByRole('button', { name: 'New shape' }).click()
-  await page.locator('#new-name').fill('Bent three side')
+  await page.locator('#new-name').fill('Comb six side')
   await page.getByRole('button', { name: 'Create' }).click()
-  await expect(page.locator('.item.cur')).toContainText('Bent three side')
+  await expect(page.locator('.item.cur')).toContainText('Comb six side')
   await page.getByRole('button', { name: '● stone' }).click()
   await clickPoint(page, 'S16')
   await clickPoint(page, 'S15')
   await expect(page.locator('svg.board .stone-b')).toHaveCount(2)
   await page.getByRole('button', { name: /Export/ }).click()
   await expect(page.locator('.file-list')).toContainText('db/index.json')
-  await expect(page.locator('.file-list')).toContainText('db/my-shapes/shapes/bent-three-side.sgf')
+  await expect(page.locator('.file-list')).toContainText('db/my-shapes/shapes/comb-six-side.sgf')
 })
 
 test('refuses an occupied point', async ({ page }) => {
+  await openEntry(page, '3-3 invasion')
   await page.getByRole('button', { name: 'Edit' }).click()
   await clickPoint(page, 'Q16')
   await expect(page.locator('.toast')).toContainText('occupied')
