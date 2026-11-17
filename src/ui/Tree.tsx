@@ -1,8 +1,9 @@
 /**
- * Tree of moves (SPEC §8.6) with three modes and a zoom:
- * - linear:    the current line, before and ahead, in one row;
- * - proximity: the line plus the other options after the current move (without their continuations);
- * - complete:  the whole tree from the start of the line.
+ * Tree of moves (docs/MODEL.md §6) with three modes and a zoom:
+ * - linear:    the current line, before and ahead, plus the lines visited in this session (the trail);
+ * - proximity: the same, plus the other moves from the current position;
+ * - complete:  every move from the start of the line.
+ * Hidden branches show a "+n" badge; "ahead" limits how far after the current move the tree goes.
  */
 import { CATEGORIES, type Category } from '../core/fields'
 import { apply, applySign, ptName, type Pt } from '../core/geometry'
@@ -50,23 +51,25 @@ interface Props {
   onSelect: (line: Step[]) => void
   /** Session moves (not in the databases) that continue the line given by these keys. */
   extra?: (keys: string[]) => Step[]
+  /** Other lines visited in this session (the trail), each from the same first position as `path`. */
+  trail?: Step[][]
   /** Short name of the label that starts at a position, if any. */
   tagOf?: (key: string) => string | null
-  /** Design tab: positions whose branch is folded (view only), and whether to show them anyway. */
+  /** Hidden branches (view only), and whether to show them anyway. The current line is never hidden. */
   folded?: Set<string>
   showFolded?: boolean
-  /** Design tab: right-click / long-press on a node. */
+  /** Right-click / long-press on a node. */
   onContext?: (line: Step[], x: number, y: number) => void
   /** Text inside the stones: move number (default) or coordinate. */
   labels?: 'number' | 'coord'
-  /** Number of the first move drawn (when the tree starts at the selection). */
+  /** Number of the first move drawn (when the tree starts at a move). */
   first?: number
   /** The step before the root, when the tree starts at a move: the root is drawn as that move. */
   rootParent?: Step
-  /** Complete mode: name of the joseki a position starts, when the tree must stop there (another joseki). */
-  stopAt?: (key: string) => string | null
-  /** Complete mode: how many moves below the root are drawn. */
-  maxDepth?: number
+  /** How many moves after the current one are drawn (all when undefined). */
+  ahead?: number
+  /** Complete mode: only children for which this is true are drawn (the current line always is). */
+  keepChild?: (parent: Step, child: Step) => boolean
 }
 
 export function Tree(props: Props) {
@@ -77,119 +80,126 @@ export function Tree(props: Props) {
     const c = (cands ?? candidates(ctx, parent)).find((x) => x.step.key === child.key && (!child.edge || x.edge === child.edge))
     const m = moveOf(child)
     const sign = c ? c.sign : m ? applySign(frame(ctx, parent), m.sign) : 0
-    const pt = c ? c.pt : m?.pt ? apply(frame(ctx, parent), m.pt) : null
+    const pt = m ? (m.pt ? apply(frame(ctx, parent), m.pt) : null) : c ? c.pt : null
     const session = !c
     const label = session
-      ? 'Your move — not in the databases'
+      ? `${sign === 1 ? 'Black' : 'White'} ${pt ? ptName(pt) : 'tenuki'} — your move, not in the databases`
       : `${sign === 1 ? 'Black' : 'White'} ${pt ? ptName(pt) : 'tenuki'}${c!.cat ? ' — ' + CATEGORIES[c!.cat].label : ''}${c!.dbs.some((d) => d !== props.defaultDb) ? ` (${c!.dbs.join(', ')})` : ''}`
     return { cat: c?.cat ?? null, sign, pass: m ? !m.pt : false, session, label, extraDb: !!c && !c.dbs.includes(props.defaultDb), pt }
   }
 
   const placed: Placed[] = []
-  const add = (p: Omit<Placed, 'tag' | 'more' | 'transposition' | 'ahead' | 'folded' | 'stub' | 'rootMove'> & Partial<Placed>) =>
-    placed.push({ tag: props.tagOf?.(p.step.key) ?? null, more: false, transposition: false, ahead: false, folded: 0, stub: null, rootMove: false, ...p }) - 1
+  const kids: number[][] = []
+  const add = (p: Omit<Placed, 'tag' | 'more' | 'transposition' | 'ahead' | 'folded' | 'stub' | 'rootMove' | 'x' | 'y'> & Partial<Placed>) => {
+    kids.push([])
+    const i = placed.push({ tag: props.tagOf?.(p.step.key) ?? null, more: false, transposition: false, ahead: false, folded: 0, stub: null, rootMove: false, x: p.line.length - 1, y: 0, ...p }) - 1
+    if (p.parent >= 0) kids[p.parent].push(i)
+    return i
+  }
   const root = path[0]
   if (props.rootParent && moveOf(root)) {
     const d = describe(props.rootParent, root)
-    add({ step: root, line: [root], parent: -1, x: 0, y: 0, ...d, label: `Tree start · ${d.label}`, rootMove: true })
+    add({ step: root, line: [root], parent: -1, ...d, label: `Tree start · ${d.label}`, rootMove: true })
   } else {
-    add({ step: root, line: [root], parent: -1, x: 0, y: 0, cat: null, sign: 0, pass: false, label: 'Start of the line', extraDb: false, session: false, pt: null })
+    add({ step: root, line: [root], parent: -1, cat: null, sign: 0, pass: false, label: 'Start of the line', extraDb: false, session: false, pt: null })
   }
-  /** Moves below a position (capped), for the badge of a folded branch. */
-  const countBelow = (step: Step, base: Step[], seen = new Set<string>()): number => {
+  /** Children of a position: database moves, then session moves. */
+  const childrenOf = (line: Step[]) => {
+    const step = line[line.length - 1]
+    const cands = candidates(ctx, step)
+    const known = new Set(cands.map((c) => c.step.key))
+    const extra = (props.extra?.(line.map((s) => s.key)) ?? []).filter((s) => !known.has(s.key))
+    return { cands, list: [...cands.map((c) => c.step), ...extra] }
+  }
+  /** Moves below a position (capped), for the badge of a hidden branch. */
+  const countBelow = (line: Step[], seen = new Set<string>()): number => {
     let n = 0
-    const known = candidates(ctx, step)
-    const kids = [...known.map((c) => c.step), ...(props.extra?.([...base.map((s) => s.key)]) ?? []).filter((s) => !known.some((c) => c.step.key === s.key))]
-    for (const k of kids) {
+    for (const k of childrenOf(line).list) {
       if (seen.has(k.key) || n > 200) continue
       seen.add(k.key)
-      n += 1 + countBelow(k, [...base, k], seen)
+      n += 1 + countBelow([...line, k], seen)
     }
     return n
   }
-  let cur = 0
-  let rows = 1
+  const onPath = (line: Step[]) => line.length <= path.length && line.every((s, i) => s.key === path[i].key)
+  const limit = props.ahead === undefined ? Infinity : path.length - 1 + props.ahead
+  const hidden = (line: Step[]) => !props.showFolded && !!props.folded?.has(line[line.length - 1].key) && !onPath(line)
 
   if (mode === 'complete') {
     const seen = new Set([root.key])
-    let row = 0
-    const keysOf = (i: number) => placed[i].line.map((s) => s.key)
-    const place = (i: number, depth: number, r: number) => {
-      const cands = candidates(ctx, placed[i].step)
-      const known = new Set(cands.map((c) => c.step.key))
-      const extra = (props.extra?.(keysOf(i)) ?? []).filter((s) => !known.has(s.key))
-      const kids = [...cands.map((c) => c.step), ...extra]
-      if (props.maxDepth !== undefined && depth >= props.maxDepth) {
-        placed[i].more = kids.length > 0
+    const grow = (i: number) => {
+      const line = placed[i].line
+      const { cands, list } = childrenOf(line)
+      const shown = list.filter((c) => !props.keepChild || onPath([...line, c]) || props.keepChild(line[line.length - 1], c))
+      if (line.length - 1 >= limit) {
+        placed[i].more = shown.length > 0
         return
       }
-      kids.forEach((child, k) => {
+      for (const child of shown) {
         if (placed.length > MAX_NODES) return
-        const y = k === 0 ? r : ++row
         const transposition = seen.has(child.key)
         seen.add(child.key)
-        const d = describe(placed[i].step, child, cands)
-        const j = add({ step: child, line: [...placed[i].line, child], parent: i, x: depth + 1, y, ...d, transposition })
-        if (transposition) return
-        const other = props.stopAt?.(child.key)
-        if (other) {
-          placed[j].stub = other
-          return
+        const cl = [...line, child]
+        const j = add({ step: child, line: cl, parent: i, ...describe(line[line.length - 1], child, cands), transposition })
+        if (transposition) continue
+        if (hidden(cl)) {
+          placed[j].folded = countBelow(cl)
+          continue
         }
-        if (props.folded?.has(child.key) && !props.showFolded) {
-          placed[j].folded = countBelow(child, placed[j].line)
-          return
-        }
-        place(j, depth + 1, y)
-      })
-    }
-    place(0, 0, 0)
-    rows = row + 1
-    // The current move: follow the line through the placed nodes.
-    for (let d = 1; d < path.length; d++) {
-      const next = placed.findIndex((p) => p.parent === cur && p.step.key === path[d].key)
-      if (next < 0) break
-      cur = next
-    }
-  } else {
-    // The line: moves before the current one, the current one, and the moves ahead.
-    const line = [...path, ...props.forward]
-    let prev = 0
-    for (let i = 1; i < line.length; i++) {
-      const d = describe(line[i - 1], line[i])
-      prev = add({ step: line[i], line: line.slice(0, i + 1), parent: prev, x: i, y: 0, ...d, ahead: i >= path.length })
-    }
-    cur = path.length - 1
-    // Has the last node of the line more moves?
-    const last = placed[placed.length - 1]
-    last.more = candidates(ctx, last.step).length > 0
-
-    if (mode === 'proximity') {
-      const branch = (parentIdx: number, parentStep: Step, base: Step[], skipKey: string | null, x: number) => {
-        const cands = candidates(ctx, parentStep)
-        const known = new Set(cands.map((c) => c.step.key))
-        const extra = (props.extra?.(base.map((s) => s.key)) ?? []).filter((s) => !known.has(s.key))
-        let y = 1
-        for (const child of [...cands.map((c) => c.step), ...extra]) {
-          if (child.key === skipKey) continue
-          const d = describe(parentStep, child, cands)
-          const j = add({ step: child, line: [...base, child], parent: parentIdx, x, y: y++, ...d })
-          placed[j].more = candidates(ctx, child).length > 0
-        }
-        rows = Math.max(rows, y)
+        grow(j)
       }
-      // Only the other options after the current move; not the alternatives at its own depth.
-      branch(cur, path[path.length - 1], path, props.forward[0]?.key ?? null, cur + 1)
     }
+    grow(0)
+  } else {
+    // The union of lines: this line and its future first, then the trail, then (proximity) the other moves from here.
+    const main = [...path, ...props.forward]
+    const lines: Step[][] = [main, ...(props.trail ?? [])]
+    if (mode === 'proximity') for (const c of childrenOf(path).list) lines.push([...path, c])
+    const insert = (line: Step[], isMain: boolean) => {
+      let i = 0
+      for (let d = 1; d < line.length && d <= limit; d++) {
+        let j = kids[i].find((k) => placed[k].step.key === line[d].key)
+        if (j === undefined) {
+          j = add({ step: line[d], line: line.slice(0, d + 1), parent: i, ...describe(line[d - 1], line[d]), ahead: isMain && d >= path.length })
+          if (hidden(line.slice(0, d + 1))) {
+            placed[j].folded = countBelow(line.slice(0, d + 1))
+            return
+          }
+        } else if (placed[j].folded) return
+        i = j
+      }
+    }
+    lines.forEach((l, k) => l[0]?.key === root.key && insert(l, k === 0))
+    // Leaves that have more moves get a "›".
+    placed.forEach((p, i) => {
+      if (!kids[i].length && !p.folded && i > 0) p.more = childrenOf(p.line).list.length > 0
+    })
+  }
+
+  // Layout: each node one column to the right of its parent; the first child stays on the parent's row.
+  let row = 0
+  const lay = (i: number, y: number) => {
+    placed[i].y = y
+    // Keep the current line (and the line ahead) on the parent's row when possible.
+    const order = [...kids[i]].sort((a, b) => Number(onPath(placed[b].line) || placed[b].ahead) - Number(onPath(placed[a].line) || placed[a].ahead))
+    order.forEach((k, n) => lay(k, n === 0 ? y : ++row))
+  }
+  lay(0, 0)
+  const rows = row + 1
+  // The current move: follow the line through the placed nodes.
+  let cur = 0
+  for (let d = 1; d < path.length; d++) {
+    const next = kids[cur].find((k) => placed[k].step.key === path[d].key)
+    if (next === undefined) break
+    cur = next
   }
 
   const select = (i: number) => props.onSelect(placed[i].line)
   const onLine = new Set<number>()
-  if (mode === 'complete') for (let i = cur; i >= 0; i = placed[i].parent) onLine.add(i)
-  else placed.forEach((p, i) => p.y === 0 && onLine.add(i))
+  for (let i = cur; i >= 0; i = placed[i].parent) onLine.add(i)
 
   const maxX = Math.max(...placed.map((p) => p.x))
-  const W = (maxX + 1) * DX + 24 + (placed.some((p) => p.stub) ? 170 : 0) + (placed[0].rootMove ? 24 : 0), H = rows * DY + 14
+  const W = (maxX + 1) * DX + 24 + (placed[0].rootMove ? 24 : 0), H = rows * DY + 14
   const shiftX = placed[0].rootMove && (props.first ?? 0) > 1 ? 24 : 0
   const pos = (p: Placed) => [OX + shiftX + p.x * DX, OY + p.y * DY]
 

@@ -22,7 +22,7 @@ export interface Step {
 }
 
 /** The move that led to a step, in the parent's canonical frame. */
-export const moveOf = (s: Step): { sign: Sign; pt: Pt | null } | null => s.edge ?? s.free ?? null
+export const moveOf = (s: Step): { sign: Sign; pt: Pt | null } | null => s.free ?? s.edge ?? null
 
 /** True when the position is in an active database. */
 export const inBook = (ctx: Ctx, s: Step) => ctx.graph.nodes.has(s.key)
@@ -53,6 +53,9 @@ export function freeStep(ctx: Ctx, parent: Step, sign: Sign, pt: Pt | null): Ste
   const { key, toCanon } = canonical(after, (-sign) as Sign)
   const D = compose(parent.D, inverse(toCanon))
   const free = { sign, pt }
+  // The same database move played in a symmetric orientation (e.g. R14 instead of O17 on a lone 4-4 stone).
+  const twin = visibleEdges(ctx.graph, parent.key, ctx.active).find((e) => e.child === key)
+  if (twin) return { key, D, edge: twin, free }
   if (ctx.graph.nodes.has(key)) return { key, D, free }
   return { key, D, free, board: transformMap(toCanon, after), toMove: applySign(toCanon, (-sign) as Sign) }
 }
@@ -273,9 +276,11 @@ export function replay(ctx: Ctx, start: Start, moves: Move[]): Step[] {
  * The label to show for the current position: among the labels in force here, the one whose
  * first node appears latest in the line (so "Empty corner" gives way to "3-3 invasion").
  */
-export function primaryLabel(ctx: Ctx, path: Step[]): string | null {
+export function primaryLabel(ctx: Ctx, path: Step[], prefer?: string | null): string | null {
   const here = labelsAt(ctx.graph, path[path.length - 1].key, ctx.active)
   if (!here.length) return null
+  // Where you come from decides between names of the same position: the sequence you opened wins a tie.
+  if (prefer && here.includes(prefer)) here.sort((a, b) => Number(b === prefer) - Number(a === prefer))
   let best = here[0], bestIdx = -2
   for (const l of here) {
     const root = ctx.graph.entries.get(l)!.root

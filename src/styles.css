@@ -834,3 +834,5 @@ button.link.small { font-size: 12px; display: inline-flex; align-items: center; 
 .chip-star .star.on { color: #e0b000; }
 .chip-star .star.on svg { fill: currentColor; }
 .tag-chips.fav svg { fill: #e0b000; color: #e0b000; vertical-align: -1px; }
+.tree-hint { margin: 4px 0; }
+.tree-toolbar { flex-wrap: wrap; }

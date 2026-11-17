@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { clickPoint, fresh } from './helpers'
 
 test('a link opens a joseki at its first move', async ({ page }) => {
-  await page.goto('./?open=3-4-low-approach')
+  await page.goto('./?open=joseki/3-4+point/Low+approach')
   await expect(page.locator('.status')).toContainText('3-4 point · low approach')
   await expect(page.locator('.status')).toContainText('Start')
 })
@@ -20,7 +20,7 @@ test('the address bar follows the position, and that link opens the same positio
 })
 
 test('the orientation is part of the link', async ({ page }) => {
-  await page.goto('./?open=3-3-point&view=bl-s')
+  await page.goto('./?open=joseki/3-3+point&view=bl-s')
   await expect(page.getByRole('button', { name: 'Bottom-left corner' })).toHaveClass(/on/)
   await expect(page.getByRole('button', { name: /Swap colors/ })).toHaveClass(/on/)
 })
@@ -32,10 +32,10 @@ test('a link to an unknown joseki says so', async ({ page }) => {
 
 test('copy link buttons copy the link', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write'])
-  await page.goto('./?open=4-4-low-approach')
+  await page.goto('./?open=joseki/4-4+point/Low+approach')
   await page.getByRole('button', { name: 'Copy link to this position' }).click()
   await expect(page.locator('.toast')).toContainText('Link to this position copied')
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('?open=4-4-low-approach')
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('?open=joseki/4-4+point/Low+approach')
   await page.locator('.joseki-info').getByRole('button', { name: /Copy link/ }).click()
   await expect(page.locator('.toast')).toContainText('copied')
 })

@@ -2,11 +2,25 @@
 
 ## Unreleased
 
+### Data model (docs/MODEL.md)
+- The databases are JSON files of **positions** with a unique **id** (`joseki/4-4 point/3-3 invasion:5`); each move points to the id it leads to. A script converted the SGF files.
+- "Joseki" and "shape" are no longer separate kinds: the id (`joseki/…`, `life & death/…`) and nested **tags** organise everything.
+- Colors are never swapped when matching positions; Black to play and White to play are different positions, joined by a tenuki (shapes now start with Black to play, and a tenuki leads to White playing first).
+- Positions have a **placement**: fixed in the corner, sliding along one edge, or anywhere. Find slides them accordingly.
+- Naming a position starts a new sequence; the following positions move into it.
+- Library: one tree of ids, tags matched with their deeper tags, **favourite tags** (common tags from `index.json` and your own stars).
+- **SGF**: load an SGF file into a database, download any position with what follows.
+
+### Tree
+- **Trail**: the lines you visit stay in the tree, so going back and playing elsewhere never removes the line you left.
+- Linear / Proximity / Complete in Explore and Design, with **Ahead** (all, next 3 / 6 / 10) and zoom.
+- Right-click: **Hide this branch** (view only, with a "+n" badge and *Show hidden*), **Forget this branch**, remove moves that are not in a database.
+- Design: **Only new** shows the position you started from and only the moves added since you opened Design.
+
 ### Design tab
 - New **Design** mode with three panels: board, a large tree of moves, and the info of the selected move (Move / Position / Name tabs).
-- Right-click a move in the tree: category, joseki end, result, why, name a joseki, make it the main line, copy link, fold, delete.
-- The Design tree shows **this joseki** from its first move, back and forth, with other joseki as one-line stubs; set its start with *Start the tree here*, limit it to the next 3 / 6 / 10 moves, or switch to **Everything**.
-- Folding is only a Design view. Moves stay in the browser cache until **Save to database**; **Export / pull request** adds **Propose on GitHub**, which opens GitHub with the new files filled in.
+- Right-click a move in the tree: category, joseki end, result, why, name a joseki, make it the main line, copy link, hide, delete.
+- Moves stay in the browser cache until **Save to database**; **Export / pull request** adds **Propose on GitHub**, which opens GitHub with the new files filled in.
 - Library: **Good only / All / Mistakes**; joseki that start with a mistake show in red.
 
 

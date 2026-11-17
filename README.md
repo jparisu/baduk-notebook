@@ -13,7 +13,7 @@ A personal web app to study, store and annotate Go joseki and shapes (eye shapes
 - **Databases** you can switch on and off (`general`, `jparisu`, …). Positions are recognized in any corner, orientation, color or move order, so notes from one database land on the right moves of another.
 - **Orientation**: show any line in another corner, mirrored, or with colors swapped.
 - **Edit**: add moves, mistakes and punishments, fill in every field, draw marks and walls, create entries and databases. Changes are kept in your browser until you export them as a patch for a pull request.
-- **Find position**: place stones or load an SGF game; the app finds matching joseki (exact, contained, or up to 2 stones different) and shapes.
+- **Find position**: place stones or load an SGF game; the app finds matching positions (exact, contained, or up to 2 stones different), sliding side and centre shapes along the directions they allow.
 - **Quiz** with spaced repetition: find the right move (or the punishment) in a random orientation.
 - Works on phones (drawer, bottom navigation bar, swipe on the board). Three themes: Modern, Simple, Minimalist, each light or dark.
 
@@ -40,11 +40,11 @@ Fast keys in Edit mode (when the board has focus):
 | `Esc` | Back to the board |
 | `←` `→` `Home` `End` | Navigate (also outside Edit mode) |
 
-**Designing a tree** (for example every way the 2-2 invasion under the 3-3 point fails): open the **Design** tab, play the lines, right-click moves to classify them (Mistake, Punishment…), mark the ends and results, name the joseki where it starts, then **Save to database** and **Export / pull request → Propose on GitHub**.
+**Designing a tree** (for example every way the 2-2 invasion under the 3-3 point fails): open the **Design** tab, play the lines, switch the tree to **Only new** to see just what you add, right-click moves to classify them (Mistake, Punishment…), mark the ends and results, name the position where the variation starts (it becomes `joseki/3-3 point/2-2 invasion`), then **Save to database** and **Export / pull request → Propose on GitHub**. **Load SGF** adds every line of an SGF file; **SGF** downloads the position and what follows.
 
-**Sharing**: the address bar always links to what is on the board, and the 🔗 buttons copy it. For example `https://jparisu.github.io/baduk-notebook/?open=3-4-low-approach` opens that joseki at its first move; `&line=…` adds moves and `&view=br` the orientation (SPEC.md §8.9).
+**Sharing**: the address bar always links to what is on the board, and the 🔗 buttons copy it. For example `https://jparisu.github.io/baduk-notebook/?open=joseki/3-4+point/Low+approach` opens that sequence at its first position; `&line=…` adds moves and `&view=br` the orientation (SPEC.md §8.9).
 
-**By hand**: write SGF files in `db/<database>/joseki/` or `db/<database>/shapes/`. `XID` + `XNAME` on any node names that position (SPEC.md §4.2). New databases also need a line in `db/index.json`.
+**By hand**: the databases are JSON files of positions in `db/<database>/` (the data model is in [docs/MODEL.md](docs/MODEL.md)). Each position has an id such as `joseki/4-4 point/3-3 invasion:5`, and each move names the id it leads to. New databases also need a line in `db/index.json`, which can list `commonTags` for the library.
 
 ## Development
 
@@ -82,9 +82,9 @@ GitHub Actions runs type checks, unit tests, database validation and browser tes
 
 | Path | Contents |
 |---|---|
-| `db/` | Databases (SGF) and `index.json` |
+| `db/` | Databases (JSON positions, docs/MODEL.md) and `index.json` |
 | `src/core/` | Geometry and symmetries, hashing, position graph, search, validation |
-| `src/edit/` | Editing workspace, SGF writer, patch export |
+| `src/edit/` | Editing workspace, SGF load and download, patch export |
 | `src/quiz/` | Quiz cards and spaced repetition |
 | `src/ui/` | Screens and components |
 | `e2e/` | Browser tests |

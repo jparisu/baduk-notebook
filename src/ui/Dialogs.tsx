@@ -136,13 +136,14 @@ const PRESETS: Record<string, { label: string; B: string[] }> = {
   '53': { label: 'Lone 5-3 stone', B: ['P17'] },
 }
 
-export function NewEntryDialog({ type, target, close, create }: { type: 'joseki' | 'shape'; target: string; close: () => void; create: (e: NewEntry) => string | null }) {
+export function NewEntryDialog({ type: initial, target, close, create }: { type: 'joseki' | 'shape'; target: string; close: () => void; create: (e: NewEntry) => string | null }) {
+  const [type, setType] = useState(initial)
   const [name, setName] = useState('')
   const [id, setId] = useState('')
   const [free, setFree] = useState<Free>(type === 'joseki' ? 'corner' : 'horizontal')
   const [diff, setDiff] = useState(type === 'shape' ? '25k' : '15k')
   const [preset, setPreset] = useState(type === 'joseki' ? '44' : 'empty')
-  const [toMove, setToMove] = useState<Sign>(type === 'joseki' ? -1 : 0)
+  const [toMove, setToMove] = useState<Sign>(type === 'joseki' ? -1 : 1)
   const [error, setError] = useState<string | null>(null)
   const finalId = id || (type === 'joseki' ? `joseki/${name.trim()}` : `life & death/${name.trim()}`)
   const submit = (e: Event) => {
@@ -157,6 +158,10 @@ export function NewEntryDialog({ type, target, close, create }: { type: 'joseki'
   return (
     <Shell title={type === 'joseki' ? 'New joseki' : 'New shape'} close={close}>
       <form onSubmit={submit} class="form">
+        <div class="seg" role="group" aria-label="Kind">
+          <button type="button" class={type === 'joseki' ? 'on' : ''} onClick={() => { setType('joseki'); setFree('corner'); setPreset('44'); setToMove(-1) }}>Joseki</button>
+          <button type="button" class={type === 'shape' ? 'on' : ''} onClick={() => { setType('shape'); setFree('horizontal'); setPreset('empty'); setToMove(1) }}>Life &amp; death</button>
+        </div>
         <label class="f"><span class="fl">Name</span><input id="new-name" type="text" value={name} onInput={(e) => setName((e.target as HTMLInputElement).value)} placeholder={type === 'joseki' ? '3-4 point · small knight approach' : 'Bent four · corner'} /></label>
         <label class="f"><span class="fl">Sequence id</span><input id="new-id" type="text" value={finalId} onInput={(e) => setId((e.target as HTMLInputElement).value)} /></label>
         <label class="f">

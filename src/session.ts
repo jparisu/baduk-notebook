@@ -12,6 +12,8 @@ export interface Line {
 
 const SESSION = storageKey('baduk-notebook.session.v1')
 const POSITION = storageKey('baduk-notebook.position.v1')
+const TRAIL = storageKey('baduk-notebook.trail.v1')
+const TRAIL_MAX = 40
 
 const sameMove = (a: Move, b: Move) => a.sign === b.sign && (a.pt === null ? b.pt === null : !!b.pt && a.pt[0] === b.pt[0] && a.pt[1] === b.pt[1])
 export const sameStart = (a: Start, b: Start) => JSON.stringify(a) === JSON.stringify(b)
@@ -64,4 +66,25 @@ export function savePosition(line: Line) {
   } catch {
     /* ignore */
   }
+}
+
+/** The trail (docs/MODEL.md §6): every line visited in this session, so the tree keeps the branches you left. */
+export function loadTrail(): Line[] {
+  try {
+    return JSON.parse(localStorage.getItem(TRAIL) ?? '[]')
+  } catch {
+    return []
+  }
+}
+export function saveTrail(lines: Line[]) {
+  try {
+    localStorage.setItem(TRAIL, JSON.stringify(lines))
+  } catch {
+    /* ignore */
+  }
+}
+/** Adds a visited line to the trail (the oldest lines go first when it gets long). */
+export function visit(trail: Line[], line: Line): Line[] {
+  const next = record(trail, line)
+  return next.length > TRAIL_MAX ? next.slice(next.length - TRAIL_MAX) : next
 }

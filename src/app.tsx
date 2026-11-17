@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/ho
 import {
   ArrowLeftRight, ArrowRight, Link2, BookOpen, GitBranch, Grid3x3, MessageSquare, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Search, ChevronLeft, ChevronRight, Contrast, Flag, Menu, Pencil, Plus, RotateCcw, Save,
   Settings as SettingsIcon, SkipBack, SkipForward, SlidersHorizontal, Trash2, Upload, X,
+  FileDown, FileUp,
 } from 'lucide-preact'
 import { loadDatabases, type DatabaseInfo } from './data/load'
 import { buildGraph, type Graph } from './core/graph'
@@ -26,13 +27,15 @@ import { EditPanel } from './ui/EditPanel'
 import { ExportDialog, NewDatabaseDialog, NewEntryDialog, SaveLinesDialog, type SessionLineView } from './ui/Dialogs'
 import { FindMode } from './ui/FindMode'
 import { QuizMode } from './ui/QuizMode'
+import { download } from './edit/workspace'
+import { importSgf, toSgf } from './edit/sgfx'
 import { changeCount, createWorkspace, discardDrafts, restoreDrafts, saveDrafts, type Workspace } from './edit/workspace'
 import { checkMove, createDatabase, createEntry, deleteMove, locate, promote, setProps } from './edit/ops'
 import { sgfPoint } from './edit/sgfio'
 import { boardOf, seqName, stonesOf } from './core/model'
 import { previewName, storageKey } from './storage'
 import { decodeLine, linkFor, readUrl } from './share'
-import { erase, loadPosition, loadSession, record, remove, savePosition, saveSession, sameStart, type Line } from './session'
+import { erase, loadPosition, loadSession, loadTrail, record, remove, savePosition, saveSession, saveTrail, sameStart, visit, type Line } from './session'
 
 // Distinct colors for "always show" references (SPEC §11.2).
 const REF_PALETTE = ['#d81b60', '#1e88e5', '#00897b', '#f4511e', '#8e24aa', '#6d4c41', '#3949ab', '#c0ca33']
@@ -88,10 +91,15 @@ export function App() {
   const [phoneTab, setPhoneTab] = useState<'next' | 'pos' | 'tree' | 'about' | 'edit'>('next')
   const [toast, setToast] = useState<string | null>(null)
   // Design tab (SPEC §8.10)
-  const [designView, setDesignView] = useState<'joseki' | 'everything'>('joseki')
-  const [anchorKey, setAnchorKey] = useState<string | null>(null)
-  const autoRoot = useRef<{ key: string; fam: string } | null>(null) // first move of the Design tree, kept while in its family
-  const [designAhead, setDesignAhead] = useState<number | null>(null)
+  const [onlyNew, setOnlyNew] = useState(false)
+  const [ahead, setAhead] = useState<number | null>(null)
+  const [trail, setTrailState] = useState<Line[]>(loadTrail)
+  const setTrail = (t: Line[]) => {
+    setTrailState(t)
+    saveTrail(t)
+  }
+  /** Moves that existed when Design was opened ("parent>child"): the others are new (Only new). */
+  const known = useRef<Set<string> | null>(null)
   const [designTab, setDesignTab] = useState<'move' | 'pos' | 'name'>('move')
   const [infoFolded, setInfoFolded] = useState(false)
   const [showFolded, setShowFolded] = useState(false)
@@ -99,7 +107,7 @@ export function App() {
   const [confirmDelete, setConfirmDelete] = useState<Step[] | null>(null)
   const [folded, setFoldedState] = useState<Set<string>>(() => {
     try {
-      return new Set(JSON.parse(localStorage.getItem(storageKey('baduk-notebook.design.folded')) ?? '[]'))
+      return new Set(JSON.parse(localStorage.getItem(storageKey('baduk-notebook.tree.hidden')) ?? '[]'))
     } catch {
       return new Set()
     }
@@ -107,7 +115,7 @@ export function App() {
   const setFolded = (f: Set<string>) => {
     setFoldedState(f)
     try {
-      localStorage.setItem(storageKey('baduk-notebook.design.folded'), JSON.stringify([...f]))
+      localStorage.setItem(storageKey('baduk-notebook.tree.hidden'), JSON.stringify([...f]))
     } catch {
       /* ignore */
     }
@@ -201,7 +209,11 @@ export function App() {
 
   // Remember the last position (SPEC: reopen where you left), also when the page closes.
   useLayoutEffect(() => {
-    if (path.length) savePosition({ start, moves: movesOf(path) })
+    if (!path.length) return
+    savePosition({ start, moves: movesOf(path) })
+    // The trail keeps every line you visit, so the tree does not lose the branches you leave.
+    const t = visit(trail, { start, moves: movesOf(path) })
+    if (t !== trail) setTrail(t)
   }, [path, start])
   useEffect(() => {
     settling.current = false
@@ -252,8 +264,6 @@ export function App() {
   function openStart(st: Start) {
     if (!ctx) return
     setStart(st)
-    autoRoot.current = null
-    setAnchorKey(null)
     setLine({ path: [startStep(ctx, st)], future: [] })
     setDrawer(false)
     resetMarks()
@@ -337,7 +347,7 @@ export function App() {
   const F = frame(ctx, step)
   const board = displayBoard(ctx, step)
   const toPlay = toMove(ctx, step)
-  const label = primaryLabel(ctx, path)
+  const label = primaryLabel(ctx, path, start.kind === 'label' ? start.id : null)
   const isShape = !!label && ctx.graph.entries.get(label)?.type === 'shape'
   const win: [number, number, number, number] = settings.view === 'full' ? [0, 18, 0, 18] : cornerWindow(settings.display.corner)
   const offBook = !inBook(ctx, step)
@@ -392,8 +402,10 @@ export function App() {
     if (refType) return setPending([...pending, pt])
     const setup = SETUP_TOOLS.has(tool)
     if (setup && path.length > 1) return flash('Set-up stones can only be changed at the start position.')
-    const loc = locate(w, ctx!, setup ? path.slice(0, 1) : path, target, label, true)!
-    const toDisplay = compose(setup ? frame(ctx!, path[0]) : F, loc.T)
+    // Set-up stones edit the start of the opened sequence (read from the graph, so quick clicks see the last change).
+    const first = setup && start.kind === 'label' && ctx!.graph.entries.has(start.id) ? rootStep(ctx!, start.id) : path[0]
+    const loc = locate(w, ctx!, setup ? [first] : path, target, label, true)!
+    const toDisplay = compose(setup ? frame(ctx!, first) : F, loc.T)
     const sp = sgfPoint(apply(inverse(toDisplay), pt))
     const d = loc.node.data
     if (setup) {
@@ -490,6 +502,7 @@ export function App() {
   }
   function eraseVariation() {
     setSession(erase(session, start, movesOf(path)))
+    setTrail(erase(trail, start, movesOf(path)))
     go(path.slice(0, -1))
     flash('Variation erased from this session')
   }
@@ -671,41 +684,83 @@ export function App() {
   const ZOOMS = [0.6, 0.75, 0.9, 1, 1.15, 1.35, 1.6]
   const zoomIdx = Math.max(0, ZOOMS.findIndex((z) => z >= settings.treeZoom - 0.001))
   const setZoom = (d: number) => setSettings({ ...settings, treeZoom: ZOOMS[Math.max(0, Math.min(ZOOMS.length - 1, zoomIdx + d))] })
+  const modeSeg = (
+    <div class="seg" role="group" aria-label="Tree mode">
+      {([['linear', 'Linear', 'This line, before and ahead, plus the lines you visited'], ['proximity', 'Proximity', 'Linear plus the other moves from the current position'], ['complete', 'Complete', 'Every move from the start of the line, except hidden branches']] as const).map(([m, name, help]) => (
+        <button key={m} class={settings.treeMode === m && !(mode === 'design' && onlyNew) ? 'on' : ''} title={help} aria-pressed={settings.treeMode === m} onClick={() => { setSettings({ ...settings, treeMode: m }); setOnlyNew(false) }}>{name}</button>
+      ))}
+    </div>
+  )
+  const aheadSel = (
+    <label class="ahead">
+      <span class="grp-label">Ahead</span>
+      <select value={ahead === null ? 'all' : String(ahead)} onChange={(e) => { const v = (e.target as HTMLSelectElement).value; setAhead(v === 'all' ? null : Number(v)) }} aria-label="How many moves after the current one are shown">
+        <option value="all">All moves</option>
+        <option value="3">Next 3</option>
+        <option value="6">Next 6</option>
+        <option value="10">Next 10</option>
+      </select>
+    </label>
+  )
+  const showHiddenBtn = folded.size > 0 && (
+    <button class={showFolded ? 'on' : ''} onClick={() => setShowFolded(!showFolded)} aria-pressed={showFolded} title="Hidden branches are only hidden in this browser">Show hidden ({folded.size})</button>
+  )
   const treeToolbar = (
     <div class="tree-toolbar">
-      <div class="seg" role="group" aria-label="Tree mode">
-        {([['linear', 'Linear', 'Only this line: the moves before and ahead'], ['proximity', 'Proximity', 'This line plus the other options after the current move'], ['complete', 'Complete', 'The whole tree from the start of the line']] as const).map(([m, name, help]) => (
-          <button key={m} class={settings.treeMode === m ? 'on' : ''} title={help} aria-pressed={settings.treeMode === m} onClick={() => setSettings({ ...settings, treeMode: m })}>{name}</button>
-        ))}
-      </div>
+      {modeSeg}
+      {aheadSel}
       <div class="zoom" role="group" aria-label="Tree size">
         <button class="icon" onClick={() => setZoom(-1)} disabled={zoomIdx === 0} aria-label="Smaller tree">−</button>
         <span class="zoom-val">{Math.round(ZOOMS[zoomIdx] * 100)}%</span>
         <button class="icon" onClick={() => setZoom(1)} disabled={zoomIdx === ZOOMS.length - 1} aria-label="Bigger tree">+</button>
       </div>
+      {showHiddenBtn}
     </div>
   )
-  const treeView = (
-    <Tree
-      ctx={ctx}
-      path={path}
-      forward={forwardLine}
-      mode={settings.treeMode}
-      zoom={ZOOMS[zoomIdx]}
-      defaultDb={databases[0]?.id ?? ''}
-      onSelect={(l) => {
-        // Selecting a move ahead on the same line keeps the rest of it for "forward".
-        const same = l.length > path.length && l.slice(0, path.length).every((s, i) => s.key === path[i].key)
-        if (same) {
-          const rest = [...path, ...forwardLine].slice(l.length)
-          setLine({ path: l, future: line.future.length ? rest : [] })
-          resetMarks()
-        } else go(l)
-      }}
-      extra={extraChildren}
-      tagOf={tagOf}
-    />
-  )
+  // Lines visited in this session that start at the same position (the trail).
+  const trailSteps = trail.filter((l) => sameStart(l.start, start)).map((l) => replay(ctx, start, l.moves))
+  /** The tree, from move `root` of the line (Explore: 0). */
+  const treeFor = (o: { root: number; zoom: number; labels?: 'coord'; keepChild?: (p: Step, c: Step) => boolean }) => {
+    const pre = path.slice(0, o.root)
+    const full = (l: Step[]) => [...pre, ...l]
+    return (
+      <Tree
+        ctx={ctx}
+        path={path.slice(o.root)}
+        forward={o.keepChild ? [] : forwardLine}
+        mode={o.keepChild ? 'complete' : settings.treeMode}
+        zoom={o.zoom}
+        labels={o.labels}
+        first={o.root}
+        rootParent={o.root > 0 ? path[o.root - 1] : undefined}
+        ahead={ahead ?? undefined}
+        keepChild={o.keepChild}
+        trail={trailSteps.filter((t) => t.length > o.root && t[o.root].key === path[o.root].key).map((t) => t.slice(o.root))}
+        defaultDb={databases[0]?.id ?? ''}
+        onSelect={(l0) => {
+          const l = full(l0)
+          setCtxMenu(null)
+          // Selecting a move ahead on the same line keeps the rest of it for "forward".
+          const same = l.length > path.length && l.slice(0, path.length).every((s, i) => s.key === path[i].key)
+          if (same) {
+            const rest = [...path, ...forwardLine].slice(l.length)
+            setLine({ path: l, future: line.future.length ? rest : [] })
+            resetMarks()
+          } else go(l)
+        }}
+        extra={(keys) => extraChildren([...pre.map((x) => x.key), ...keys])}
+        tagOf={tagOf}
+        folded={folded}
+        showFolded={showFolded}
+        onContext={(l0, x, y) => {
+          const l = full(l0)
+          if (mode === 'design') go(l) // Design: the menu edits the selected move
+          setCtxMenu({ line: l, x, y })
+        }}
+      />
+    )
+  }
+  const treeView = treeFor({ root: 0, zoom: ZOOMS[zoomIdx] })
   const treeLegend = (
     <div class="legend">
       <span><MoveMark cat="main" />joseki</span>
@@ -830,65 +885,17 @@ export function App() {
   )
 
   /* ---- Design tab (SPEC §8.10): board | big tree | info of the selected node ---- */
-  // The tree starts where the current joseki starts, or at a move you chose; it stops at other joseki.
-  const lastKnown = (() => {
-    let i = path.length
-    while (i > 1 && !inBook(ctx, path[i - 1])) i--
-    return i
-  })()
-  const treeLabel = primaryLabel(ctx, path.slice(0, lastKnown))
-  const anchorIdx = anchorKey ? path.findIndex((x) => x.key === anchorKey) : -1
-  // The tree stays put while its first move is still on the line, so moving into a named
-  // variation (or back) does not redraw a different tree; before it, it follows the joseki again.
-  const famOf = (id: string) => id
-  const labelIdx = treeLabel ? labelStart(ctx, path, treeLabel) : 0
-  const labelFam = treeLabel ? famOf(treeLabel) : ''
-  const sticky = autoRoot.current
-  const stickyIdx = sticky ? path.findIndex((x) => x.key === sticky.key) : -1
-  const keep = stickyIdx >= 0 && stickyIdx <= labelIdx && !!sticky!.fam && (labelFam === sticky!.fam || labelFam.startsWith(sticky!.fam + '/'))
-  const autoIdx = keep ? stickyIdx : labelIdx
-  const rootIdx = designView === 'everything' ? 0 : anchorIdx >= 0 ? anchorIdx : autoIdx
-  if (mode === 'design' && !keep) autoRoot.current = path[autoIdx] ? { key: path[autoIdx].key, fam: labelFam } : null
-  const rootEntry = entries.find((e) => e.root === path[rootIdx].key) ?? (treeLabel ? graph!.entries.get(treeLabel) : undefined)
-  const rootFam = rootEntry ? famOf(rootEntry.id) : ''
-  const stopAt = (key: string): string | null => {
-    if (designView === 'everything') return null
-    const here = entries.filter((e) => e.root === key && e.id !== rootEntry?.id)
-    if (!here.length) return null
-    // Variations of the same joseki (family inside the tree's family) stay in the tree.
-    if (rootFam && here.every((e) => famOf(e.id).startsWith(rootFam + '/'))) return null
-    return entryName(here[0].id)
-  }
+  // Only new: the moves added since Design was opened, from the position where the first of them starts.
+  if (mode === 'design' && !known.current) known.current = new Set([...ctx.graph.nodes.values()].flatMap((n) => n.edges.map((e) => `${n.key}>${e.child}`)))
+  if (mode !== 'design') known.current = null
+  const isNew = (parent: Step, child: Step) => (!!child.free && !child.edge) || !known.current?.has(`${parent.key}>${child.key}`)
+  let newIdx = path.findIndex((s, i) => i > 0 && isNew(path[i - 1], s))
+  newIdx = newIdx < 0 ? path.length - 1 : newIdx - 1
+  const rootIdx = mode === 'design' && onlyNew ? newIdx : 0
   const prefix = path.slice(0, rootIdx)
   const designZoom = settings.designZoom
   const setDesignZoom = (z: number) => setSettings({ ...settings, designZoom: Math.max(0.5, Math.min(2, Math.round(z * 100) / 100)) })
-  const designTree = (
-    <Tree
-      ctx={ctx}
-      path={path.slice(rootIdx)}
-      forward={[]}
-      mode="complete"
-      zoom={designZoom}
-      labels="coord"
-      first={rootIdx}
-      rootParent={rootIdx > 0 ? path[rootIdx - 1] : undefined}
-      stopAt={stopAt}
-      maxDepth={designAhead === null ? undefined : path.length - 1 - rootIdx + designAhead}
-      defaultDb={databases[0]?.id ?? ''}
-      onSelect={(l) => {
-        go([...prefix, ...l])
-        setCtxMenu(null)
-      }}
-      extra={(keys) => extraChildren([...prefix.map((x) => x.key), ...keys])}
-      tagOf={tagOf}
-      folded={folded}
-      showFolded={showFolded}
-      onContext={(l, x, y) => {
-        go([...prefix, ...l])
-        setCtxMenu({ line: [...prefix, ...l], x, y })
-      }}
-    />
-  )
+  const designTree = treeFor({ root: rootIdx, zoom: designZoom, labels: 'coord', keepChild: onlyNew ? isNew : undefined })
   const fitTree = () => {
     const box = document.querySelector('.dtree-canvas') as HTMLElement | null
     const svg = box?.querySelector('svg')
@@ -905,6 +912,7 @@ export function App() {
     const last = l[l.length - 1]
     if (last.free && !last.edge) {
       setSession(erase(session, start, movesOf(l)))
+      setTrail(erase(trail, start, movesOf(l)))
       go(l.slice(0, -1))
       flash('Removed from the session')
     } else setConfirmDelete(l)
@@ -912,7 +920,31 @@ export function App() {
   const unsavedCount = unsaved.reduce((n, u) => n + u.steps.filter((x) => x.free && !x.edge).length, 0)
   const cats = isShape ? SHAPE_CATEGORIES : JOSEKI_CATEGORIES
   const ctxLast = ctxMenu ? ctxMenu.line[ctxMenu.line.length - 1] : null
-  const ctxMenuEl = ctxMenu && ctxLast && (
+  const ctxIsFree = !!ctxLast?.free && !ctxLast.edge
+  const hideItems = ctxMenu && ctxLast && ctxMenu.line.length > 1 && (
+    <>
+      <button role="menuitem" onClick={() => {
+        const hiding = !folded.has(ctxLast.key)
+        toggleFold(ctxLast.key)
+        // The current line is never hidden: step back to where the hidden branch starts.
+        if (hiding && ctxMenu.line.every((s, i) => path[i]?.key === s.key)) go(ctxMenu.line.slice(0, -1))
+        setCtxMenu(null)
+      }}>{folded.has(ctxLast.key) ? 'Show this branch' : 'Hide this branch'}</button>
+      <button role="menuitem" onClick={() => { setTrail(erase(trail, start, movesOf(ctxMenu.line))); setCtxMenu(null); flash('Removed from the trail') }}>Forget this branch (trail)</button>
+    </>
+  )
+  const exploreMenuEl = ctxMenu && ctxLast && (
+    <div class="ctx-backdrop" onClick={() => setCtxMenu(null)} onContextMenu={(e) => { e.preventDefault(); setCtxMenu(null) }}>
+      <div class="ctx-menu" role="menu" style={{ left: `${Math.min(ctxMenu.x, window.innerWidth - 260)}px`, top: `${Math.min(ctxMenu.y, window.innerHeight - 200)}px` }} onClick={(e) => e.stopPropagation()}>
+        {hideItems}
+        {ctxIsFree && (
+          <button role="menuitem" class="danger-text" onClick={() => { setSession(erase(session, start, movesOf(ctxMenu.line))); setTrail(erase(trail, start, movesOf(ctxMenu.line))); go(ctxMenu.line.slice(0, -2 + 1)); setCtxMenu(null); flash('Removed: it was not in your databases') }}>Remove this move and what follows</button>
+        )}
+        <button role="menuitem" onClick={() => { copyLink(linkFor(ctx, start, ctxMenu.line, settings.display), 'this position'); setCtxMenu(null) }}>Copy link</button>
+      </div>
+    </div>
+  )
+  const ctxMenuEl = ctxMenu && ctxLast && mode !== 'design' ? exploreMenuEl : ctxMenu && ctxLast && (
     <div class="ctx-backdrop" onClick={() => setCtxMenu(null)} onContextMenu={(e) => { e.preventDefault(); setCtxMenu(null) }}>
       <div
         class="ctx-menu"
@@ -944,8 +976,7 @@ export function App() {
         )}
         <button role="menuitem" onClick={() => { copyLink(linkFor(ctx, start, ctxMenu.line, settings.display), 'this position'); setCtxMenu(null) }}>Copy link</button>
         <hr />
-        <button role="menuitem" onClick={() => { setAnchorKey(ctxLast.key); setDesignView('joseki'); setCtxMenu(null); flash('The tree now starts at this move') }}>⤒ Start the tree here</button>
-        <button role="menuitem" onClick={() => { toggleFold(ctxLast.key); setCtxMenu(null) }}>{folded.has(ctxLast.key) ? 'Unfold this branch' : 'Fold this branch (only in Design)'}</button>
+        {hideItems}
         {ctxMenu.line.length > 1 && (
           <button role="menuitem" class="danger-text" onClick={() => { setCtxMenu(null); deleteAt(ctxMenu.line) }}>Delete this move and what follows…</button>
         )}
@@ -968,6 +999,24 @@ export function App() {
       <button class={unsavedCount ? 'save-lines' : ''} disabled={!unsavedCount} onClick={() => saveLines(unsaved.map((_, i) => i), target)} title="Store every move of this tree that is only in the browser cache">
         <Save size={15} /> Save to database{unsavedCount ? ` (${unsavedCount})` : ''}
       </button>
+      <label class="btn file-btn" title="Add every line of an SGF file to the selected database">
+        <FileUp size={15} /> Load SGF
+        <input type="file" accept=".sgf,application/x-go-sgf" hidden onChange={async (e) => {
+          const input = e.target as HTMLInputElement
+          const f = input.files?.[0]
+          input.value = ''
+          if (!f) return
+          try {
+            const n = importSgf(w, () => ({ ...ctx!, graph: buildGraph(w.files) }), await f.text(), target)
+            commit(`Loaded ${n} move${n === 1 ? '' : 's'} from ${f.name} into ${target}`)
+          } catch {
+            flash('Could not read this SGF file.')
+          }
+        }} />
+      </label>
+      <button onClick={() => download(`${(label ? entryName(label) : 'position').replace(/[^\w\- ]+/g, '').trim() || 'position'}.sgf`, toSgf(ctx, path[path.length - 1]), 'application/x-go-sgf')} title="Download this position and the moves after it as SGF">
+        <FileDown size={15} /> SGF
+      </button>
       <button class={nChanges ? 'changes' : ''} onClick={() => setDialog('export')} title="Download a patch or propose the changes on GitHub">
         <Upload size={15} /> Export / pull request{nChanges ? ` (${nChanges})` : ''}
       </button>
@@ -984,40 +1033,19 @@ export function App() {
       </section>
       <section class="card design-tree" aria-label="Tree of moves">
         <div class="dtree-bar">
-          <div class="seg" role="group" aria-label="What the tree shows">
-            <button class={designView === 'joseki' ? 'on' : ''} onClick={() => setDesignView('joseki')} title="The joseki you are working on, from its first move (or the start you chose); other joseki are not expanded">This joseki</button>
-            <button class={designView === 'everything' ? 'on' : ''} onClick={() => setDesignView('everything')} title="Every move from the start of the line, including other joseki">Everything</button>
-          </div>
-          <label class="ahead">
-            <span class="grp-label">Ahead</span>
-            <select value={designAhead === null ? 'all' : String(designAhead)} onChange={(e) => { const v = (e.target as HTMLSelectElement).value; setDesignAhead(v === 'all' ? null : Number(v)) }} aria-label="How many moves after the selected one are shown">
-              <option value="all">All moves</option>
-              <option value="3">Next 3</option>
-              <option value="6">Next 6</option>
-              <option value="10">Next 10</option>
-            </select>
-          </label>
+          {modeSeg}
+          <button class={onlyNew ? 'on' : ''} aria-pressed={onlyNew} onClick={() => setOnlyNew(!onlyNew)} title="Only the moves added since you opened Design, from the position where they start">Only new</button>
+          {aheadSel}
           <div class="zoom" role="group" aria-label="Tree size">
             <button class="icon" onClick={() => setDesignZoom(designZoom - 0.15)} aria-label="Smaller tree">−</button>
             <span class="zoom-val">{Math.round(designZoom * 100)}%</span>
             <button class="icon" onClick={() => setDesignZoom(designZoom + 0.15)} aria-label="Bigger tree">+</button>
             <button onClick={fitTree}>Fit</button>
           </div>
-          {folded.size > 0 && (
-            <button class={showFolded ? 'on' : ''} onClick={() => setShowFolded(!showFolded)} aria-pressed={showFolded}>Show folded ({folded.size})</button>
-          )}
+          {showHiddenBtn}
         </div>
-        {designView === 'joseki' && (
-          <div class="tree-start">
-            <span>
-              Tree starts at <b>{rootIdx ? `move ${rootIdx}` : 'the start'}</b>
-              {rootEntry ? <> · {entryName(rootEntry.id)}</> : null}
-              {anchorKey && anchorIdx < 0 && <span class="hint"> · your chosen start is not on this line</span>}
-            </span>
-            <span class="spacer" />
-            {path.length - 1 !== rootIdx && <button class="link small" onClick={() => setAnchorKey(path[path.length - 1].key)}>⤒ Start here</button>}
-            {anchorKey && <button class="link small" onClick={() => setAnchorKey(null)}>↺ Joseki start</button>}
-          </div>
+        {onlyNew && rootIdx === path.length - 1 && !candidates(ctx, path[path.length - 1]).some((c) => isNew(path[path.length - 1], c.step)) && !extraChildren(path.map((x) => x.key)).length && (
+          <p class="hint tree-hint">No new moves here yet: play a move on the board to start one.</p>
         )}
         <div class="dtree-canvas">{designTree}</div>
         <div class="legend">
@@ -1026,7 +1054,7 @@ export function App() {
           <span><MoveMark cat="punish" />punishment</span>
           <span>⚑ name starts</span>
           <span class="unsaved">◌ only in the browser cache</span>
-          <span>+n folded</span>
+          <span>+n hidden</span>
           <span>right-click a move for more</span>
         </div>
         <div class="dtree-save">
@@ -1146,6 +1174,7 @@ export function App() {
 
   return (
     <div class={`layout ${phone ? 'phone' : ''} mode-${mode} ${!phone && mode === 'explore' && settings.hideLeft ? 'hide-left' : ''} ${!phone && mode === 'explore' && settings.hideRight ? 'hide-right' : ''}`}>
+      {mode !== 'design' && ctxMenuEl}
       <header class="top">
         {phone && <button class="icon ghost" onClick={() => setDrawer(true)} aria-label="Open library and menu"><Menu size={20} /></button>}
         <h1><span class="logo" aria-hidden />Baduk Notebook</h1>

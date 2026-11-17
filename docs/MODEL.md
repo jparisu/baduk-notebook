@@ -1,4 +1,4 @@
-# Data model (draft for review)
+# Data model
 
 Baduk Notebook stores one kind of thing: a **graph of positions joined by moves**.
 "Joseki", "shape" and "life & death" are not separate kinds of data. They are part of a
@@ -18,6 +18,7 @@ A position is the stones on a local area of the board plus **who plays next**.
 | `name` | Optional display name. Defaults to the last part of the sequence ("3-3 invasion"). |
 | `eval` | Optional: `balance` (points, from Black's view, local), `difficulty` (kyu/dan), `status` for life & death (`alive`, `dead`, `ko`, `seki`, `unsettled`). |
 | `notes` | Free text, with board marks (triangles, arrows, influence…). |
+| `extra` | Other details, with their SGF-style names: summary (`XSUM`), aliases, sources, evaluation symbol (`XEV`), status (`XST`), life & death results (`XSB`, `XSW`…), board marks (`TR`, `SQ`, `AR`…). |
 | `moves` | The moves from this position (§2). |
 
 **Same position:** two positions are the same when one is a rotation or reflection of the other
@@ -37,6 +38,7 @@ lead to. The app checks that playing the move really gives that position.
 | `status` | `main`, `alternative`, `situational`, `slack`, `mistake`, `overplay`, `trick`, `punishment`. |
 | `why` | Why the move is good or bad. |
 | `notes` | Free text with board marks. |
+| `extra` | Other details: style (`XSTY`), purpose (`XPUR`), conditions, board marks. |
 
 Rules:
 - A move always adds exactly one move to the line: a stone (possibly capturing) or a tenuki.
@@ -126,7 +128,9 @@ The tree draws the graph around the line you are on.
 - Placing stones moves the tree to that line. If the line leaves the databases, it branches there.
 - **Right-click a move:**
   - **Hide this branch:** a view-only setting, kept in the browser. A "+n" badge shows what is hidden.
-  - **Remove** (only for moves that are not in a database): deletes it from your trail.
+  - **Forget this branch:** removes it from your trail (database moves stay in the database).
+  - **Remove this move** (only for moves that are not in a database): deletes it and what follows.
+- The current line is never hidden: hiding the branch you are on steps back to where it starts.
 - **Ahead** (all / next 3 / 6 / 10) and zoom work in every mode.
 
 ### Design

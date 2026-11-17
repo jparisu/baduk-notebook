@@ -64,14 +64,13 @@ test('theme and dark mode can be chosen in settings', async ({ page }) => {
   await expect(page.locator('html')).toHaveAttribute('data-mode', 'dark')
 })
 
-test('shapes: Black and White moves are shown separately', async ({ page }) => {
-  await page.locator('.library .seg').getByText('Shapes').click()
+test('shapes: Black plays first; a tenuki leads to White playing first', async ({ page }) => {
   await openEntry(page, 'Straight three')
-  await expect(page.locator('.side-switch')).toBeVisible()
-  await expect(page.locator('.next-moves .mv')).toHaveCount(2) // Black: T15 correct, T14 wrong
-  await page.locator('.side-tabs').getByText('White plays').click()
+  await expect(page.locator('.status')).toContainText('Black to play')
+  await expect(page.locator('.next-moves .mv')).toHaveCount(3) // Black: correct, wrong, and tenuki
+  await page.locator('.next-moves .mv', { hasText: 'Tenuki' }).click()
+  await expect(page.locator('.status')).toContainText('White to play')
   await expect(page.locator('.next-moves .mv')).toHaveCount(1)
-  await expect(page.locator('svg.board .marker')).toHaveCount(1)
 })
 
 test('side panels can be hidden and folded', async ({ page }) => {
@@ -92,7 +91,8 @@ test('a good move that starts another variation is drawn dashed', async ({ page 
 })
 
 test('the library folds by family and filters by tag', async ({ page }) => {
-  await expect(page.locator('.library .lib-name', { hasText: 'Low approach' })).toHaveCount(0) // families start folded
+  await expect(page.locator('.library .lib-name', { hasText: 'Low approach' })).toHaveCount(0) // the tree starts folded
+  await page.getByRole('button', { name: 'Open joseki' }).click()
   await page.getByRole('button', { name: 'Open 3-4 point' }).click()
   await expect(page.locator('.library .lib-name', { hasText: 'Low approach' })).toHaveCount(1)
   await page.getByRole('button', { name: /^Tags/ }).click()
@@ -143,4 +143,20 @@ test('proximity shows the line and only the other options after the current move
   expect(await col(6)).toBeGreaterThan(1)
   // Nothing after the alternatives: column 7 only has the line.
   expect(await col(7)).toBe(1)
+})
+
+test('the tree keeps the lines you leave (the trail), and a branch can be hidden', async ({ page }) => {
+  await page.locator('.tree-toolbar').getByRole('button', { name: 'Linear' }).click()
+  for (const p of ['Q16', 'R17', 'Q17']) await clickPoint(page, p) // 3-3 invasion
+  await page.keyboard.press('ArrowLeft')
+  await page.keyboard.press('ArrowLeft')
+  await clickPoint(page, 'R14') // low approach instead
+  const nodes = page.locator('.tree-box .tree-node')
+  await expect(page.locator('.tree-box .tree-node[data-key]', { has: page.locator('title', { hasText: 'White R17' }) })).toHaveCount(1) // the line you left
+  const before = await nodes.count()
+  await page.locator('.tree-box .tree-node', { has: page.locator('title', { hasText: 'White R17' }) }).click({ button: 'right' })
+  await page.locator('.ctx-menu').getByRole('menuitem', { name: 'Hide this branch' }).click()
+  await expect(page.locator('.tree-box .fold-badge')).toHaveCount(1)
+  expect(await nodes.count()).toBeLessThan(before)
+  await expect(page.locator('.status')).toContainText('low approach') // hiding another branch does not move you
 })

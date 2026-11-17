@@ -1,6 +1,6 @@
 /**
  * Shareable links (SPEC §8.9):
- *   ?open=<label-id>        open a joseki or shape at its first move (empty corner when absent)
+ *   ?open=<sequence id>     open a sequence at its first position, e.g. joseki/4-4+point (empty corner when absent)
  *   &line=qc.pc.qd          moves after the start, as SGF points in the start's stored orientation;
  *                           "-" is a pass; a move whose color does not alternate is prefixed with B or W
  *   &view=br-m-s            corner (tl, tr, bl, br), m = mirrored, s = colors swapped
@@ -94,7 +94,7 @@ export function linkFor(ctx: Ctx, start: Start, path: Step[], view: DisplayOptio
   if (line) q.set('line', line)
   const v = encodeView(view)
   if (v) q.set('view', v)
-  const s = q.toString().replace(/%2C/g, ',')
+  const s = q.toString().replace(/%2C/g, ',').replace(/%2F/g, '/')
   return `${location.origin}${location.pathname}${s ? '?' + s : ''}`
 }
 

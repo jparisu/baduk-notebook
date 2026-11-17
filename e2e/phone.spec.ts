@@ -10,7 +10,6 @@ test('phone layout: no sideways scroll, drawer, bottom bar', async ({ page }) =>
   await page.locator('.bottom-bar').getByRole('button', { name: 'Forward (→)' }).click()
   await expect(page.locator('.status')).toContainText('Move 1')
   await page.getByRole('button', { name: 'Open library and menu' }).click()
-  await page.locator('.drawer .library .seg').getByText('Shapes').click()
   await openEntry(page, 'Straight four')
   await expect(page.locator('.drawer')).toHaveCount(0)
   await expect(page.locator('.status')).toContainText('Straight four')
