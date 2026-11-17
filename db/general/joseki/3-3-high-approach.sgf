@@ -1,0 +1,10 @@
+(;FF[4]CA[UTF-8]GM[1]SZ[19]
+XID[3-3-high-approach]XTYPE[joseki]XNAME[3-3 point · high approach]XALIAS[Knight's move approach][San-san keima kakari][三々ケイマガカリ]XFAM[3-3 point/High approach]XDIFF[15k]XERA[classic]XSTART[setup]XTAG[influence]XSUM[White approaches the 3-3 stone with a knight's move on the fourth line. Black pushes along the side and White builds a wall. Source: 33PointHighApproach.]XSRC[Sensei's Library (senseis.xmp.net), joseki pages listed in XSUM. Sequences copied from its diagrams and mirrored to the top-right corner.]PL[B]XST[start]XEV[=]XPW[{{TR:P16|White's knight's move approach}} to {{TR:R17|the 3-3 stone}}. Knight's move approach on the fourth line.]AB[qc]AW[od]
+;B[pe]XCAT[main]XSTY[balanced]XPUR[territory]XMW[Pushes underneath White's stone.]XST[progress]XEV[=]
+;W[oe]XCAT[main]XSTY[solid]XPUR[influence]XST[progress]XEV[=]
+;B[pf]XCAT[main]XSTY[solid]XPUR[territory]XST[progress]XEV[=]
+;W[of]XCAT[main]XSTY[solid]XPUR[influence]XST[progress]XEV[=]
+;B[pg]XCAT[main]XSTY[solid]XPUR[territory]XMW[Black has territory on the side; White has a wall. White now finishes the top.]XST[progress]XEV[=]
+;W[pc]XCAT[main]XSTY[aggressive]XPUR[territory]XMW[Hane on top, reducing the corner.]XST[progress]XEV[=]
+;B[qb]XCAT[main]XSTY[solid]XPUR[defend]XMW[Blocks underneath.]XST[progress]XEV[=]
+;W[jd]XCAT[main]XSTY[balanced]XPUR[eye][influence]XMW[Extends along the top to use the wall.]XST[end]XEV[=]XSEN[B]XRES[Black has the corner and left side; White has a wall and the top side.])

@@ -1,0 +1,12 @@
+(;FF[4]CA[UTF-8]GM[1]SZ[19]
+XID[bent-four-side]XTYPE[shape]XNAME[Bent four · side · enclosed]XALIAS[Kyokushi][Magari yonmoku][曲がり四目][曲四]XDIFF[25k]
+XSIZE[4]XLOC[side]XSURR[full]XOLIB[0]XINSIDE[0]XARR[connected]XRESB[alive]XRESW[alive]
+XREG[pb:sh]XTAG[eye shape]XSRC[Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search.]
+XSUM[Four points with a bend, away from the corner. Alive: the two middle points are miai, just as in straight four. In the corner it is a different story: see "Bent four in the corner".]
+AB[rc][rd][re][sc][rg][sg][qe][qf][qg]AW[qb][qc][qd][rb][sb][qh][rh][sh][pd][pe][pf][pg][ph]
+XSB[alive]XSW[alive]XEYE[One eye space of 4 points]XLIB[0 outside liberties]
+XPW[{{SQ:T16,T15,T14,S14|The 4-point eye space}} has {{CR:T15,T14|two middle points}}. White can take only one of them.]
+(;W[se]XCAT[wrong]XMW[Takes one middle point.]XSB[alive]XSW[dead]
+;B[sf]XCAT[correct]XMW[Takes the other one. {{SQ:T16}} and {{SQ:S14}} are two eyes.]XSB[alive]XSW[alive]XEYE[Two eyes])
+(;W[sf]XCAT[wrong]XMW[Takes the other middle point.]XSB[alive]XSW[dead]
+;B[se]XCAT[correct]XMW[Takes the remaining middle point. {{TR:T14|The white stone}} is in atari, and {{SQ:T16}} is already an eye.]XSB[alive]XSW[alive]XEYE[Two eyes]))

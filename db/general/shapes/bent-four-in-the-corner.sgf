@@ -1,0 +1,14 @@
+(;FF[4]CA[UTF-8]GM[1]SZ[19]
+XID[bent-four-in-the-corner]XTYPE[shape]XNAME[Bent four in the corner]XALIAS[Sumi no magari yonmoku][隅の曲り四目][盘角曲四][귀곡사]XDIFF[10k]
+XSIZE[4]XLOC[corner]XSURR[full]XOLIB[0]XINSIDE[0]XARR[connected]XRESB[alive]XRESW[ko]XVITAL[ra]XKOT[direct]XRULE[Under Japanese rules a group that cannot stop this shape from being reached is dead: the attacker removes all ko threats first and only then starts the ko, so it does not have to be played out. Under Chinese and AGA rules it has to be played out as a ko.]
+XREG[oa:sd]XTAG[eye shape][ko][rules]XSRC[Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search.]
+XSUM[Bent four with the bend on the 1-1 point. Normally bent four is alive, but in the corner it is unsettled: Black lives by playing first, and if White plays first it becomes a ko.]
+AB[pa][pb][qb][rb][rc][sc]AW[oa][ob][oc][pc][qc][qd][rd][sd]
+XSB[alive]XSW[ko]XEYE[One eye space of 4 points]XLIB[0 outside liberties]
+XPW[{{SQ:R19,S19,T19,T18|The 4-point eye space}}, with {{TR:T19|the bend on the 1-1 point}}. {{CR:S19|The 1-2 point on the long side}} is the vital point.]
+(;B[ra]XCAT[correct]XMW[Takes the vital point: {{SQ:R19}} and {{SQ:T19,T18}} become two eyes.]XSB[alive]XSW[alive]XEYE[Two eyes])
+(;W[ra]XCAT[correct]XMW[Takes the vital point. Black cannot make two eyes without a ko.]XSB[ko]XSW[dead]
+;B[sa]XCAT[ko]XMW[Black's best: it puts {{TR:S19|the white stone}} in atari.]XSB[alive]XSW[ko]
+;W[sb]XCAT[ko]XMW[Captures {{TR:T19}} and takes the ko first. Black needs a ko threat.]XSB[ko]XSW[dead]XPW[Ko: White has taken first. If Black wins the ko, Black lives.])
+(;W[sa]XCAT[wrong]XMW[The 1-1 point is not the vital point.]XSB[alive]XSW[dead]
+;B[ra]XCAT[correct]XMW[Black lives: White cannot approach from either side.]XSB[alive]XSW[alive]))
