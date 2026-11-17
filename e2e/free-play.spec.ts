@@ -5,7 +5,7 @@ test.beforeEach(async ({ page }) => fresh(page))
 
 test('keeps every line played in the session and saves the chosen ones', async ({ page }) => {
   await clickPoint(page, 'Q16')
-  await clickPoint(page, 'R14') // not in the databases
+  await clickPoint(page, 'R13') // not in the databases
   await expect(page.locator('.offbook-pill')).toBeVisible()
   await clickPoint(page, 'O17')
   await page.keyboard.press('ArrowLeft')
@@ -21,7 +21,7 @@ test('keeps every line played in the session and saves the chosen ones', async (
 
 test('back and forward replay your own moves; erase removes a variation', async ({ page }) => {
   await clickPoint(page, 'Q16')
-  await clickPoint(page, 'R14')
+  await clickPoint(page, 'R13')
   await clickPoint(page, 'O17')
   await page.keyboard.press('ArrowLeft')
   await page.keyboard.press('ArrowLeft')
@@ -29,7 +29,7 @@ test('back and forward replay your own moves; erase removes a variation', async 
   await page.keyboard.press('ArrowRight')
   await expect(page.locator('.status')).toContainText('Move 3: Black O17')
   await page.getByRole('button', { name: 'Erase variation' }).click()
-  await expect(page.locator('.status')).toContainText('Move 2: White R14')
+  await expect(page.locator('.status')).toContainText('Move 2: White R13')
 })
 
 test('a transposition brings the known moves back', async ({ page }) => {
@@ -43,7 +43,7 @@ test('a transposition brings the known moves back', async ({ page }) => {
 })
 
 test('clicking a reference keeps its marks; clicking again hides them', async ({ page }) => {
-  await page.locator('.item', { hasText: '3-3 invasion' }).click()
+  await page.locator('.item', { hasText: '3-3 invasion' }).first().click()
   for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowRight')
   const ref = page.locator('.last-move .ref').first()
   const marks = () => page.locator('svg.board polygon').count()

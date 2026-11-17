@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { clickPoint, fresh } from './helpers'
+import { clickPoint, fresh, openEntry } from './helpers'
 
 test.beforeEach(async ({ page }) => fresh(page))
 
@@ -15,11 +15,11 @@ test('starts at the empty corner and recognizes the joseki as you play', async (
 })
 
 test('opens a joseki from the library and navigates with the keyboard', async ({ page }) => {
-  await page.locator('.item', { hasText: '3-3 invasion' }).click()
+  await page.locator('.item', { hasText: '3-3 invasion' }).first().click()
   for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowRight')
   await expect(page.locator('.status')).toContainText('Move 4: Black R15')
   await page.keyboard.press('End')
-  await expect(page.locator('.status')).toContainText('Move 6')
+  await expect(page.locator('.status')).toContainText('Move 12')
 })
 
 test('reopens the last position after a reload', async ({ page }) => {
@@ -31,7 +31,7 @@ test('reopens the last position after a reload', async ({ page }) => {
 })
 
 test('hovering a reference draws its marks on the board', async ({ page }) => {
-  await page.locator('.item', { hasText: '3-3 invasion' }).click()
+  await page.locator('.item', { hasText: '3-3 invasion' }).first().click()
   for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowRight')
   const before = await page.locator('svg.board polygon').count()
   await page.locator('.last-move .ref').first().hover()
@@ -39,8 +39,8 @@ test('hovering a reference draws its marks on the board', async ({ page }) => {
 })
 
 test('switching a database off hides its notes', async ({ page }) => {
-  await page.locator('.item', { hasText: '3-3 invasion' }).click()
-  for (let i = 0; i < 6; i++) await page.keyboard.press('ArrowRight')
+  await openEntry(page, '3-3 invasion')
+  for (const p of ['R17', 'Q17', 'R16', 'R15', 'Q18', 'P18']) await clickPoint(page, p) // the line of the jparisu notes
   await expect(page.locator('.pos-info .msg.note')).toContainText('Remember')
   await page.locator('.top .layer', { hasText: 'jparisu' }).locator('input').uncheck()
   await expect(page.locator('.pos-info .msg.note')).toHaveCount(0)

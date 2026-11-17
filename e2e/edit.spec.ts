@@ -4,15 +4,15 @@ import { clickPoint, fresh } from './helpers'
 test.beforeEach(async ({ page }) => fresh(page))
 
 test('game scenario: mark the opponent\'s unknown move as a mistake and my answer as a punishment worth +3', async ({ page }) => {
-  await page.locator('.item', { hasText: '3-3 invasion' }).click()
+  await page.locator('.item', { hasText: '3-3 invasion' }).first().click()
   for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowRight') // ... B R15, White to play
-  await clickPoint(page, 'S15') // opponent plays something not in the list
+  await clickPoint(page, 'S16') // opponent plays something not in the list
   await expect(page.locator('.offbook-pill')).toBeVisible()
   await page.getByRole('button', { name: 'Edit' }).click()
   await page.locator('.cat-btn', { hasText: 'Mistake' }).click()
   await expect(page.locator('.toast')).toContainText('Saved as mistake in jparisu')
   await expect(page.locator('.offbook-pill')).toHaveCount(0)
-  await clickPoint(page, 'S16') // my answer
+  await clickPoint(page, 'S15') // my answer
   await page.locator('.cat-btn', { hasText: 'Punishment' }).click()
   await page.locator('#f-XPB').fill('+3')
   await page.locator('#f-XPB').press('Enter')
@@ -31,7 +31,7 @@ test('game scenario: mark the opponent\'s unknown move as a mistake and my answe
 
 test('names a position, and the moves after it carry the name', async ({ page }) => {
   await clickPoint(page, 'Q16')
-  await clickPoint(page, 'R14')
+  await clickPoint(page, 'R13') // an approach that is not in the databases
   await page.getByRole('button', { name: 'Edit' }).click()
   await page.locator('#f-name-new').fill('Low approach')
   await page.getByRole('button', { name: 'Name this position' }).click()
@@ -63,15 +63,15 @@ test('creates a database and a new shape start with set-up stones', async ({ pag
   await expect(page.locator('.toast')).toContainText('Created database My shapes')
   await page.locator('.library .seg').getByText('Shapes').click()
   await page.getByRole('button', { name: 'New start position' }).click()
-  await page.locator('#new-name').fill('Bent three side')
+  await page.locator('#new-name').fill('Comb six side')
   await page.getByRole('button', { name: 'Create' }).click()
-  await expect(page.locator('.status')).toContainText('Bent three side')
+  await expect(page.locator('.status')).toContainText('Comb six side')
   await page.getByRole('button', { name: /Set-up black stone/ }).click()
   await clickPoint(page, 'S16')
   await clickPoint(page, 'S15')
   await expect(page.locator('svg.board .stone-b')).toHaveCount(2)
   await page.getByRole('button', { name: /Export/ }).click()
-  await expect(page.locator('.file-list')).toContainText('db/my-shapes/shapes/bent-three-side.sgf')
+  await expect(page.locator('.file-list')).toContainText('db/my-shapes/shapes/comb-six-side.sgf')
 })
 
 test('tools explain themselves on hover', async ({ page }) => {

@@ -12,6 +12,11 @@
 - Find: one result per label; an exact match hides the other positions of the same joseki.
 - Removed hint lines that repeated the obvious.
 
+### Joseki and shapes
+- **New joseki** in `general`, checked against Sensei's Library: 4-4 low approach (small knight and one-space extensions with the slide, one-space low pincer with the 3-3 invasion, kick, attach-extend, attach-block, tenuki), 3-4 low approach (diagonal, small knight, kick, one-space low pincer), 3-4 high approach (attach-drawback with solid or hanging connection), 3-3 shoulder hit and 3-3 high approach. Named variations are labels on their first move (slide joseki, kick, attach-extend, attach-block, 3-3 invasion hane / double hane / extend / knight's move, 3-4 diagonal, attach-drawback…), so the status line and "→ name" follow them as you play.
+- **3-3 invasion** rewritten from the example: the standard hane-extend line, the old continuation, the double hane, and the extension for sente. The earlier direct-hane line and its mistakes are kept as a side branch.
+- **New shapes**: bent three, bent four (side), bent four in the corner, square four, pyramid four, bulky five, crossed five, rabbity six. Each result and vital point is checked with a small life-and-death search.
+
 ### Earlier in this release
 
 - **Free play**: click any empty point to play outside the databases. Back and forward also step through your own moves. Messages come back when the line reaches a known position, also by transposition. "Save this line" stores the moves in a database.

@@ -25,7 +25,7 @@ test('phone: tapping a next-move marker plays it', async ({ page }) => {
 
 test('phone: tapping a reference shows its marks and tapping again hides them', async ({ page }) => {
   await page.getByRole('button', { name: 'Open library and menu' }).click()
-  await page.locator('.drawer .item', { hasText: '3-3 invasion' }).click()
+  await page.locator('.drawer .item', { hasText: '3-3 invasion' }).first().click()
   for (let i = 0; i < 4; i++) await page.locator('.bottom-bar').getByRole('button', { name: 'Forward (→)' }).click()
   await page.locator('.phone-tabs').getByText('Why').click()
   const ref = page.locator('.last-move .ref').first()
