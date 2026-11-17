@@ -1,7 +1,8 @@
 # Data model (draft for review)
 
 Baduk Notebook stores one kind of thing: a **graph of positions joined by moves**.
-"Joseki", "shape", "life & death" are not separate kinds of data; they are tags.
+"Joseki", "shape" and "life & death" are not separate kinds of data. They are parts of a
+position's `id` or of its `tags`.
 
 ## 1. Position (node)
 
@@ -9,65 +10,63 @@ A position is the stones on a local area of the board plus **who plays next**.
 
 | Field | Meaning |
 |---|---|
-| `id` | Short stable id, unique in its database (e.g. `p-3f9a`). |
 | `stones` | Black and white stones, in the upper-right corner frame (`B:pd,qf W:qc`). |
-| `toPlay` | `B` or `W`. Same stones with the other player to move is a **different** position. |
-| `free` | Placement: `corner` (default), `horizontal`, `vertical` or `anywhere` (see §4). |
-| `name` | Optional. |
-| `tags` | Nested tags, all in one list (see §3). |
+| `toPlay` | `B` or `W`. The same stones with the other player to move is a **different** position. |
+| `id` | The **sequence** the position belongs to, nested with `/`: `joseki`, `joseki/4-4 point`, `joseki/4-4 point/3-3 invasion`. Many positions share one id. It decides the hierarchy, the order and what the tree shows (§3). |
+| `tags` | Free nested tags for searching: `3-3`, `life & death/corner`, `ko`, `beginner`… |
+| `free` | Placement: `corner` (default), `horizontal`, `vertical` or `anywhere` (§4). |
+| `name` | Optional display name. Defaults to the last part of the id ("3-3 invasion"). |
 | `eval` | Optional: `balance` (points, from Black's view, local), `difficulty` (kyu/dan), `status` for life & death (`alive`, `dead`, `ko`, `seki`, `unsettled`). |
 | `notes` | Free text, with board marks (triangles, arrows, influence…). |
+| `moves` | The moves from this position (§2). |
 
 **Same position:** two positions are the same when one is a rotation or reflection of the other
-(8 symmetries), with the same colors and the same player to move. Colors are **not** swapped:
-a shape with Black to play and the same shape with White to play are different positions,
-joined by a tenuki edge when that is what happened.
+(8 symmetries), with the same colors and the same player to move. Colors are **not** swapped.
+Black to play and White to play, with the same stones, are different positions. A tenuki move
+joins them.
 
-## 2. Edge (move)
+## 2. Move (edge)
 
-An edge goes from one position to the next.
+Moves are stored inside the position they start from. The app finds the position they lead to by
+playing them.
 
 | Field | Meaning |
 |---|---|
-| `from`, `to` | Position ids. |
 | `move` | A point (`qc`) or `tenuki` (play elsewhere: same stones, the other player to move). |
 | `status` | `main`, `alternative`, `situational`, `slack`, `mistake`, `overplay`, `trick`, `punishment`. |
 | `why` | Why the move is good or bad. |
 | `notes` | Free text with board marks. |
 
 Rules:
-- An edge always adds exactly one move (a stone, possibly with captures, or a tenuki).
-- No two tenukis in a row, and no edge that returns to a position already on the line (no loops).
+- A move always adds exactly one move to the line: a stone (possibly capturing) or a tenuki.
+- No two tenukis in a row. No move may return to a position already on the line (no loops).
 
-## 3. Tags
+## 3. Sequences (`id`) and tags
 
-- **All tags live in one list, and all are nested** with `/`: `joseki`, `life & death/corner`,
-  `4-4 point`, `4-4 point/3-3 invasion`, `4-4 point/3-3 invasion/aggressive`.
-- A position with a nested tag also has every shorter tag: `4-4 point/3-3 invasion` implies `4-4 point`.
-- **Copied forward:** when you add a move, the new position gets the tags of the position it comes
-  from. When a variation becomes its own line, you give it a deeper tag (add `/aggressive`) and the
-  moves after it copy that one. Tags are stored on every position, never inherited at read time.
-- A position reached by two different lines can have the tags of both.
+### `id`
+- **Joseki use `joseki` as the root.** The empty corner is the start of `joseki`. The 4-4 stone
+  starts `joseki/4-4 point`. The 2-2 invasion of the 3-3 point starts
+  `joseki/3-3 point/2-2 invasion`, and its first move has status `mistake`.
+- A new position **copies the id** of the position it comes from. When a line becomes its own
+  variation, you give it a deeper id, such as `…/3-3 invasion/aggressive`. The moves after it copy that id.
+- An id includes every shorter id. `joseki/4-4 point/3-3 invasion` is inside `joseki/4-4 point`, which is inside `joseki`.
 
-### Sequence of a tag
-The positions that have a tag `T` form a small tree of moves:
-- **N** of a position: number of moves on the shortest path from a starting position (a position
-  with no incoming edge, such as the empty corner or a life & death setup). Tenuki counts as a move.
-  N is **computed on load, never stored**, so it stays right when lines are added.
-- **Start of `T`:** the position with tag `T` and the lowest N.
-- **Ends of `T`:** positions with tag `T` and no move to another position with tag `T`.
-- **Main path of `T`:** from the start, follow the `main` edges while the tag stays `T`.
+### Order inside a sequence
+- **N** of a position: the number of moves on the shortest path from a starting position. A
+  starting position has no move leading to it; examples are the empty corner and a life & death
+  setup. Tenuki counts as a move. N is **computed on load, never stored**, so it stays right
+  when lines are added. It is not a stone count, because captures remove stones.
+- **Start of an id:** its position with the lowest N.
+- **Ends:** positions with that id and no move to another position with the same id.
+- **Main path:** from the start, follow the `main` moves while the id stays the same.
 
-### The sequence you are in
-On the line you played, the current sequence is the most specific tag of the current position
-(deepest; on a tie, the tag with fewer positions). It follows where you came from: a position
-with two tags uses the one shared with the previous position on your line. The tree toolbar lets
-you switch to another tag of the position.
-
-### Favourite tags
-- Each database lists its **common tags** in `index.json` (`"commonTags": ["joseki", "4-4 point", "life & death"]`).
-- You can **star** any tag; stars are kept in the browser.
-- The tag picker shows starred and common tags first as chips, then the whole tag tree.
+### Tags
+- Free and nested, all in one list (`life & death/corner`, `3-3`, `ko`).
+- Used only for searching; they do not affect the tree.
+- **Favourites:**
+  - each database lists its common tags in `index.json` (`"commonTags": [...]`);
+  - you can star any tag, and stars are kept in the browser;
+  - the picker shows starred and common tags first, then the whole tag tree.
 
 ## 4. Placement (`free`)
 
@@ -76,55 +75,85 @@ The board shows every position in the **upper-right corner** by default.
 | `free` | The stones may be found… | Example |
 |---|---|---|
 | `corner` | only at that distance from both edges | joseki, corner life & death |
-| `horizontal` | anywhere along the top edge, same distance from it | a side shape on the 2nd line (2nd and 3rd line differ) |
+| `horizontal` | anywhere along the top edge, same distance from it | a 2nd-line side shape (2nd and 3rd line differ) |
 | `vertical` | anywhere along the right edge, same distance from it | the same, along the other side |
 | `anywhere` | anywhere | a centre shape (tiger's mouth, ponnuki) |
 
-Find matches a position by sliding the stones along the free directions, for all 8 symmetries.
+Find matches a position by sliding its stones along the free directions, for all 8 symmetries.
 
 ## 5. Finding positions
 
-- **By stones:** place stones (Find) and the app lists the positions that match, with their tags.
-- **By tags:** pick one or more tags (all must match) and optionally type part of a name.
-  Example: `joseki` + `4-4 point/3-3 invasion` lists the 3-3 invasion sequences.
-- Results are **sequences, not single positions:** one row per most specific tag under the query,
-  opening at the start of that sequence. Positions further down are reached by playing the moves.
-- The list is a tree following the nested tags (`4-4 point` › `3-3 invasion` › `aggressive`).
+- **By stones:** place stones (Find) and the app lists the matching positions with their ids and tags.
+- **By id and tags:** pick an id branch (`joseki` › `4-4 point` › `3-3 invasion`) and/or tags,
+  and optionally type part of a name.
+- Results are **sequences, not single positions**. Each row is one id and opens at its start.
+- The list is a tree that follows the ids.
 
-## 6. Tree view
+## 6. Tree
 
-The tree shows the **sequence you are in**, from its start, with every move after it:
-- Moving back and forth along it never changes the tree.
-- An edge that leads to a deeper tag is drawn as one node, "→ aggressive". Click it to step in.
-- Moves to positions without the tag (other joseki, tenuki to another area) are drawn as
-  "→ name/tag" stubs and are not expanded.
-- **Ahead:** all moves, or only the next 3 / 6 / 10. **Start here** sets your own start.
+The tree draws the graph around the line you are on.
+
+### Your trail
+- The app remembers the lines you visit in this session (the **trail**).
+- If you go back and play something else, the line you left **stays in the tree as a branch**;
+  it is never replaced.
+- A move that is not in any database (free play) opens a new branch at that point.
+- The trail is kept in the browser with the session.
+
+### Explore
+| Mode | Shows |
+|---|---|
+| **Linear** | The line you are on, plus its future. If you just opened a sequence, that is the main path; if you came back, it is the last line you saw. Lines on your trail stay as branches. |
+| **Proximity** | Linear, plus the other moves from the current position. |
+| **Complete** | Every move in the active databases, except hidden branches. |
+
+- Placing stones moves the tree to that line. If the line leaves the databases, it branches there.
+- **Right-click a move:**
+  - **Hide this branch:** a view-only setting, kept in the browser. A "+n" badge shows what is hidden.
+  - **Remove** (only for moves that are not in a database): deletes it from your trail.
+- **Ahead** (all / next 3 / 6 / 10) and zoom work in every mode.
+
+### Design
+- Design shows the same tree with the same right-click options, plus editing (status, why, id, name…).
+- **Only new:** hides everything that is already in the target database except the position you
+  started from.
+
+  Example: on the 3-3 point you start `joseki/3-3 point/2-2 invasion`. The tree shows the 3-3 stone,
+  then only the moves you add, each with the status you give it (2-2 as `mistake`, the punishment…).
+
+  "New" means added in this Design session, so moves stay visible after you save them to the database.
 
 ## 7. Storage
 
-Each database is a folder under `db/` with JSON files; any file may hold any positions and edges.
+Each database is a folder under `db/` with JSON files; any file may hold any positions.
 
 ```json
 {
   "positions": [
-    { "id": "p-44", "stones": "B:pd", "toPlay": "W", "tags": ["joseki", "4-4 point"], "name": "4-4 point" },
-    { "id": "p-44-33", "stones": "B:pd W:qc", "toPlay": "B",
-      "tags": ["joseki", "4-4 point/3-3 invasion"], "name": "3-3 invasion", "eval": { "balance": 0, "difficulty": "20k" } }
-  ],
-  "edges": [
-    { "from": "p-44", "to": "p-44-33", "move": "qc", "status": "main", "why": "Takes the corner." }
+    { "stones": "", "toPlay": "B", "id": "joseki", "name": "Empty corner",
+      "moves": [{ "move": "pd", "status": "main" }, { "move": "qc", "status": "main" }] },
+    { "stones": "B:pd", "toPlay": "W", "id": "joseki/4-4 point",
+      "moves": [{ "move": "qc", "status": "main", "why": "Takes the corner." }] },
+    { "stones": "B:pd W:qc", "toPlay": "B", "id": "joseki/4-4 point/3-3 invasion",
+      "eval": { "balance": 0, "difficulty": "20k" }, "moves": [] }
   ]
 }
 ```
 
-- Positions are matched across files and databases by their stones (with symmetries), not by id,
-  so two databases describing the same position merge. Ids only link edges inside a database.
+- Positions are matched across files and databases by their stones, using the 8 symmetries, so
+  when two databases describe the same position, the app merges them.
 - When databases disagree on a field, the first active database in the list wins.
-- **SGF:** load an SGF file (each node becomes a position, each move an edge, comments become notes)
-  and download any position with what follows it as SGF.
-- The current SGF database is converted once by a script; `X*` properties map to the fields above
-  (XNAME → name, XFAM → tag, XTAG → tags, category → edge status, XPB → balance, XDIFF → difficulty).
+- **SGF:**
+  - loading an SGF makes each node a position and each move a move;
+  - comments become notes;
+  - you can download any position with what follows it as SGF.
+- A script converts the current SGF database once. The `X*` properties map as follows:
 
-## Open points
-1. The tie rule for "the sequence you are in" (§3).
-2. Whether the empty corner is a position (start of every joseki) or each joseki starts at its first stone.
+  | SGF property | New field |
+  |---|---|
+  | XFAM | `id`, under `joseki/` |
+  | XNAME | `name` |
+  | XTAG | `tags` |
+  | category | `status` |
+  | XPB | `balance` |
+  | XDIFF | `difficulty` |
