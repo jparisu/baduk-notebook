@@ -762,3 +762,10 @@ button.link.small { font-size: 12px; display: inline-flex; align-items: center; 
 .zoom-val { font-size: 11px; color: var(--muted); min-width: 34px; text-align: center; font-variant-numeric: tabular-nums; }
 .tree-box { max-height: 240px; }
 .tree-node.ahead circle, .tree-node.ahead rect { opacity: .75; }
+
+/* Position evaluation: bar on its own row, then the result with its tags on one line */
+.eval-bar-row { display: flex; align-items: center; gap: 8px; margin: 2px 0 10px; }
+.eval-bar-row .balance-bar { flex: 1; min-width: 60px; }
+.bar-end { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.eval-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.eval-head .score { font-size: 20px; font-weight: 800; letter-spacing: -.01em; line-height: 1.2; margin-right: 2px; overflow-wrap: anywhere; }

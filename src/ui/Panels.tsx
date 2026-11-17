@@ -192,13 +192,16 @@ export function PositionEval(p: Common) {
   const here = p.messages.filter((m) => m.place === 'position')
   return (
     <div class="pos-eval">
-      {score && (
-        <div class="eval-big">
-          <span class="score">{score}</span>
-          {Number.isFinite(n) ? <BalanceBar value={n} /> : ev ? <BalanceBar value={ev.startsWith('B') ? ev.length * 2 : ev.startsWith('W') ? -ev.length * 2 : 0} /> : null}
+      {/* Bar on its own row; under it, the result followed on the same line by the tags. */}
+      {score && (Number.isFinite(n) || ev) && (
+        <div class="eval-bar-row">
+          <span class="bar-end">White</span>
+          <BalanceBar value={Number.isFinite(n) ? n : ev!.startsWith('B') ? ev!.length * 2 : ev!.startsWith('W') ? -ev!.length * 2 : 0} />
+          <span class="bar-end">Black</span>
         </div>
       )}
-      <div class="chips">
+      <div class="eval-head">
+        {score && <span class="score">{score}</span>}
         {pf.one('XST') && <span class="chip"><IconLabel map={STATUS_ICONS} value={pf.one('XST')!.value} show={icons} /></span>}
         {sente && sente !== 'none' && <span class="chip">Sente: {colorWord(sente === 'B' ? 1 : -1)}</span>}
         {shape('XSB') && <span class="chip">Black next: {shape('XSB')}</span>}
