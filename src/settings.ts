@@ -24,6 +24,8 @@ export interface Settings {
   quizNewPerDay: number
   display: DisplayOptions
   hideLeft: boolean
+  treeMode: 'linear' | 'proximity' | 'complete'
+  treeZoom: number
   hideRight: boolean
   activeDatabases: string[] | null // null = use activeByDefault from db/index.json
 }
@@ -46,6 +48,8 @@ export const DEFAULT_SETTINGS: Settings = {
   quizNewPerDay: 10,
   display: { corner: 'tr', mirror: false, swap: false },
   hideLeft: false,
+  treeMode: 'proximity',
+  treeZoom: 1,
   hideRight: false,
   activeDatabases: null,
 }

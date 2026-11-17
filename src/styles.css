@@ -755,3 +755,10 @@ button.link.small { font-size: 12px; display: inline-flex; align-items: center; 
 .info-links { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; margin-bottom: 6px; }
 .info-links .link { font-size: 13px; }
 .copy-link { padding: 3px 6px; color: var(--muted); }
+.tree-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+.tree-toolbar .seg button { font-size: 12px; padding: 4px 9px; }
+.zoom { display: inline-flex; align-items: center; gap: 4px; }
+.zoom button { width: 28px; height: 28px; padding: 0; font-size: 16px; line-height: 1; }
+.zoom-val { font-size: 11px; color: var(--muted); min-width: 34px; text-align: center; font-variant-numeric: tabular-nums; }
+.tree-box { max-height: 240px; }
+.tree-node.ahead circle, .tree-node.ahead rect { opacity: .75; }

@@ -1,10 +1,19 @@
-/** Variation tree (SPEC §8.6): main line along the top, branches below. */
+/**
+ * Tree of moves (SPEC §8.6) with three modes and a zoom:
+ * - linear:    the current line, before and ahead, in one row;
+ * - proximity: the line plus the neighbours of the current move (its alternatives and the options after it);
+ * - complete:  the whole tree from the start of the line.
+ */
 import { CATEGORIES, type Category } from '../core/fields'
-import { ptName } from '../core/geometry'
-import { candidates, moveOf, type Ctx, type Step } from '../view'
+import { applySign, ptName } from '../core/geometry'
+import { candidates, frame, moveOf, type Candidate, type Ctx, type Step } from '../view'
+
+export type TreeMode = 'linear' | 'proximity' | 'complete'
 
 interface Placed {
   step: Step
+  /** Line from the root to this node: selecting the node opens it. */
+  line: Step[]
   parent: number
   x: number
   y: number
@@ -16,107 +25,137 @@ interface Placed {
   transposition: boolean
   session: boolean
   tag: string | null
-  /** Has continuations beyond the visible window. */
   more: boolean
+  ahead: boolean // part of the line after the current move
 }
 
-const DX = 34, DY = 30, OX = 16, OY = 24, MAX_NODES = 800
+const DX = 34, DY = 30, OX = 18, OY = 24, MAX_NODES = 800
 
-export function Tree(props: {
+interface Props {
   ctx: Ctx
-  root: Step
+  /** Current line, from its start. */
   path: Step[]
+  /** Moves after the current one on this line (stepped-back moves or the main line). */
+  forward: Step[]
+  mode: TreeMode
+  zoom: number
   defaultDb: string
-  onSelect: (path: Step[]) => void
-  /** Moves of your session (not in the databases) that continue the line given by these keys. */
+  onSelect: (line: Step[]) => void
+  /** Session moves (not in the databases) that continue the line given by these keys. */
   extra?: (keys: string[]) => Step[]
   /** Short name of the label that starts at a position, if any. */
   tagOf?: (key: string) => string | null
-  /** Move number of the root (moves before it are not drawn). */
-  first?: number
-  /** How many moves after the root are drawn. */
-  maxDepth?: number
-}) {
-  const first = props.first ?? 0
-  const maxDepth = props.maxDepth ?? Infinity
-  const { ctx, root, path } = props
-  const placed: Placed[] = [{ step: root, parent: -1, x: 0, y: 0, cat: null, sign: 0, pass: false, label: first ? `Move ${first} (earlier moves are hidden)` : 'Start', extraDb: false, transposition: false, session: false, tag: props.tagOf?.(root.key) ?? null, more: false }]
-  const keysOf = (i: number) => {
-    const k: string[] = []
-    for (let j = i; j >= 0; j = placed[j].parent) k.unshift(placed[j].step.key)
-    return k
-  }
-  const seen = new Set([root.key])
-  let row = 0
-  const place = (i: number, depth: number, r: number) => {
-    const cands = candidates(ctx, placed[i].step)
-    const known = new Set(cands.map((c) => c.step.key))
-    const extra = (props.extra?.(keysOf(i)) ?? []).filter((s) => !known.has(s.key))
-    const parentD = placed[i].step.D
-    if (depth >= maxDepth) {
-      placed[i].more = cands.length + extra.length > 0
-      return
-    }
-    const items = [
-      ...cands.map((c) => ({ step: c.step, cat: c.cat, sign: c.sign, pt: c.pt, dbs: c.dbs, session: false })),
-      ...extra.map((s) => {
-        const m = moveOf(s)!
-        const sign = (ctx.U.swap !== parentD.swap ? -m.sign : m.sign) as number
-        return { step: s, cat: null, sign, pt: m.pt, dbs: [] as string[], session: true }
-      }),
-    ]
-    items.forEach((c, k) => {
-      if (placed.length > MAX_NODES) return
-      const y = k === 0 ? r : ++row
-      const transposition = seen.has(c.step.key)
-      seen.add(c.step.key)
-      placed.push({
-        step: c.step,
-        parent: i,
-        x: depth + 1,
-        y,
-        cat: c.cat,
-        sign: c.sign,
-        pass: !c.pt,
-        label: c.session
-          ? `Your move ${c.pt ? '' : '(tenuki)'} — not saved yet`
-          : `${c.sign === 1 ? 'Black' : 'White'} ${c.pt ? ptName(c.pt) : 'tenuki'}${c.cat ? ' — ' + CATEGORIES[c.cat].label : ''}${c.dbs.some((d) => d !== props.defaultDb) ? ` (${c.dbs.join(', ')})` : ''}${transposition ? ' — joins a position shown elsewhere' : ''}`,
-        extraDb: !c.session && !c.dbs.includes(props.defaultDb),
-        transposition,
-        session: c.session,
-        tag: props.tagOf?.(c.step.key) ?? null,
-        more: false,
-      })
-      if (!transposition) place(placed.length - 1, depth + 1, y)
-    })
-  }
-  place(0, 0, 0)
+}
 
-  const onPath = new Set<number>()
-  // Find the placed node that matches the current path (same sequence of keys).
+export function Tree(props: Props) {
+  const { ctx, path, mode } = props
+
+  /** Category, color and label of the move from `parent` to `child`. */
+  const describe = (parent: Step, child: Step, cands?: Candidate[]) => {
+    const c = (cands ?? candidates(ctx, parent)).find((x) => x.step.key === child.key && (!child.edge || x.edge === child.edge))
+    const m = moveOf(child)
+    const sign = c ? c.sign : m ? applySign(frame(ctx, parent), m.sign) : 0
+    const pt = c ? c.pt : null
+    const session = !c
+    const label = session
+      ? 'Your move — not in the databases'
+      : `${sign === 1 ? 'Black' : 'White'} ${pt ? ptName(pt) : 'tenuki'}${c!.cat ? ' — ' + CATEGORIES[c!.cat].label : ''}${c!.dbs.some((d) => d !== props.defaultDb) ? ` (${c!.dbs.join(', ')})` : ''}`
+    return { cat: c?.cat ?? null, sign, pass: m ? !m.pt : false, session, label, extraDb: !!c && !c.dbs.includes(props.defaultDb) }
+  }
+
+  const placed: Placed[] = []
+  const add = (p: Omit<Placed, 'tag' | 'more' | 'transposition' | 'ahead'> & Partial<Placed>) =>
+    placed.push({ tag: props.tagOf?.(p.step.key) ?? null, more: false, transposition: false, ahead: false, ...p }) - 1
+  const root = path[0]
+  add({ step: root, line: [root], parent: -1, x: 0, y: 0, cat: null, sign: 0, pass: false, label: 'Start of the line', extraDb: false, session: false })
   let cur = 0
-  for (let d = 1; d < path.length; d++) {
-    const next = placed.findIndex((p) => p.parent === cur && p.step.key === path[d].key)
-    if (next < 0) break
-    cur = next
-  }
-  for (let i = cur; i >= 0; i = placed[i].parent) onPath.add(i)
+  let rows = 1
 
-  const select = (i: number) => {
-    const chain: Step[] = []
-    for (let j = i; j >= 0; j = placed[j].parent) chain.unshift(placed[j].step)
-    props.onSelect(chain)
+  if (mode === 'complete') {
+    const seen = new Set([root.key])
+    let row = 0
+    const keysOf = (i: number) => placed[i].line.map((s) => s.key)
+    const place = (i: number, depth: number, r: number) => {
+      const cands = candidates(ctx, placed[i].step)
+      const known = new Set(cands.map((c) => c.step.key))
+      const extra = (props.extra?.(keysOf(i)) ?? []).filter((s) => !known.has(s.key))
+      const kids = [...cands.map((c) => c.step), ...extra]
+      kids.forEach((child, k) => {
+        if (placed.length > MAX_NODES) return
+        const y = k === 0 ? r : ++row
+        const transposition = seen.has(child.key)
+        seen.add(child.key)
+        const d = describe(placed[i].step, child, cands)
+        const j = add({ step: child, line: [...placed[i].line, child], parent: i, x: depth + 1, y, ...d, transposition })
+        if (!transposition) place(j, depth + 1, y)
+      })
+    }
+    place(0, 0, 0)
+    rows = row + 1
+    // The current move: follow the line through the placed nodes.
+    for (let d = 1; d < path.length; d++) {
+      const next = placed.findIndex((p) => p.parent === cur && p.step.key === path[d].key)
+      if (next < 0) break
+      cur = next
+    }
+  } else {
+    // The line: moves before the current one, the current one, and the moves ahead.
+    const line = [...path, ...props.forward]
+    let prev = 0
+    for (let i = 1; i < line.length; i++) {
+      const d = describe(line[i - 1], line[i])
+      prev = add({ step: line[i], line: line.slice(0, i + 1), parent: prev, x: i, y: 0, ...d, ahead: i >= path.length })
+    }
+    cur = path.length - 1
+    // Has the last node of the line more moves?
+    const last = placed[placed.length - 1]
+    last.more = candidates(ctx, last.step).length > 0
+
+    if (mode === 'proximity') {
+      // Alternatives to the current move (siblings), one column; options after it (children), next column.
+      const branch = (parentIdx: number, parentStep: Step, base: Step[], skipKey: string | null, x: number) => {
+        const cands = candidates(ctx, parentStep)
+        const known = new Set(cands.map((c) => c.step.key))
+        const extra = (props.extra?.(base.map((s) => s.key)) ?? []).filter((s) => !known.has(s.key))
+        let y = 1
+        for (const child of [...cands.map((c) => c.step), ...extra]) {
+          if (child.key === skipKey) continue
+          const d = describe(parentStep, child, cands)
+          const j = add({ step: child, line: [...base, child], parent: parentIdx, x, y: y++, ...d })
+          placed[j].more = candidates(ctx, child).length > 0
+        }
+        rows = Math.max(rows, y)
+      }
+      if (path.length > 1) branch(cur - 1, path[path.length - 2], path.slice(0, -1), path[path.length - 1].key, cur)
+      branch(cur, path[path.length - 1], path, props.forward[0]?.key ?? null, cur + 1)
+    }
   }
+
+  const select = (i: number) => props.onSelect(placed[i].line)
+  const onLine = new Set<number>()
+  if (mode === 'complete') for (let i = cur; i >= 0; i = placed[i].parent) onLine.add(i)
+  else placed.forEach((p, i) => p.y === 0 && onLine.add(i))
+
   const maxX = Math.max(...placed.map((p) => p.x))
+  const W = (maxX + 1) * DX + 24, H = rows * DY + 14
   const pos = (p: Placed) => [OX + p.x * DX, OY + p.y * DY]
 
   return (
-    <svg width={(maxX + 1) * DX + 20} height={(row + 1) * DY + 12} role="img" aria-label="Variation tree">
+    <svg width={W * props.zoom} height={H * props.zoom} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Tree of moves (${mode})`}>
       {placed.map((p, i) => {
         if (p.parent < 0) return null
         const [x1, y1] = pos(placed[p.parent]), [x2, y2] = pos(p)
-        const on = onPath.has(i)
-        return <path key={'e' + i} d={`M${x1} ${y1} L${x1 + DX / 2} ${y2} L${x2} ${y2}`} fill="none" stroke={on ? 'var(--fg)' : 'var(--tree-line)'} stroke-width={on ? 2.4 : 1.6} />
+        const strong = onLine.has(i) && !p.ahead && i <= cur
+        return (
+          <path
+            key={'e' + i}
+            d={`M${x1} ${y1} L${x1 + DX / 2} ${y2} L${x2} ${y2}`}
+            fill="none"
+            stroke={strong ? 'var(--fg)' : 'var(--tree-line)'}
+            stroke-width={strong ? 2.4 : 1.6}
+            stroke-dasharray={p.ahead ? '4 3' : undefined}
+          />
+        )
       })}
       {placed.map((p, i) => {
         const [x, y] = pos(p)
@@ -124,19 +163,13 @@ export function Tree(props: {
         const ring = p.session ? 'var(--markup)' : k?.color ?? 'var(--muted)'
         const fill = p.sign === 1 ? '#151515' : '#f5f5f2'
         const ink = p.sign === 1 ? '#fff' : '#111'
+        const dashed = p.transposition || p.session || (p.tag && !p.pass && p.parent >= 0)
         return (
-          <g key={'n' + i} class={`tree-node ${i === cur ? 'cur' : ''}`} onClick={() => select(i)} role="button" aria-label={p.label}>
+          <g key={'n' + i} class={`tree-node ${i === cur ? 'cur' : ''} ${p.ahead ? 'ahead' : ''}`} onClick={() => select(i)} role="button" aria-label={p.label}>
             <title>{p.label}{p.tag ? ` — start of ${p.tag}` : ''}</title>
-            {i === cur && <rect x={x - 14} y={y - 14} width="28" height="28" rx="4" fill="none" stroke="var(--accent)" stroke-width="2" />}
+            {i === cur && <rect x={x - 14} y={y - 14} width="28" height="28" rx="5" fill="none" stroke="var(--accent)" stroke-width="2.4" />}
             {p.parent < 0 ? (
-              first ? (
-                <>
-                  <rect x={x - 13} y={y - 9} width="26" height="18" rx="9" fill="var(--chip)" stroke="var(--muted)" />
-                  <text x={x} y={y + 3.5} font-size="9" text-anchor="middle" fill="var(--chip-fg)">⋯{first}</text>
-                </>
-              ) : (
-                <rect x={x - 8} y={y - 8} width="16" height="16" fill="var(--chip)" stroke="var(--muted)" />
-              )
+              <rect x={x - 8} y={y - 8} width="16" height="16" rx="3" fill="var(--chip)" stroke="var(--muted)" />
             ) : p.pass ? (
               <>
                 <rect x={x - 9} y={y - 9} width="18" height="18" rx="3" fill={fill} stroke={ring} stroke-width="3" />
@@ -144,8 +177,8 @@ export function Tree(props: {
               </>
             ) : (
               <>
-                <circle cx={x} cy={y} r="9" fill={fill} stroke={ring} stroke-width="3" stroke-dasharray={p.transposition || p.session || (p.tag && !p.pass && p.parent >= 0) ? '3 2' : undefined} />
-                <text x={x} y={y + 3.5} font-size="9" text-anchor="middle" fill={ink}>{p.transposition ? '⇄' : first + p.x}</text>
+                <circle cx={x} cy={y} r="9" fill={fill} stroke={ring} stroke-width="3" stroke-dasharray={dashed ? '3 2' : undefined} />
+                <text x={x} y={y + 3.5} font-size="9" text-anchor="middle" fill={ink}>{p.transposition ? '⇄' : p.line.length - 1}</text>
               </>
             )}
             {p.extraDb && <circle cx={x + 9} cy={y - 9} r="3.5" fill="var(--db-extra)" />}

@@ -349,7 +349,11 @@ The main object is **the position on the board**, not a joseki entry.
 ```
 
 - Position evaluation sits in the left panel under This joseki. "Save lines (n)" is in the top bar; "back to the database" and "erase" sit next to the "Free play" label.
-- The tree of moves shows 3 moves back and 4 ahead of the current move, at most 210 px tall with its own scroll.
+- The tree of moves has three modes and a zoom (− / +), both remembered:
+  - **Linear**: only the current line, the moves before and the moves ahead (moves you stepped back over, otherwise the main line; ahead is dashed).
+  - **Proximity** (default): the line plus the neighbours of the current move: its alternatives (below it) and the options after it (below the next column), without their own continuations.
+  - **Complete**: the whole tree from the start of the line.
+  It is at most 240 px tall with its own scroll, and the current move is kept in view.
 - On desktop the whole screen fits the window: each column scrolls on its own and the board follows the window height.
 - The library is a tree of families that folds open and closed, with search by name and a list of tags to filter by.
 - Every card (▾) folds; "Description" and "More details" fold inside "This joseki". Open/closed state is remembered.

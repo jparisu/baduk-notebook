@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks'
 import {
   ArrowLeftRight, ArrowRight, Link2, BookOpen, GitBranch, Grid3x3, MessageSquare, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Search, ChevronLeft, ChevronRight, Contrast, Flag, Menu, Pencil, Plus, RotateCcw, Save,
   Settings as SettingsIcon, SkipBack, SkipForward, SlidersHorizontal, Trash2, Upload, X,
@@ -174,7 +174,7 @@ export function App() {
   }, [graph, shown])
 
   // Remember the last position (SPEC: reopen where you left), also when the page closes.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (path.length) savePosition({ start, moves: movesOf(path) })
   }, [path, start])
   useEffect(() => {
@@ -188,7 +188,8 @@ export function App() {
   }, [])
 
   // The address bar always holds the link to what is on the board (explore mode).
-  useEffect(() => {
+  // Layout effect: updated in the same step as the screen, so a reload never reads an older link.
+  useLayoutEffect(() => {
     if (!ctx || !path.length || mode !== 'explore') return
     const url = linkFor(ctx, start, path, settings.display)
     try {
@@ -632,19 +633,43 @@ export function App() {
       </div>
     </div>
   )
-  // The tree shows a window around the current move: a few moves back, a few ahead.
-  const TREE_BACK = 3, TREE_AHEAD = 4
-  const treeFrom = Math.max(0, path.length - 1 - TREE_BACK)
+  // Tree of moves: mode (linear, proximity, complete) and zoom are remembered (SPEC §8.6).
+  const forwardLine = line.future.length ? line.future : mainLineEnd(ctx, path).slice(path.length)
+  const ZOOMS = [0.6, 0.75, 0.9, 1, 1.15, 1.35, 1.6]
+  const zoomIdx = Math.max(0, ZOOMS.findIndex((z) => z >= settings.treeZoom - 0.001))
+  const setZoom = (d: number) => setSettings({ ...settings, treeZoom: ZOOMS[Math.max(0, Math.min(ZOOMS.length - 1, zoomIdx + d))] })
+  const treeToolbar = (
+    <div class="tree-toolbar">
+      <div class="seg" role="group" aria-label="Tree mode">
+        {([['linear', 'Linear', 'Only this line: the moves before and ahead'], ['proximity', 'Proximity', 'This line plus the alternatives to the current move and the options after it'], ['complete', 'Complete', 'The whole tree from the start of the line']] as const).map(([m, name, help]) => (
+          <button key={m} class={settings.treeMode === m ? 'on' : ''} title={help} aria-pressed={settings.treeMode === m} onClick={() => setSettings({ ...settings, treeMode: m })}>{name}</button>
+        ))}
+      </div>
+      <div class="zoom" role="group" aria-label="Tree size">
+        <button class="icon" onClick={() => setZoom(-1)} disabled={zoomIdx === 0} aria-label="Smaller tree">−</button>
+        <span class="zoom-val">{Math.round(ZOOMS[zoomIdx] * 100)}%</span>
+        <button class="icon" onClick={() => setZoom(1)} disabled={zoomIdx === ZOOMS.length - 1} aria-label="Bigger tree">+</button>
+      </div>
+    </div>
+  )
   const treeView = (
     <Tree
       ctx={ctx}
-      root={path[treeFrom]}
-      path={path.slice(treeFrom)}
-      first={treeFrom}
-      maxDepth={path.length - 1 - treeFrom + TREE_AHEAD}
+      path={path}
+      forward={forwardLine}
+      mode={settings.treeMode}
+      zoom={ZOOMS[zoomIdx]}
       defaultDb={databases[0]?.id ?? ''}
-      onSelect={(chain) => go([...path.slice(0, treeFrom), ...chain])}
-      extra={(keys) => extraChildren([...path.slice(0, treeFrom).map((s) => s.key), ...keys])}
+      onSelect={(l) => {
+        // Selecting a move ahead on the same line keeps the rest of it for "forward".
+        const same = l.length > path.length && l.slice(0, path.length).every((s, i) => s.key === path[i].key)
+        if (same) {
+          const rest = [...path, ...forwardLine].slice(l.length)
+          setLine({ path: l, future: line.future.length ? rest : [] })
+          resetMarks()
+        } else go(l)
+      }}
+      extra={extraChildren}
       tagOf={tagOf}
     />
   )
@@ -711,6 +736,7 @@ export function App() {
         </Card>
       )}
       <Card id="tree" title="Tree of moves" icon={<GitBranch size={15} />}>
+        {treeToolbar}
         <div class="tree-box">{treeView}</div>
         {treeLegend}
       </Card>
@@ -799,7 +825,7 @@ export function App() {
           {tab === 'edit' && editPanel}
           {tab === 'next' && nextMoves}
           {tab === 'pos' && <PositionEval {...common} />}
-          {tab === 'tree' && <><div class="tree-box">{treeView}</div>{treeLegend}</>}
+          {tab === 'tree' && <>{treeToolbar}<div class="tree-box">{treeView}</div>{treeLegend}</>}
           {tab === 'about' && <JosekiInfo {...common} onOpenLabel={onOpenLabel} onCopyLink={(id) => copyLink(linkFor(ctx, { kind: 'label', id }, [startStep(ctx, { kind: 'label', id })], { corner: 'tr', mirror: false, swap: false }), entryName(id))} />}
         </div></div>
       </section>

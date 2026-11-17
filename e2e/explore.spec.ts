@@ -100,10 +100,29 @@ test('the library folds by family and filters by tag', async ({ page }) => {
   await expect(page.locator('.library .lib-name:not(.fam-only)')).toContainText(['3-3 invasion'])
 })
 
-test('the tree shows only a few moves around the current one', async ({ page }) => {
-  for (const p of ['Q16', 'R17', 'Q17', 'R16', 'R15', 'S15']) await clickPoint(page, p)
-  await expect(page.locator('.tree-box text', { hasText: '⋯3' })).toHaveCount(1)
-  expect(await page.locator('.tree-box .tree-node').count()).toBeLessThan(40)
+test('the tree has linear, proximity and complete modes, and a zoom', async ({ page }) => {
+  await page.goto('./?line=pd.qc.pc.qd.qe.re')
+  const nodes = () => page.locator('.tree-box .tree-node').count()
+  await page.locator('.tree-toolbar').getByRole('button', { name: 'Linear' }).click()
+  const linear = await nodes()
+  await page.locator('.tree-toolbar').getByRole('button', { name: 'Proximity' }).click()
+  const proximity = await nodes()
+  await page.locator('.tree-toolbar').getByRole('button', { name: 'Complete' }).click()
+  const complete = await nodes()
+  expect(linear).toBeLessThan(proximity)
+  expect(proximity).toBeLessThan(complete)
+  const w = Number(await page.locator('.tree-box svg').getAttribute('width'))
+  await page.getByRole('button', { name: 'Smaller tree' }).click()
+  expect(Number(await page.locator('.tree-box svg').getAttribute('width'))).toBeLessThan(w)
+  await page.reload()
+  await expect(page.locator('.tree-toolbar').getByRole('button', { name: 'Complete' })).toHaveAttribute('aria-pressed', 'true') // remembered
+})
+
+test('clicking a move ahead in the linear tree goes there', async ({ page }) => {
+  await page.goto('./?line=pd.qc')
+  await page.locator('.tree-toolbar').getByRole('button', { name: 'Linear' }).click()
+  await page.locator('.tree-box .tree-node.ahead').first().click()
+  await expect(page.locator('.status')).toContainText('Move 3')
 })
 
 test('fits on a 1366×768 screen without scrolling the page', async ({ page }) => {
