@@ -8,7 +8,7 @@ const ORDER = [
   'AB', 'AW', 'AE', 'PL',
   'B', 'W', 'XCAT', 'XSTY', 'XPUR', 'XCOND', 'XMW', 'XMN', 'XLINK', 'TE', 'BM', 'DO', 'IT',
   'XST', 'XEV', 'XPB', 'XPBS', 'XSEN', 'XSB', 'XSW', 'XEYE', 'XLIB', 'XRES', 'XTEN', 'XAJI', 'XPW', 'XPN',
-  'TR', 'SQ', 'CR', 'MA', 'LB', 'AR', 'LN', 'XWALL', 'XINF', 'XTB', 'XTW', 'XMOYO', 'XCUT', 'XWEAK', 'XLAD',
+  'TR', 'SQ', 'CR', 'MA', 'LB', 'AR', 'LN', 'XWALL', 'XINF', 'XTB', 'XTW', 'XMOYO', 'XCUT', 'XEYEM', 'XWEAK', 'XLAD',
 ]
 const rank = (k: string) => {
   const i = ORDER.indexOf(k)

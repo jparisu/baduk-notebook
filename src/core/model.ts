@@ -115,7 +115,7 @@ const EXTRA_ORDER = [
   'XALIAS', 'XSUM', 'XSRC', 'XERA', 'XST', 'XEV', 'XPBS', 'XSEN', 'XSB', 'XSW', 'XRESB', 'XRESW', 'XEYE', 'XLIB', 'XRES', 'XTEN', 'XAJI', 'XPN',
   'XSIZE', 'XSURR', 'XOLIB', 'XINSIDE', 'XARR', 'XVITAL', 'XKOT', 'XRULE', 'XREG',
   'XSTY', 'XPUR', 'XCOND', 'XLINK', 'TE', 'BM', 'DO', 'IT',
-  'TR', 'SQ', 'CR', 'MA', 'LB', 'AR', 'LN', 'XWALL', 'XINF', 'XTB', 'XTW', 'XMOYO', 'XCUT', 'XWEAK', 'XLAD',
+  'TR', 'SQ', 'CR', 'MA', 'LB', 'AR', 'LN', 'XWALL', 'XINF', 'XTB', 'XTW', 'XMOYO', 'XCUT', 'XEYEM', 'XWEAK', 'XLAD',
 ]
 const rank = (k: string) => {
   const i = EXTRA_ORDER.indexOf(k)

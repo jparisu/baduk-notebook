@@ -33,7 +33,7 @@ const ENUMS: Record<string, string[]> = {
   PL: ['B', 'W'],
 }
 const INTS = ['XSIZE', 'XOLIB', 'XINSIDE']
-const POINT_LISTS = ['AB', 'AW', 'AE', 'TR', 'SQ', 'CR', 'MA', 'XVITAL', 'XREG', 'XTB', 'XTW', 'XCUT', 'XWEAK', 'XLAD']
+const POINT_LISTS = ['AB', 'AW', 'AE', 'TR', 'SQ', 'CR', 'MA', 'XVITAL', 'XREG', 'XTB', 'XTW', 'XCUT', 'XEYEM', 'XWEAK', 'XLAD']
 const POINT_PAIRS = ['AR', 'LN', 'XWALL', 'XINF']
 const TEXT = ['XMW', 'XMN', 'XPW', 'XPN', 'XAJI', 'XTEN', 'XRES', 'XSUM', 'XRULE']
 const KNOWN = new Set([
@@ -41,7 +41,7 @@ const KNOWN = new Set([
   'FF', 'CA', 'GM', 'SZ', 'C', 'B', 'W', 'TE', 'BM', 'DO', 'IT', 'LB', 'XID', 'XNAME', 'XALIAS', 'XFAM', 'XDIFF', 'XTAG', 'XSRC',
   'XCOND', 'XLINK', 'XPB', 'XPBS', 'XEYE', 'XLIB', 'XMOYO', 'GN', 'PB', 'PW', 'KM', 'RU', 'DT', 'EV', 'RE', 'AP', 'ST', 'N', 'MN', 'HA',
 ])
-const REF_TYPES = new Set(['TR', 'SQ', 'CR', 'MA', 'LB', 'AR', 'LN', 'WALL', 'INF', 'TB', 'TW', 'CUT'])
+const REF_TYPES = new Set(['TR', 'SQ', 'CR', 'MA', 'LB', 'AR', 'LN', 'WALL', 'INF', 'TB', 'TW', 'CUT', 'EYE'])
 
 function checkRefs(text: string, push: (m: string) => void) {
   text = playerWords(text, false, 1) // {{Black}}, {{Player}}… are words, not board references

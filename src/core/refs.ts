@@ -2,7 +2,7 @@
 import { apply, parsePt, parseSgfPtList, ptName, type Pt, type Sign, type Transform } from './geometry'
 import type { Props } from './fields'
 
-export type MarkType = 'TR' | 'SQ' | 'CR' | 'MA' | 'LB' | 'AR' | 'LN' | 'WALL' | 'INF' | 'TB' | 'TW' | 'CUT'
+export type MarkType = 'TR' | 'SQ' | 'CR' | 'MA' | 'LB' | 'AR' | 'LN' | 'WALL' | 'INF' | 'TB' | 'TW' | 'CUT' | 'EYE'
 
 export interface Mark {
   type: MarkType
@@ -109,5 +109,6 @@ export function propMarks(p: Props): Mark[] {
     if (pts.length) out.push({ type, pts })
   }
   for (const v of p.XCUT ?? []) for (const pt of parseSgfPtList(v)) out.push({ type: 'CUT', pts: [pt] })
+  for (const v of p.XEYEM ?? []) for (const pt of parseSgfPtList(v)) out.push({ type: 'EYE', pts: [pt] })
   return out
 }

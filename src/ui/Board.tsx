@@ -71,6 +71,14 @@ function MarkShape({ m, board }: { m: Mark; board: SignMap }) {
           ))}
         </g>
       )
+    case 'EYE':
+      // An eye: almond outline with a pupil.
+      return (
+        <g class="mark-eye">
+          <path d={`M${p[0] - 0.34} ${p[1]}Q${p[0]} ${p[1] - 0.34} ${p[0] + 0.34} ${p[1]}Q${p[0]} ${p[1] + 0.34} ${p[0] - 0.34} ${p[1]}Z`} fill="none" stroke={col} stroke-width=".07" stroke-linejoin="round" />
+          <circle cx={p[0]} cy={p[1]} r=".11" fill={col} />
+        </g>
+      )
     case 'CUT':
       return (
         <g>

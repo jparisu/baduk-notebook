@@ -41,7 +41,7 @@ import { erase, loadPosition, loadSession, loadTrail, record, remove, savePositi
 const REF_PALETTE = ['#d81b60', '#1e88e5', '#00897b', '#f4511e', '#8e24aa', '#6d4c41', '#3949ab', '#c0ca33']
 
 type Mode = 'explore' | 'design' | 'find' | 'quiz'
-type Tool = 'move' | 'TR' | 'SQ' | 'CR' | 'MA' | 'LB' | 'XCUT' | 'XWALL' | 'XINF' | 'AR' | 'AB' | 'AW' | 'AE'
+type Tool = 'move' | 'TR' | 'SQ' | 'CR' | 'MA' | 'LB' | 'XCUT' | 'XEYEM' | 'XWALL' | 'XINF' | 'AR' | 'AB' | 'AW' | 'AE'
 /** Edit tools: id, button text, explanation (shown on hover and long-press). */
 const TOOLS: [Tool, string, string][] = [
   ['move', 'Play', 'Play moves (saved when you annotate them or use Save lines)'],
@@ -51,6 +51,7 @@ const TOOLS: [Tool, string, string][] = [
   ['MA', '✕ Cross', 'X mark on a point'],
   ['LB', 'A Letter', 'Letters A, B, C… on points'],
   ['XCUT', '✂ Cut', 'Cutting point'],
+  ['XEYEM', '◉ Eye', 'Eye: a point that is (or becomes) an eye'],
   ['XWALL', '▬ Wall', 'Wall: a barrier of stones that stops influence (click start and end)'],
   ['XINF', '⇢ Influence', 'Direction where a wall or group exerts influence (click start and end)'],
   ['AR', '→ Arrow', 'Plain arrow (click start and end)'],
@@ -61,7 +62,7 @@ const TOOLS: [Tool, string, string][] = [
 const PAIR_TOOLS = new Set<Tool>(['XWALL', 'XINF', 'AR'])
 const SETUP_TOOLS = new Set<Tool>(['AB', 'AW', 'AE'])
 const REF_TYPES: [string, string][] = [
-  ['TR', 'Triangle'], ['SQ', 'Square'], ['CR', 'Circle'], ['MA', 'Cross'], ['CUT', 'Cutting point'], ['WALL', 'Wall'], ['INF', 'Influence'], ['AR', 'Arrow'],
+  ['TR', 'Triangle'], ['SQ', 'Square'], ['CR', 'Circle'], ['MA', 'Cross'], ['CUT', 'Cutting point'], ['EYE', 'Eye'], ['WALL', 'Wall'], ['INF', 'Influence'], ['AR', 'Arrow'],
 ]
 
 export function App() {

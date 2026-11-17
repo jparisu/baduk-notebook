@@ -51,3 +51,13 @@ describe('player words in texts', () => {
     expect(playerWords('{{Player}} wins', true, 1)).toBe('White wins')
   })
 })
+
+import { parseText, propMarks } from './refs'
+import { IDENTITY as ID } from './geometry'
+describe('eye marks', () => {
+  it('are read from the position and from text references', () => {
+    expect(propMarks({ XEYEM: ['ra'] })).toEqual([{ type: 'EYE', pts: [[17, 0]] }])
+    const seg = parseText('Two {{EYE:S19,T18|eyes}}.', ID, 'x')
+    expect(seg.some((s) => 'ref' in s && s.ref.every((m) => m.type === 'EYE'))).toBe(true)
+  })
+})

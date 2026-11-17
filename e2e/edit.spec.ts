@@ -85,3 +85,11 @@ test('refuses an occupied point', async ({ page }) => {
   await clickPoint(page, 'Q16')
   await expect(page.locator('.toast')).toContainText('occupied')
 })
+
+test('the eye mark is drawn on the board', async ({ page }) => {
+  await clickPoint(page, 'Q16')
+  await page.getByRole('button', { name: 'Edit' }).click()
+  await page.getByRole('button', { name: /Eye: a point/ }).click()
+  await clickPoint(page, 'R17')
+  await expect(page.locator('svg.board .mark-eye')).toHaveCount(1)
+})

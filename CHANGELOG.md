@@ -16,6 +16,9 @@
 - Library: one tree of ids, tags matched with their deeper tags, **favourite tags** (common tags from `index.json` and your own stars).
 - **SGF**: load an SGF file into a database, download any position with what follows.
 
+### Board marks
+- New **Eye** mark (◉ Eye in the Draw tools, `{{EYE:S19|the eye}}` in texts), stored as `XEYEM` on the position.
+
 ### Library
 - Tags sit in one row of chips (selected ones and favourites): click to select or deselect; *All tags…* opens the full list. The results scroll in their own box, so the tags never disappear.
 
