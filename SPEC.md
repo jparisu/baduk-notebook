@@ -326,6 +326,7 @@ Clicking a result opens Explore at that position, **in the user's orientation** 
 The main object is **the position on the board**, not a joseki entry.
 - The board is always live. It reopens on the last position. Buttons go to the **Empty corner** or to the **first move of the current label**; the library opens any label at its first move.
 - After every move, the position is looked up in all active databases (any order, corner, orientation or colors). The screen shows what the position is (its labels), how to continue (good moves, then mistakes and traps) and why.
+- **Corner connectors** (`general`): "4-4 point", "3-4 point" and "3-3 point" name the lone stone. Joseki files start from that single stone and put their name on the approach or invasion move, so every joseki that starts from a stone appears as a next move of its connector, and the Empty corner leads to the connectors.
 - **Labels**: a joseki or shape is a label on positions (§4.2). The label shown is the one whose first node is closest in the current line, so "Empty corner" gives way to "4-4 point · 3-3 invasion". A next move that enters another label shows "→ name".
 - **Session lines**: every line played outside the databases is kept in the browser (like OGS), shown dashed in the tree. "Save lines…" lists them, with the stored part in grey, to save some or all into a database; "Erase variation" removes the current one. Annotating a free move in Edit mode saves the line up to it.
 
@@ -347,6 +348,10 @@ The main object is **the position on the board**, not a joseki entry.
 └──────────────────┴──────────────────────────────┴──────────────────────┘
 ```
 
+- Position evaluation sits in the left panel under This joseki. "Save lines (n)" is in the top bar; "back to the database" and "erase" sit next to the "Free play" label.
+- The tree of moves shows 3 moves back and 4 ahead of the current move, at most 210 px tall with its own scroll.
+- On desktop the whole screen fits the window: each column scrolls on its own and the board follows the window height.
+- The library is a tree of families that folds open and closed, with search by name and a list of tags to filter by.
 - Every card (▾) folds; "Description" and "More details" fold inside "This joseki". Open/closed state is remembered.
 - ⟨ and ⟩ hide the left and right panels; a thin rail brings them back and the board grows.
 - In Edit mode the right panel shows the edit card (category buttons, why, result, name) instead of "Position evaluation" and "Last move".

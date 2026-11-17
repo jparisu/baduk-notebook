@@ -703,3 +703,52 @@ button.link { background: none; border: none !important; padding: 0; color: var(
 .next-moves { border-top: 0; padding-top: 0; }
 .left .library { max-height: 380px; overflow: auto; }
 .preview-pill { font-size: 11px; font-weight: 800; letter-spacing: .04em; padding: 3px 10px; border-radius: 999px; background: #e8741c; color: #fff; white-space: nowrap; }
+
+/* ======================================================================
+   Fit on one screen (desktop), tree window, library tree, tags
+   ====================================================================== */
+:root { --tree-line: color-mix(in srgb, var(--muted) 70%, transparent); }
+.tree-box { max-height: 210px; overflow: auto; background: color-mix(in srgb, var(--chip) 60%, var(--panel-solid)); border: 1px solid var(--line); }
+
+/* library tree */
+.library { display: flex; flex-direction: column; gap: 6px; }
+.lib-filters { display: flex; gap: 6px; }
+.lib-filters .filter { flex: 1; min-width: 0; }
+.tags-toggle { font-size: 12px; padding: 4px 10px; }
+.tag-chips { display: flex; flex-wrap: wrap; gap: 4px; max-height: 96px; overflow: auto; }
+.tag-chips .chip { cursor: pointer; }
+.tag-chips .chip.on { background: var(--accent); color: var(--accent-fg); }
+.lib-tree, .lib-tree ul { list-style: none; margin: 0; padding: 0; }
+.lib-tree { max-height: 32vh; overflow: auto; }
+.lib-row { display: flex; align-items: center; gap: 2px; border-radius: var(--radius-sm); }
+.lib-row:hover { background: var(--chip); }
+.lib-row.cur { background: var(--accent); }
+.lib-row.cur .lib-name, .lib-row.cur .k, .lib-row.cur .twisty { color: var(--accent-fg); }
+.twisty { background: transparent; border: 0 !important; padding: 2px; color: var(--muted); border-radius: 4px; }
+.twisty svg { transition: transform .15s; }
+.twisty.open svg { transform: rotate(90deg); }
+.twisty-space { width: 18px; flex: none; }
+.lib-name { flex: 1; min-width: 0; text-align: left; justify-content: flex-start; background: transparent; border: 0 !important; color: var(--fg); padding: 5px 4px; font-size: 13px; font-weight: 500; }
+.lib-name.fam-only { font-weight: 700; color: var(--muted); font-size: 12px; text-transform: none; }
+.lib-row .k { padding-right: 8px; }
+
+/* top bar and title-row actions */
+.save-lines { background: #e8741c; color: #fff; }
+button.link.small { font-size: 12px; display: inline-flex; align-items: center; gap: 3px; }
+
+/* one screen on desktop: columns scroll on their own, the board fits the height */
+@media (min-width: 1101px) {
+  .layout:not(.phone) { height: 100vh; grid-template-rows: auto minmax(0, 1fr); padding-bottom: 12px; overflow: hidden; }
+  .layout:not(.phone) > .side, .layout:not(.phone) > .center, .layout:not(.phone) > .pane { min-height: 0; max-height: 100%; overflow: auto; }
+  .layout:not(.phone) > .side { padding-right: 2px; scrollbar-width: thin; }
+  .layout:not(.phone) .board { max-width: min(640px, calc(100vh - 250px)); }
+  .layout.hide-left:not(.phone) .board, .layout.hide-right:not(.phone) .board { max-width: min(720px, calc(100vh - 250px)); }
+  .layout.hide-left.hide-right:not(.phone) .board { max-width: min(860px, calc(100vh - 250px)); }
+  .center { gap: 8px; padding: 10px 14px; }
+  .card-head { padding: 9px 12px; }
+  .card-body { padding: 0 12px 12px; }
+  .why-text { font-size: 16px; margin: 6px 0 8px; }
+  .title-row h2 { font-size: 20px; }
+}
+/* Cards keep their height; the column scrolls instead of squeezing them. */
+.side > * { flex-shrink: 0; }

@@ -27,6 +27,8 @@ export async function fresh(page: Page) {
 /** Opens a library entry by (part of) its name. On a phone the library sits in the drawer. */
 export async function openEntry(page: Page, name: string) {
   const menu = page.getByRole('button', { name: 'Open library and menu' })
-  if (await menu.isVisible()) await menu.click()
-  await page.locator('.library .item', { hasText: name }).first().click()
+  if ((await menu.isVisible()) && !(await page.locator('.drawer').count())) await menu.click()
+  // Search narrows the family tree and opens it, then the entry is clicked.
+  await page.locator('.library input.search').first().fill(name)
+  await page.locator('.library .lib-name:not(.fam-only)', { hasText: name }).first().click()
 }

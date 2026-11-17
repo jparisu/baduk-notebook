@@ -28,7 +28,7 @@ describe('find position', () => {
   it('returns an exact match and the display options that show it like the input', () => {
     const ctx: Ctx = { graph: g, active, order: ['general'], U: userTransform({ corner: 'tr', mirror: false, swap: false }) }
     let p = [rootStep(ctx, '4-4-3-3-invasion')]
-    for (let i = 0; i < 2; i++) p = [...p, candidates(ctx, p[p.length - 1])[0].step]
+    for (let i = 0; i < 1; i++) p = [...p, candidates(ctx, p[p.length - 1])[0].step] // the label starts after W R17
     // Same position (B Q16, W R17, B Q17) placed in the bottom-right corner.
     const m = empty()
     put(m, 1, 'Q4', 'Q3')
@@ -36,11 +36,11 @@ describe('find position', () => {
     const res = search(g, active, m)
     const exact = res.find((r) => r.kind === 'exact')!
     expect(exact.entryId).toBe('4-4-3-3-invasion')
-    expect(exact.keys.length).toBe(3)
-    const view = userViewFor(exact.toCanon, p[2].D)
+    expect(exact.keys.length).toBe(2)
+    const view = userViewFor(exact.toCanon, p[1].D)
     // Showing the stored line with that view puts the stones where the user placed them.
     const U = userTransform(view)
-    const shown = apply(compose(U, p[2].D), apply(exact.toCanon, parsePt('Q4')!))
+    const shown = apply(compose(U, p[1].D), apply(exact.toCanon, parsePt('Q4')!))
     expect(shown).toEqual(parsePt('Q4'))
   })
 

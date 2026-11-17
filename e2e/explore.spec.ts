@@ -7,19 +7,21 @@ test('starts at the empty corner and recognizes the joseki as you play', async (
   await expect(page.locator('.status')).toContainText('Empty corner')
   await expect(page.locator('.next-moves .mv')).toHaveCount(5)
   await clickPoint(page, 'Q16')
+  await expect(page.locator('.status')).toContainText('4-4 point')
+  await expect(page.locator('.next-moves .mv').first()).toBeVisible() // the 4-4 connector opens its joseki
+  await clickPoint(page, 'R17')
   await expect(page.locator('.status')).toContainText('3-3 invasion')
   await expect(page.locator('.joseki-info')).toContainText('4-4 point · 3-3 invasion')
-  await clickPoint(page, 'R17')
   await expect(page.locator('.why-card')).toContainText('Takes the corner')
   await expect(page.locator('.next-moves .mv').first()).toContainText('Q17')
 })
 
 test('opens a joseki from the library and navigates with the keyboard', async ({ page }) => {
-  await page.locator('.item', { hasText: '3-3 invasion' }).first().click()
-  for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowRight')
-  await expect(page.locator('.status')).toContainText('Move 4: Black R15')
+  await openEntry(page, '3-3 invasion')
+  for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowRight')
+  await expect(page.locator('.status')).toContainText('Move 3: Black R15')
   await page.keyboard.press('End')
-  await expect(page.locator('.status')).toContainText('Move 12')
+  await expect(page.locator('.status')).toContainText('Move 11')
 })
 
 test('reopens the last position after a reload', async ({ page }) => {
@@ -31,8 +33,8 @@ test('reopens the last position after a reload', async ({ page }) => {
 })
 
 test('hovering a reference draws its marks on the board', async ({ page }) => {
-  await page.locator('.item', { hasText: '3-3 invasion' }).first().click()
-  for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowRight')
+  await openEntry(page, '3-3 invasion')
+  for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowRight')
   const before = await page.locator('svg.board polygon').count()
   await page.locator('.why-card .ref').first().hover()
   await expect.poll(() => page.locator('svg.board polygon').count()).toBeGreaterThan(before)
@@ -64,7 +66,7 @@ test('theme and dark mode can be chosen in settings', async ({ page }) => {
 
 test('shapes: Black and White moves are shown separately', async ({ page }) => {
   await page.locator('.library .seg').getByText('Shapes').click()
-  await page.locator('.item', { hasText: 'Straight three' }).click()
+  await openEntry(page, 'Straight three')
   await expect(page.locator('.side-switch')).toBeVisible()
   await expect(page.locator('.next-moves .mv')).toHaveCount(2) // Black: T15 correct, T14 wrong
   await page.locator('.side-tabs').getByText('White plays').click()
@@ -87,4 +89,25 @@ test('a good move that starts another variation is drawn dashed', async ({ page 
   await expect(page.locator('.next-moves .mv .mk.dash')).toHaveCount(1)
   await expect(page.locator('.next-moves .mv', { hasText: 'S14' })).toContainText('→ double hane')
   await expect(page.locator('svg.board circle[stroke-dasharray]')).toHaveCount(1)
+})
+
+test('the library folds by family and filters by tag', async ({ page }) => {
+  await expect(page.locator('.library .lib-name', { hasText: 'Low approach' })).toHaveCount(0) // families start folded
+  await page.getByRole('button', { name: 'Open 3-4 point' }).click()
+  await expect(page.locator('.library .lib-name', { hasText: 'Low approach' })).toHaveCount(1)
+  await page.getByRole('button', { name: /^Tags/ }).click()
+  await page.locator('.tag-chips .chip', { hasText: 'invasion' }).click()
+  await expect(page.locator('.library .lib-name:not(.fam-only)')).toContainText(['3-3 invasion'])
+})
+
+test('the tree shows only a few moves around the current one', async ({ page }) => {
+  for (const p of ['Q16', 'R17', 'Q17', 'R16', 'R15', 'S15']) await clickPoint(page, p)
+  await expect(page.locator('.tree-box text', { hasText: '⋯3' })).toHaveCount(1)
+  expect(await page.locator('.tree-box .tree-node').count()).toBeLessThan(40)
+})
+
+test('fits on a 1366×768 screen without scrolling the page', async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 })
+  await page.waitForTimeout(200)
+  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(768)
 })

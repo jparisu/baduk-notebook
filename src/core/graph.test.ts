@@ -23,7 +23,7 @@ describe('position graph', () => {
     const root = g.nodes.get(key)!
     expect(root.contribs.map((c) => c.db).sort()).toEqual(['general', 'jparisu'])
     // follow the jparisu line six moves; every move must join an edge that general also has
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 5; i++) { // the label starts at the invasion (move 1)
       const e = visibleEdges(g, key, new Set(['general', 'jparisu'])).find((e) => e.contribs.some((c) => c.db === 'jparisu'))!
       expect(e.contribs.some((c) => c.db === 'general')).toBe(true)
       key = e.child

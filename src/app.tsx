@@ -586,21 +586,22 @@ export function App() {
       </div>
     </div>
   )
-  const sessionBox = (offBook || unsaved.length > 0) && (
-    <div class={`session-box ${offBook ? 'off' : ''}`}>
-      {offBook ? (
-        <p class="text"><b>Not in your databases.</b> Keep playing: your moves are kept in this session.</p>
-      ) : (
-        <p class="text">{unsaved.length} line{unsaved.length === 1 ? '' : 's'} of yours not saved yet.</p>
-      )}
-      <div class="grp">
-        {offBook && firstFree > 0 && <button onClick={() => go(path.slice(0, firstFree))}>Back to the database</button>}
-        {unsaved.length > 0 && <button class="on" onClick={() => setDialog('save-lines')}><Save size={15} /> Save lines…</button>}
-        {step.free && !step.edge && <button class="ghost danger-text" onClick={eraseVariation} title="Erase this move and what follows from the session"><Trash2 size={15} /> Erase variation</button>}
-      </div>
-    </div>
+  // The tree shows a window around the current move: a few moves back, a few ahead.
+  const TREE_BACK = 3, TREE_AHEAD = 4
+  const treeFrom = Math.max(0, path.length - 1 - TREE_BACK)
+  const treeView = (
+    <Tree
+      ctx={ctx}
+      root={path[treeFrom]}
+      path={path.slice(treeFrom)}
+      first={treeFrom}
+      maxDepth={path.length - 1 - treeFrom + TREE_AHEAD}
+      defaultDb={databases[0]?.id ?? ''}
+      onSelect={(chain) => go([...path.slice(0, treeFrom), ...chain])}
+      extra={(keys) => extraChildren([...path.slice(0, treeFrom).map((s) => s.key), ...keys])}
+      tagOf={tagOf}
+    />
   )
-  const treeView = <Tree ctx={ctx} root={path[0]} path={path} defaultDb={databases[0]?.id ?? ''} onSelect={go} extra={extraChildren} tagOf={tagOf} />
   const treeLegend = (
     <div class="legend">
       <span><MoveMark cat="main" />joseki</span>
@@ -648,6 +649,7 @@ export function App() {
       <Card id="joseki" title={isShape ? 'This shape' : 'This joseki'} icon={<BookOpen size={15} />}>
         <JosekiInfo {...common} onOpenLabel={onOpenLabel} />
       </Card>
+      {!edit && <Card id="eval" title="Position evaluation" icon={<Grid3x3 size={15} />}><PositionEval {...common} /></Card>}
     </aside>
   )
   const rightPanel = (
@@ -655,16 +657,12 @@ export function App() {
       <div class="panel-head end">
         <button class="hide-btn" onClick={() => setSettings({ ...settings, hideRight: true })} aria-label="Hide right panel"><PanelRightClose size={16} /></button>
       </div>
-      {sessionBox}
       {edit ? (
         <Card id="edit" title={`Edit · into ${target}`} icon={<Pencil size={15} />} class="edit-card">{editPanel}</Card>
       ) : (
-        <>
-          <Card id="eval" title="Position evaluation" icon={<Grid3x3 size={15} />}><PositionEval {...common} /></Card>
-          <Card id="last" title="Last move" icon={<MessageSquare size={15} />} class="why" style={{ '--cat': lastCat }}>
-            <LastMove {...common} onGoTo={(n) => go(path.slice(0, n + 1))} />
-          </Card>
-        </>
+        <Card id="last" title="Last move" icon={<MessageSquare size={15} />} class="why" style={{ '--cat': lastCat }}>
+          <LastMove {...common} onGoTo={(n) => go(path.slice(0, n + 1))} />
+        </Card>
       )}
       <Card id="tree" title="Tree of moves" icon={<GitBranch size={15} />}>
         <div class="tree-box">{treeView}</div>
@@ -682,6 +680,10 @@ export function App() {
         <h2>{label ? entryName(label) : offBook ? 'Your own line' : 'Known position'}</h2>
       )}
       {offBook && <span class="offbook-pill">Free play</span>}
+      {offBook && firstFree > 0 && <button class="link small" onClick={() => go(path.slice(0, firstFree))}>back to the database</button>}
+      {step.free && !step.edge && (
+        <button class="link small danger-text" onClick={eraseVariation} title="Erase this move and what follows from the session"><Trash2 size={13} /> erase</button>
+      )}
       <span class="turn">
         {moveNo ? `Move ${moveNo}: ${lastName}` : 'Start'} · <span class={`stone-ico ${(toPlay || nextSide) === 1 ? 'b' : 'w'}`} aria-hidden />{' '}
         <b>{toPlay === 1 ? 'Black' : toPlay === -1 ? 'White' : bothSides ? (side === 1 ? 'Black' : 'White') : 'Either side'} to play</b>
@@ -739,7 +741,6 @@ export function App() {
         {viewOpen && viewOptions}
       </main>
       <section class="phone-panels">
-        {sessionBox}
         <div class="seg phone-tabs" role="tablist">
           {phoneTabs.map(([t, name]) => (
             <button key={t} role="tab" aria-selected={tab === t} class={tab === t ? 'on' : ''} onClick={() => setPhoneTab(t)}>{name}</button>
@@ -797,6 +798,11 @@ export function App() {
           </div>
         )}
         <span class="spacer" />
+        {mode === 'explore' && unsaved.length > 0 && (
+          <button class={phone ? 'icon ghost' : 'save-lines'} onClick={() => setDialog('save-lines')} title="Lines you played that are not in your databases yet" aria-label={`Save lines (${unsaved.length})`}>
+            <Save size={phone ? 20 : 15} />{!phone && ` Save lines (${unsaved.length})`}
+          </button>
+        )}
         {!phone && mode === 'explore' && editControls}
         {phone && nChanges > 0 && <button class="icon ghost changes" onClick={() => setDialog('export')} aria-label={`Export ${nChanges} changes`}><Upload size={20} /></button>}
         <button class={phone ? 'icon ghost' : ''} onClick={() => setDialog('settings')} aria-label="Settings"><SettingsIcon size={phone ? 20 : 16} />{!phone && ' Settings'}</button>

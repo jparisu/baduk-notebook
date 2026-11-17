@@ -35,7 +35,8 @@ describe('labels', () => {
     const line = [s]
     s = playFree(ctx, s, 1, parsePt('Q16')!)
     line.push(s)
-    expect(primaryLabel(ctx, line)).toBe('4-4-3-3-invasion')
+    // the lone 4-4 stone belongs to the empty corner tree; the 3-3 invasion label starts at the invasion
+    expect(['empty-corner', 'root']).toContain(primaryLabel(ctx, line))
     s = playFree(ctx, s, -1, parsePt('R17')!)
     line.push(s)
     expect(['4-4-3-3-invasion', 'inv']).toContain(primaryLabel(ctx, line))

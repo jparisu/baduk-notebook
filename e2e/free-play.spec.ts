@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { clickPoint, fresh } from './helpers'
+import { clickPoint, fresh, openEntry } from './helpers'
 
 test.beforeEach(async ({ page }) => fresh(page))
 
@@ -11,7 +11,7 @@ test('keeps every line played in the session and saves the chosen ones', async (
   await page.keyboard.press('ArrowLeft')
   await clickPoint(page, 'P17') // a second variation
   await expect(page.locator('.tree-node')).toContainText([]) // tree renders
-  await page.getByRole('button', { name: 'Save lines…' }).click()
+  await page.getByRole('button', { name: /Save lines/ }).click()
   await expect(page.locator('.line-list li')).toHaveCount(2)
   await page.getByRole('button', { name: /Save 1 line/ }).click()
   await expect(page.locator('.toast')).toContainText('Saved 1 line to jparisu')
@@ -28,7 +28,7 @@ test('back and forward replay your own moves; erase removes a variation', async 
   await page.keyboard.press('ArrowRight')
   await page.keyboard.press('ArrowRight')
   await expect(page.locator('.status')).toContainText('Move 3: Black O17')
-  await page.getByRole('button', { name: 'Erase variation' }).click()
+  await page.getByRole('button', { name: 'erase' }).click()
   await expect(page.locator('.status')).toContainText('Move 2: White R13')
 })
 
@@ -43,8 +43,8 @@ test('a transposition brings the known moves back', async ({ page }) => {
 })
 
 test('clicking a reference keeps its marks; clicking again hides them', async ({ page }) => {
-  await page.locator('.item', { hasText: '3-3 invasion' }).first().click()
-  for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowRight')
+  await openEntry(page, '3-3 invasion')
+  for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowRight')
   const ref = page.locator('.why-card .ref').first()
   const marks = () => page.locator('svg.board polygon').count()
   const base = await marks()

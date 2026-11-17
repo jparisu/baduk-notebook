@@ -1,5 +1,5 @@
 (;FF[4]CA[UTF-8]GM[1]SZ[19]
-XID[empty-corner]XTYPE[joseki]XNAME[Empty corner]XFAM[Start]XDIFF[25k]XSTART[empty]XTAG[opening][first move]
+XID[empty-corner]XTYPE[joseki]XNAME[Empty corner]XFAM[Empty corner]XDIFF[25k]XSTART[empty]XTAG[opening][first move]
 XSUM[Choose where to play first in an empty corner. Each first move leads into the joseki that start from it. Example notes, to verify.]
 PL[B]
 XST[start]XPW[An empty corner. The first stone decides the balance between corner territory and influence toward the sides.]

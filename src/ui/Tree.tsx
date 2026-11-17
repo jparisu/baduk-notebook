@@ -16,6 +16,8 @@ interface Placed {
   transposition: boolean
   session: boolean
   tag: string | null
+  /** Has continuations beyond the visible window. */
+  more: boolean
 }
 
 const DX = 34, DY = 30, OX = 16, OY = 24, MAX_NODES = 800
@@ -30,9 +32,15 @@ export function Tree(props: {
   extra?: (keys: string[]) => Step[]
   /** Short name of the label that starts at a position, if any. */
   tagOf?: (key: string) => string | null
+  /** Move number of the root (moves before it are not drawn). */
+  first?: number
+  /** How many moves after the root are drawn. */
+  maxDepth?: number
 }) {
+  const first = props.first ?? 0
+  const maxDepth = props.maxDepth ?? Infinity
   const { ctx, root, path } = props
-  const placed: Placed[] = [{ step: root, parent: -1, x: 0, y: 0, cat: null, sign: 0, pass: false, label: 'Start', extraDb: false, transposition: false, session: false, tag: props.tagOf?.(root.key) ?? null }]
+  const placed: Placed[] = [{ step: root, parent: -1, x: 0, y: 0, cat: null, sign: 0, pass: false, label: first ? `Move ${first} (earlier moves are hidden)` : 'Start', extraDb: false, transposition: false, session: false, tag: props.tagOf?.(root.key) ?? null, more: false }]
   const keysOf = (i: number) => {
     const k: string[] = []
     for (let j = i; j >= 0; j = placed[j].parent) k.unshift(placed[j].step.key)
@@ -45,6 +53,10 @@ export function Tree(props: {
     const known = new Set(cands.map((c) => c.step.key))
     const extra = (props.extra?.(keysOf(i)) ?? []).filter((s) => !known.has(s.key))
     const parentD = placed[i].step.D
+    if (depth >= maxDepth) {
+      placed[i].more = cands.length + extra.length > 0
+      return
+    }
     const items = [
       ...cands.map((c) => ({ step: c.step, cat: c.cat, sign: c.sign, pt: c.pt, dbs: c.dbs, session: false })),
       ...extra.map((s) => {
@@ -73,6 +85,7 @@ export function Tree(props: {
         transposition,
         session: c.session,
         tag: props.tagOf?.(c.step.key) ?? null,
+        more: false,
       })
       if (!transposition) place(placed.length - 1, depth + 1, y)
     })
@@ -103,20 +116,27 @@ export function Tree(props: {
         if (p.parent < 0) return null
         const [x1, y1] = pos(placed[p.parent]), [x2, y2] = pos(p)
         const on = onPath.has(i)
-        return <path key={'e' + i} d={`M${x1} ${y1} L${x1 + DX / 2} ${y2} L${x2} ${y2}`} fill="none" stroke={on ? 'var(--fg)' : 'var(--line)'} stroke-width={on ? 2.2 : 1.4} />
+        return <path key={'e' + i} d={`M${x1} ${y1} L${x1 + DX / 2} ${y2} L${x2} ${y2}`} fill="none" stroke={on ? 'var(--fg)' : 'var(--tree-line)'} stroke-width={on ? 2.4 : 1.6} />
       })}
       {placed.map((p, i) => {
         const [x, y] = pos(p)
         const k = p.cat ? CATEGORIES[p.cat] : null
         const ring = p.session ? 'var(--markup)' : k?.color ?? 'var(--muted)'
-        const fill = p.sign === 1 ? 'var(--stone-black)' : 'var(--stone-white)'
+        const fill = p.sign === 1 ? '#151515' : '#f5f5f2'
         const ink = p.sign === 1 ? '#fff' : '#111'
         return (
           <g key={'n' + i} class={`tree-node ${i === cur ? 'cur' : ''}`} onClick={() => select(i)} role="button" aria-label={p.label}>
             <title>{p.label}{p.tag ? ` — start of ${p.tag}` : ''}</title>
             {i === cur && <rect x={x - 14} y={y - 14} width="28" height="28" rx="4" fill="none" stroke="var(--accent)" stroke-width="2" />}
             {p.parent < 0 ? (
-              <rect x={x - 8} y={y - 8} width="16" height="16" fill="var(--chip)" stroke="var(--muted)" />
+              first ? (
+                <>
+                  <rect x={x - 13} y={y - 9} width="26" height="18" rx="9" fill="var(--chip)" stroke="var(--muted)" />
+                  <text x={x} y={y + 3.5} font-size="9" text-anchor="middle" fill="var(--chip-fg)">⋯{first}</text>
+                </>
+              ) : (
+                <rect x={x - 8} y={y - 8} width="16" height="16" fill="var(--chip)" stroke="var(--muted)" />
+              )
             ) : p.pass ? (
               <>
                 <rect x={x - 9} y={y - 9} width="18" height="18" rx="3" fill={fill} stroke={ring} stroke-width="3" />
@@ -125,10 +145,11 @@ export function Tree(props: {
             ) : (
               <>
                 <circle cx={x} cy={y} r="9" fill={fill} stroke={ring} stroke-width="3" stroke-dasharray={p.transposition || p.session || (p.tag && !p.pass && p.parent >= 0) ? '3 2' : undefined} />
-                <text x={x} y={y + 3.5} font-size="9" text-anchor="middle" fill={ink}>{p.transposition ? '⇄' : p.x}</text>
+                <text x={x} y={y + 3.5} font-size="9" text-anchor="middle" fill={ink}>{p.transposition ? '⇄' : first + p.x}</text>
               </>
             )}
             {p.extraDb && <circle cx={x + 9} cy={y - 9} r="3.5" fill="var(--db-extra)" />}
+            {p.more && <text x={x + 13} y={y + 4} font-size="12" fill="var(--muted)" aria-hidden>›</text>}
             {p.tag && (
               <g class="tree-tag">
                 <path d={`M${x - 3} ${y - 11} L${x - 3} ${y - 21}`} stroke="var(--accent)" stroke-width="1.5" />

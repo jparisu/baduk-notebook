@@ -172,7 +172,7 @@ export function Board({ window: win, board, last, numbers, markers, marks, coord
           return (
             <g key={`m${i}`} class="marker" onClick={m.onClick} role="button" aria-label={m.title}>
               <title>{m.title}</title>
-              <circle cx={x} cy={y} r={same.length > 1 ? 0.24 : 0.3} fill={m.sign === 1 ? 'var(--stone-black)' : 'var(--stone-white)'} stroke={k.color} stroke-width={m.highlight ? 0.14 : 0.1} />
+              <circle cx={x} cy={y} r={same.length > 1 ? 0.24 : 0.3} fill={m.sign === 1 ? '#151515' : '#f5f5f2'} stroke={k.color} stroke-width={m.highlight ? 0.14 : 0.1} />
             </g>
           )
         return (

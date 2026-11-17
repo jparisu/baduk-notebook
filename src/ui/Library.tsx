@@ -1,11 +1,54 @@
-/** Library of entries: Joseki / Shapes tabs, search, difficulty filter, grouped by family or location. */
-import { useState } from 'preact/hooks'
+/**
+ * Library (SPEC §8.1): joseki and shapes as a tree of families that folds open and closed,
+ * with search by name, a list of tags to filter by, and a difficulty filter.
+ */
+import { useMemo, useState } from 'preact/hooks'
+import type { ComponentChildren } from 'preact'
+import { ChevronRight, X } from 'lucide-preact'
 import type { Entry } from '../core/graph'
 import { entryFields, rootStep, type Ctx } from '../view'
 
 const RANK = (r: string) => {
   const m = r.match(/^(\d+)([kd])$/)
   return m ? (m[2] === 'k' ? -Number(m[1]) : Number(m[1]) - 1) : 0
+}
+
+interface Item {
+  e: Entry
+  name: string
+  diff: string
+  fam: string[]
+  tags: string[]
+}
+
+interface Node {
+  key: string
+  name: string
+  item: Item | null // the entry that is this family itself (e.g. "4-4 point")
+  children: Node[]
+  count: number
+}
+
+function buildTree(items: Item[]): Node[] {
+  const root: Node = { key: '', name: '', item: null, children: [], count: 0 }
+  for (const it of items) {
+    let n = root
+    it.fam.forEach((seg, i) => {
+      const key = it.fam.slice(0, i + 1).join('/')
+      let c = n.children.find((x) => x.key === key)
+      if (!c) n.children.push((c = { key, name: seg, item: null, children: [], count: 0 }))
+      c.count++
+      n = c
+    })
+    if (n.item) n.children.push({ key: n.key + '#' + it.e.id, name: it.name, item: it, children: [], count: 1 })
+    else n.item = it
+  }
+  const sort = (ns: Node[]) => {
+    ns.sort((a, b) => a.name.localeCompare(b.name))
+    ns.forEach((n) => sort(n.children))
+  }
+  sort(root.children)
+  return root.children
 }
 
 export function Library(props: {
@@ -15,51 +58,116 @@ export function Library(props: {
   lib: 'joseki' | 'shape'
   setLib: (l: 'joseki' | 'shape') => void
   onOpen: (id: string) => void
-  extra?: preact.ComponentChildren
+  extra?: ComponentChildren
 }) {
   const { ctx } = props
   const [query, setQuery] = useState('')
   const [maxRank, setMaxRank] = useState('any')
-  const items = props.entries
-    .filter((e) => e.type === props.lib)
-    .map((e) => {
-      const f = entryFields(ctx, e.id, rootStep(ctx, e.id))
-      return { e, f, name: f.one('XNAME')?.value ?? e.id, diff: f.one('XDIFF')?.value ?? '' }
-    })
-    .filter(({ name, f }) => !query || (name + ' ' + f.list('XTAG').join(' ')).toLowerCase().includes(query.toLowerCase()))
-    .filter(({ diff }) => maxRank === 'any' || !diff || RANK(diff) <= RANK(maxRank))
-    .sort((a, b) => a.name.localeCompare(b.name))
-  const groups = new Map<string, typeof items>()
-  for (const it of items) {
-    const g = props.lib === 'joseki' ? (it.f.one('XFAM')?.value.split('/')[0] ?? 'Other') : (it.f.one('XLOC')?.value ?? 'Other')
-    groups.set(g, [...(groups.get(g) ?? []), it])
+  const [tags, setTags] = useState<string[]>([])
+  const [showTags, setShowTags] = useState(false)
+  const [open, setOpen] = useState<Set<string>>(new Set())
+
+  const all = useMemo<Item[]>(
+    () =>
+      props.entries
+        .filter((e) => e.type === props.lib)
+        .map((e) => {
+          const f = entryFields(ctx, e.id, rootStep(ctx, e.id))
+          const name = f.one('XNAME')?.value ?? e.id
+          const famRaw = f.one('XFAM')?.value ?? (props.lib === 'shape' ? f.one('XLOC')?.value : null)
+          const fam = famRaw ? famRaw.split('/').map((s) => s.trim()).filter(Boolean) : ['Other']
+          if (props.lib === 'shape') fam.push(name)
+          return { e, name, diff: f.one('XDIFF')?.value ?? '', fam, tags: f.list('XTAG') }
+        }),
+    [props.entries, props.lib, ctx.graph, ctx.active],
+  )
+  const allTags = useMemo(() => [...new Set(all.flatMap((i) => i.tags))].sort(), [all])
+  const q = query.trim().toLowerCase()
+  const filtering = !!q || tags.length > 0 || maxRank !== 'any'
+  const items = all
+    .filter((i) => !q || i.name.toLowerCase().includes(q) || i.fam.join(' ').toLowerCase().includes(q))
+    .filter((i) => tags.every((t) => i.tags.includes(t)))
+    .filter((i) => maxRank === 'any' || !i.diff || RANK(i.diff) <= RANK(maxRank))
+  const tree = buildTree(items)
+
+  // Families around the current entry start open.
+  const currentFam = all.find((i) => i.e.id === props.current)?.fam ?? []
+  const isOpen = (key: string) =>
+    filtering || open.has(key) || (!open.has('!' + key) && currentFam.some((_, i) => currentFam.slice(0, i + 1).join('/') === key))
+  const toggle = (key: string) => {
+    const n = new Set(open)
+    if (isOpen(key)) {
+      n.delete(key)
+      n.add('!' + key)
+    } else {
+      n.add(key)
+      n.delete('!' + key)
+    }
+    setOpen(n)
   }
+
+  const render = (n: Node, depth: number): ComponentChildren => {
+    const hasKids = n.children.length > 0
+    const opened = hasKids && isOpen(n.key)
+    const cur = n.item && n.item.e.id === props.current
+    return (
+      <li key={n.key} class="lib-node">
+        <div class={`lib-row ${cur ? 'cur' : ''}`} style={{ paddingLeft: `${depth * 14}px` }}>
+          {hasKids ? (
+            <button class={`twisty ${opened ? 'open' : ''}`} onClick={() => toggle(n.key)} aria-expanded={opened} aria-label={`${opened ? 'Close' : 'Open'} ${n.name}`}>
+              <ChevronRight size={14} />
+            </button>
+          ) : (
+            <span class="twisty-space" />
+          )}
+          {n.item ? (
+            <button class="lib-name" onClick={() => props.onOpen(n.item!.e.id)} title={n.item.name}>{n.name}</button>
+          ) : (
+            <button class="lib-name fam-only" onClick={() => toggle(n.key)}>{n.name}</button>
+          )}
+          {n.item?.diff ? <span class="k">{n.item.diff}</span> : hasKids ? <span class="k">{n.count}</span> : null}
+        </div>
+        {opened && <ul>{n.children.map((c) => render(c, depth + 1))}</ul>}
+      </li>
+    )
+  }
+
   return (
     <div class="library">
       <div class="seg" role="tablist">
         <button role="tab" aria-selected={props.lib === 'joseki'} class={props.lib === 'joseki' ? 'on' : ''} onClick={() => props.setLib('joseki')}>Joseki</button>
         <button role="tab" aria-selected={props.lib === 'shape'} class={props.lib === 'shape' ? 'on' : ''} onClick={() => props.setLib('shape')}>Shapes</button>
       </div>
-      <input class="search" type="search" placeholder="Search by name or tag" value={query} onInput={(e) => setQuery((e.target as HTMLInputElement).value)} aria-label="Search library" />
-      <select class="filter" value={maxRank} onChange={(e) => setMaxRank((e.target as HTMLSelectElement).value)} aria-label="Difficulty">
-        <option value="any">Any difficulty</option>
-        <option value="20k">Up to 20k</option>
-        <option value="15k">Up to 15k</option>
-        <option value="10k">Up to 10k</option>
-        <option value="5k">Up to 5k</option>
-        <option value="1k">Up to 1k</option>
-      </select>
-      {[...groups].map(([g, list]) => (
-        <div key={g} class="group">
-          <div class="fam">{g}</div>
-          {list.map(({ e, name, diff }) => (
-            <button key={e.id} class={`item ${e.id === props.current ? 'cur' : ''}`} onClick={() => props.onOpen(e.id)}>
-              <span>{name}</span>
-              <span class="k">{diff}</span>
-            </button>
+      <input class="search" type="search" placeholder="Search by name" value={query} onInput={(e) => setQuery((e.target as HTMLInputElement).value)} aria-label="Search by name" />
+      <div class="lib-filters">
+        <select class="filter" value={maxRank} onChange={(e) => setMaxRank((e.target as HTMLSelectElement).value)} aria-label="Difficulty">
+          <option value="any">Any difficulty</option>
+          <option value="20k">Up to 20k</option>
+          <option value="15k">Up to 15k</option>
+          <option value="10k">Up to 10k</option>
+          <option value="5k">Up to 5k</option>
+          <option value="1k">Up to 1k</option>
+        </select>
+        <button class={`tags-toggle ${showTags || tags.length ? 'on' : ''}`} onClick={() => setShowTags(!showTags)} aria-expanded={showTags}>
+          Tags{tags.length ? ` (${tags.length})` : ''}
+        </button>
+      </div>
+      {tags.length > 0 && (
+        <div class="tag-chips selected">
+          {tags.map((t) => (
+            <button key={t} class="chip on" onClick={() => setTags(tags.filter((x) => x !== t))} aria-label={`Remove tag ${t}`}>{t} <X size={12} /></button>
           ))}
         </div>
-      ))}
+      )}
+      {showTags && (
+        <div class="tag-chips" role="group" aria-label="Filter by tag">
+          {allTags.filter((t) => !tags.includes(t)).map((t) => (
+            <button key={t} class="chip" onClick={() => setTags([...tags, t])}>{t}</button>
+          ))}
+          {allTags.length === 0 && <span class="hint">No tags yet.</span>}
+        </div>
+      )}
+      <ul class="lib-tree">{tree.map((n) => render(n, 0))}</ul>
       {items.length === 0 && <p class="hint">No entries match.</p>}
       {props.extra}
     </div>

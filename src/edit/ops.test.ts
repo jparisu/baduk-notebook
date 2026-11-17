@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { buildGraph } from '../core/graph'
 import { IDENTITY, parsePt } from '../core/geometry'
-import { candidates, rootStep, type Ctx, type Step } from '../view'
+import { candidates, startStep, type Ctx, type Step } from '../view'
 import { createWorkspace, changes, makePatch } from './workspace'
 import { addMove, checkMove, createDatabase, deleteMove, locate, setProps } from './ops'
 import { writeSgf } from './sgfio'
@@ -18,7 +18,7 @@ function setup() {
   const ctxOf = (): Ctx => ({ graph: buildGraph(ws.files), active: new Set(['general', 'jparisu', 'mine']), order: ['general', 'jparisu', 'mine'], U: IDENTITY })
   let ctx = ctxOf()
   const line = (n: number): Step[] => {
-    const p = [rootStep(ctx, '4-4-3-3-invasion')]
+    const p = [startStep(ctx, { kind: 'setup', B: [parsePt('Q16')!], W: [], toMove: -1 })]
     for (let i = 0; i < n; i++) p.push(candidates(ctx, p[p.length - 1])[0].step)
     return p
   }

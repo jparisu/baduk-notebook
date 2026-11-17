@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Layout and data fixes
+- Tree of moves: shows 3 moves back and 4 ahead of the current one (⋯N marks hidden earlier moves, › marks hidden continuations), at most 210 px tall with its own scroll, and lines with more contrast. White stones in the tree are white again.
+- "Save lines (n)" moved to the top bar; "back to the database" and "erase" sit next to the "Free play" label. The session box is gone.
+- Position evaluation moved to the left panel, under This joseki.
+- Desktop fits on one screen (tested at 1366×768, 1440×900, 1920×1080): each column scrolls on its own and the board follows the window height.
+- Library: families fold and unfold (4-4 point › 3-3 invasion › Hane…), search by name, and a list of tags to filter by.
+- Data: joseki start from a single stone; the approach (or invasion) is a move that carries the joseki name. New connectors "4-4 point", "3-4 point" and "3-3 point" open every joseki that starts from that stone; the empty corner leads to them.
+
+
 ### Pull request previews
 - Every pull request is published at its own address (`/pr-preview/pr-<number>/`) with the link posted in the pull request, so changes can be checked before merging. The main site is now published from the `gh-pages` branch.
 - Previews use their own browser storage and show a "Preview · pr-N" label.

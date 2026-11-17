@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test'
-import { clickPoint, fresh } from './helpers'
+import { clickPoint, fresh, openEntry } from './helpers'
 
 test.beforeEach(async ({ page }) => fresh(page))
 
 test('game scenario: mark the opponent\'s unknown move as a mistake and my answer as a punishment worth +3', async ({ page }) => {
-  await page.locator('.item', { hasText: '3-3 invasion' }).first().click()
-  for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowRight') // ... B R15, White to play
+  await openEntry(page, '3-3 invasion')
+  for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowRight') // ... B R15, White to play
   await clickPoint(page, 'S16') // opponent plays something not in the list
   await expect(page.locator('.offbook-pill')).toBeVisible()
   await page.getByRole('button', { name: 'Edit' }).click()
