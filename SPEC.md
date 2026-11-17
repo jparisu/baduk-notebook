@@ -633,7 +633,10 @@ Icons appear in the info panel, in the next-moves list, on board tooltips and in
 
 ### 12.2 Hosting and deployment
 
-- A GitHub Pages site is built by a GitHub Actions workflow on every push to `main`.
+- The site is published from the **`gh-pages` branch** (Settings → Pages → Deploy from a branch → `gh-pages`, `/ (root)`).
+- `main` is built and published to the root of `gh-pages` on every push (`deploy.yml`).
+- **Pull request previews** (`preview.yml`): every pull request from this repository, app change or database update, is built and published at `https://jparisu.github.io/baduk-notebook/pr-preview/pr-<number>/`. A comment with the link is added to the pull request and updated on every push; the preview is deleted when the pull request is closed or merged.
+- The base address is set at build time (`BASE_PATH`). Previews use their own browser storage names (`src/storage.ts`), so trying things in a preview never changes the main site's settings, drafts, session lines or quiz progress. Previews show a "Preview · pr-N" label in the top bar.
 - The `db/` folder is copied into the site unchanged, plus the generated `db/files.json`. The app loads `db/index.json`, `db/files.json` and the SGF files with `fetch`.
 - The site is served at `https://jparisu.github.io/baduk-notebook/`.
 - The app is fully static and runs without a server. A service worker can be added later for offline use.

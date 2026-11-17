@@ -8,6 +8,7 @@ import { get, set, del } from 'idb-keyval'
 import { structuredPatch } from 'diff'
 import type { DatabaseInfo } from '../data/load'
 import { writeSgf } from './sgfio'
+import { storageKey } from '../storage'
 
 export interface WorkFile {
   db: string
@@ -26,7 +27,7 @@ export interface Workspace {
   version: number
 }
 
-const DRAFT_KEY = 'baduk-notebook.drafts.v1'
+const DRAFT_KEY = storageKey('baduk-notebook.drafts.v1')
 
 interface Draft {
   databases: DatabaseInfo[] | null

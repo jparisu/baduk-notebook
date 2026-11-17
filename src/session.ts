@@ -3,14 +3,15 @@
  * until you save it to a database or erase it. Also remembers the last position.
  */
 import type { Move, Start } from './view'
+import { storageKey } from './storage'
 
 export interface Line {
   start: Start
   moves: Move[]
 }
 
-const SESSION = 'baduk-notebook.session.v1'
-const POSITION = 'baduk-notebook.position.v1'
+const SESSION = storageKey('baduk-notebook.session.v1')
+const POSITION = storageKey('baduk-notebook.position.v1')
 
 const sameMove = (a: Move, b: Move) => a.sign === b.sign && (a.pt === null ? b.pt === null : !!b.pt && a.pt[0] === b.pt[0] && a.pt[1] === b.pt[1])
 export const sameStart = (a: Start, b: Start) => JSON.stringify(a) === JSON.stringify(b)

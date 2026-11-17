@@ -1,6 +1,7 @@
 /** User settings (SPEC §8.8). Defaults equal the mock-up behavior. Saved in localStorage. */
 import type { Category } from './core/fields'
 import type { DisplayOptions } from './core/geometry'
+import { storageKey } from './storage'
 
 export type Theme = 'simple' | 'minimal' | 'modern'
 export type ColorMode = 'auto' | 'light' | 'dark'
@@ -49,7 +50,7 @@ export const DEFAULT_SETTINGS: Settings = {
   activeDatabases: null,
 }
 
-const KEY = 'baduk-notebook.settings'
+const KEY = storageKey('baduk-notebook.settings')
 
 export function loadSettings(): Settings {
   try {

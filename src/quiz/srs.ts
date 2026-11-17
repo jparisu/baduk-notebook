@@ -3,6 +3,7 @@ import type { Graph } from '../core/graph'
 import { CATEGORIES, categoryOf } from '../core/fields'
 import { edgeCategory } from '../core/graph'
 import { indexLines } from '../core/search'
+import { storageKey } from '../storage'
 
 export type Rating = 'again' | 'hard' | 'good' | 'easy'
 
@@ -103,7 +104,7 @@ export function streak(days: string[], today = new Date()): number {
   }
 }
 
-const KEY = 'baduk-notebook.quiz.v1'
+const KEY = storageKey('baduk-notebook.quiz.v1')
 export function loadProgress(): Progress {
   try {
     const raw = localStorage.getItem(KEY)

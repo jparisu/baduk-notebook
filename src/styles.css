@@ -702,3 +702,4 @@ button.link { background: none; border: none !important; padding: 0; color: var(
 }
 .next-moves { border-top: 0; padding-top: 0; }
 .left .library { max-height: 380px; overflow: auto; }
+.preview-pill { font-size: 11px; font-weight: 800; letter-spacing: .04em; padding: 3px 10px; border-radius: 999px; background: #e8741c; color: #fff; white-space: nowrap; }
