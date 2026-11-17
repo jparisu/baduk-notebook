@@ -59,7 +59,7 @@ export function validateFile(db: string, path: string, roots: SgfNode[], known: 
     issues.push({ severity: 'warning', file: path, message: 'Expected path db-id/joseki/name.sgf or db-id/shapes/name.sgf (lowercase)' })
 
   for (const root of roots) {
-    const walk = (node: SgfNode, board: GoBoard, isRoot: boolean) => {
+    const walk = (node: SgfNode, board: GoBoard, _isRoot: boolean) => {
       const err = (message: string, severity: Issue['severity'] = 'error') => issues.push({ severity, file: path, node, message })
       const d = node.data
       for (const [k, vals] of Object.entries(d)) {
@@ -77,8 +77,7 @@ export function validateFile(db: string, path: string, roots: SgfNode[], known: 
       if (d.XDIFF && !/^([1-9]|[12]\d|30)k$|^[1-9]d$/.test(d.XDIFF[0])) err(`XDIFF[${d.XDIFF[0]}] must look like 15k or 2d`)
       if (d.XPB && !Number.isFinite(Number(d.XPB[0]))) err(`XPB[${d.XPB[0]}] must be a number`)
       if (d.XID && !/^[a-z0-9-]+$/.test(d.XID[0])) err(`XID[${d.XID[0]}] must use lowercase letters, digits and hyphens`)
-      if (isRoot && d.XNAME && !d.XID) err('An entry with XNAME needs an XID')
-      if (!isRoot && (d.XID || d.XNAME)) err('XID and XNAME belong on the first node of the file')
+      if (d.XNAME && !d.XID) err('A name (XNAME) needs an id (XID)')
       if (d.B && d.W) err('A node cannot have both B and W')
 
       let next = board
@@ -106,13 +105,15 @@ export function validateFile(db: string, path: string, roots: SgfNode[], known: 
 export function validateAll(files: { db: string; path: string; roots: SgfNode[] }[], known: Set<string>): Issue[] {
   const issues = files.flatMap((f) => validateFile(f.db, f.path, f.roots, known))
   const seen = new Map<string, string>()
-  for (const f of files)
-    for (const r of f.roots) {
-      const id = r.data.XID?.[0]
-      if (!id || !r.data.XNAME) continue
+  const visit = (f: { db: string; path: string }, n: SgfNode) => {
+    const id = n.data.XID?.[0]
+    if (id && n.data.XNAME) {
       const key = f.db + '/' + id
-      if (seen.has(key)) issues.push({ severity: 'error', file: f.path, node: r, message: `Entry id "${id}" is already used in ${seen.get(key)}` })
+      if (seen.has(key)) issues.push({ severity: 'error', file: f.path, node: n, message: `The label "${id}" is already named in ${seen.get(key)}` })
       else seen.set(key, f.path)
     }
+    n.children.forEach((c) => visit(f, c))
+  }
+  for (const f of files) for (const r of f.roots) visit(f, r)
   return issues
 }

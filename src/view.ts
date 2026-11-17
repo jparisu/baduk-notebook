@@ -1,6 +1,6 @@
 /** View model: turns the canonical graph into what the screen shows, after transforms and database filters. */
 import type { Graph, Contribution, Edge, PosNode } from './core/graph'
-import { edgeCategory, visibleEdges } from './core/graph'
+import { edgeCategory, labelsAt, visibleEdges } from './core/graph'
 import { CATEGORY_ORDER, COLOR_PROPS, LIST_PROPS, TEXT_PROPS, flipValue, type Category } from './core/fields'
 import GoBoard from '@sabaki/go-board'
 import { canonical } from './core/hash'
@@ -222,3 +222,76 @@ export function moveFields(ctx: Ctx, parent: Step, edge: Edge) {
 }
 export const entryFields = (ctx: Ctx, entryId: string, rootStep: Step) =>
   new Fields(ctx, ctx.graph.entries.get(entryId)!.contribs, frame(ctx, rootStep), `e:${entryId}`)
+
+/* ---- Position-first navigation (SPEC §8.0) ---- */
+
+/** Where a line starts: the empty corner, the first node of a label, or stones set up by hand. */
+export type Start =
+  | { kind: 'empty' }
+  | { kind: 'label'; id: string }
+  | { kind: 'setup'; B: Pt[]; W: Pt[]; toMove: Sign }
+
+export type Move = { sign: Sign; pt: Pt | null }
+
+export function startStep(ctx: Ctx, start: Start): Step {
+  if (start.kind === 'label' && ctx.graph.entries.has(start.id)) return rootStep(ctx, start.id)
+  const board: SignMap = Array.from({ length: 19 }, () => Array<Sign>(19).fill(0))
+  let toMove: Sign = 1
+  if (start.kind === 'setup') {
+    for (const [x, y] of start.B) board[y][x] = 1
+    for (const [x, y] of start.W) board[y][x] = -1
+    toMove = start.toMove
+  }
+  const { key, toCanon } = canonical(board, toMove)
+  const D = inverse(toCanon)
+  if (ctx.graph.nodes.has(key)) return { key, D }
+  return { key, D, board: transformMap(toCanon, board), toMove: applySign(toCanon, toMove) }
+}
+
+/** The moves of a line, each in its parent's canonical frame (stable across rebuilds). */
+export const movesOf = (path: Step[]): Move[] =>
+  path.slice(1).flatMap((s) => {
+    const m = moveOf(s)
+    // Only color and point: edges also carry database objects that must not be stored.
+    return m ? [{ sign: m.sign, pt: m.pt ? ([m.pt[0], m.pt[1]] as Pt) : null }] : []
+  })
+
+/** Replays moves from a start; stops at the first illegal move. */
+export function replay(ctx: Ctx, start: Start, moves: Move[]): Step[] {
+  const out = [startStep(ctx, start)]
+  for (const m of moves) {
+    try {
+      out.push(freeStep(ctx, out[out.length - 1], m.sign, m.pt))
+    } catch {
+      break
+    }
+  }
+  return out
+}
+
+/**
+ * The label to show for the current position: among the labels in force here, the one whose
+ * first node appears latest in the line (so "Empty corner" gives way to "3-3 invasion").
+ */
+export function primaryLabel(ctx: Ctx, path: Step[]): string | null {
+  const here = labelsAt(ctx.graph, path[path.length - 1].key, ctx.active)
+  if (!here.length) return null
+  let best = here[0], bestIdx = -2
+  for (const l of here) {
+    const root = ctx.graph.entries.get(l)!.root
+    let idx = -1
+    for (let i = path.length - 1; i >= 0; i--) if (path[i].key === root) { idx = i; break }
+    if (idx > bestIdx) {
+      best = l
+      bestIdx = idx
+    }
+  }
+  return best
+}
+
+/** Index of the label's first node in the line (0 when it starts before the line). */
+export function labelStart(ctx: Ctx, path: Step[], label: string): number {
+  const root = ctx.graph.entries.get(label)?.root
+  for (let i = path.length - 1; i >= 0; i--) if (path[i].key === root) return i
+  return 0
+}

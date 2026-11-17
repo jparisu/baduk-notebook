@@ -53,3 +53,15 @@ describe('find position', () => {
     expect(res.some((r) => r.entryId === 'straight-three-side' && r.kind === 'exact')).toBe(true)
   })
 })
+
+describe('find position: one result per label', () => {
+  it('an exact match hides the other positions of the same label', () => {
+    const m = empty()
+    put(m, 1, 'Q4', 'Q3')
+    put(m, -1, 'R3')
+    const res = search(g, active, m)
+    const inv = res.filter((r) => r.labels.includes('4-4-3-3-invasion') || r.entryId === '4-4-3-3-invasion')
+    expect(inv.length).toBe(1)
+    expect(inv[0].kind).toBe('exact')
+  })
+})

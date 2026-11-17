@@ -183,3 +183,64 @@ export function NewDatabaseDialog({ close, create, count }: { close: () => void;
     </Shell>
   )
 }
+
+export interface SessionLineView {
+  id: number
+  moves: { name: string; known: boolean }[]
+  newMoves: number
+  current: boolean
+}
+
+/** Pick which of the lines played in this session to store (SPEC §8.3). */
+export function SaveLinesDialog(props: {
+  lines: SessionLineView[]
+  databases: DatabaseInfo[]
+  target: string
+  close: () => void
+  save: (ids: number[], target: string) => void
+  erase: (id: number) => void
+}) {
+  const [chosen, setChosen] = useState<Set<number>>(new Set(props.lines.filter((l) => l.current).map((l) => l.id)))
+  const [target, setTarget] = useState(props.target)
+  const toggle = (id: number) => {
+    const n = new Set(chosen)
+    n.has(id) ? n.delete(id) : n.add(id)
+    setChosen(n)
+  }
+  return (
+    <Shell title="Save lines" close={props.close}>
+      {props.lines.length === 0 ? (
+        <p class="text">Every line you played is already in your databases.</p>
+      ) : (
+        <>
+          <p class="hint">Lines you played from this start that are not in your databases yet. The part already stored is in grey.</p>
+          <ul class="line-list">
+            {props.lines.map((l) => (
+              <li key={l.id}>
+                <label class="cat-row">
+                  <input type="checkbox" checked={chosen.has(l.id)} onChange={() => toggle(l.id)} />
+                  <span class="line-moves">
+                    {l.moves.map((m, i) => <span key={i} class={m.known ? 'known' : 'new'}>{m.name}</span>)}
+                  </span>
+                  <span class="badge">{l.newMoves} new</span>
+                  {l.current && <span class="badge">current</span>}
+                </label>
+                <button class="ghost danger-text" onClick={() => props.erase(l.id)} aria-label="Erase this line">Erase</button>
+              </li>
+            ))}
+          </ul>
+          <label class="f">
+            <span class="fl">Save into</span>
+            <select value={target} onChange={(e) => setTarget((e.target as HTMLSelectElement).value)} aria-label="Database to save into">
+              {props.databases.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </select>
+          </label>
+          <div class="actions">
+            <button onClick={() => setChosen(new Set(props.lines.map((l) => l.id)))}>Select all</button>
+            <button class="on" disabled={!chosen.size} onClick={() => props.save([...chosen], target)}>Save {chosen.size} line{chosen.size === 1 ? '' : 's'}</button>
+          </div>
+        </>
+      )}
+    </Shell>
+  )
+}
