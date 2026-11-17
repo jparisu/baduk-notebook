@@ -836,3 +836,6 @@ button.link.small { font-size: 12px; display: inline-flex; align-items: center; 
 .tag-chips.fav svg { fill: #e0b000; color: #e0b000; vertical-align: -1px; }
 .tree-hint { margin: 4px 0; }
 .tree-toolbar { flex-wrap: wrap; }
+/* The tree keeps a fixed size: moving along it scrolls inside, the panel never jumps. */
+.tree-box.fixed { height: 220px; max-height: none; overflow: auto; }
+.layout:not(.phone) .side.right .tree-box.fixed { height: 230px; }

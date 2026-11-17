@@ -26,6 +26,11 @@ A position is the stones on a local area of the board plus **who plays next**.
 Black to play and White to play, with the same stones, are different positions. A tenuki move
 joins them.
 
+**Player words in texts:** `{{Player}}` is the player who made the move (in a move's `why`/`notes`) or who plays
+next (in a position's text), `{{Opponent}}` the other one. `{{Black}}` and `{{White}}` follow the board's
+*Swap colors* option. Lowercase tokens (`{{player}}`) give lowercase words. Rotating or mirroring the board never
+changes colors.
+
 ## 2. Move (edge)
 
 Moves are stored inside the position they start from and point to the **id** of the position they

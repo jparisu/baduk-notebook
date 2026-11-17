@@ -1,5 +1,5 @@
 /** Visual references inside text: {{TYPE:points|label}} (SPEC §5). */
-import { apply, parsePt, parseSgfPtList, ptName, type Pt, type Transform } from './geometry'
+import { apply, parsePt, parseSgfPtList, ptName, type Pt, type Sign, type Transform } from './geometry'
 import type { Props } from './fields'
 
 export type MarkType = 'TR' | 'SQ' | 'CR' | 'MA' | 'LB' | 'AR' | 'LN' | 'WALL' | 'INF' | 'TB' | 'TW' | 'CUT'
@@ -56,7 +56,25 @@ export const transformMarks = (t: Transform, marks: Mark[]): Mark[] =>
  * Splits text into plain parts and references. Points are transformed with `t` (file frame → display frame).
  * A reference without a label shows its (transformed) coordinate.
  */
-export function parseText(text: string, t: Transform, idPrefix: string): Segment[] {
+/**
+ * Player words: {{Black}} / {{White}} follow the display's color swap; {{Player}} is the player who made
+ * the move (in a move text) or who plays next (in a position text), {{Opponent}} the other one.
+ * Lowercase tokens ({{player}}) give lowercase words.
+ */
+export function playerWords(text: string, swap: boolean, player: Sign | null): string {
+  return text.replace(/\{\{(black|white|player|opponent)\}\}/gi, (all, word: string) => {
+    const w = word.toLowerCase()
+    let sign: Sign = w === 'black' ? 1 : w === 'white' ? -1 : player ?? 0
+    if (!sign) return all
+    if (w === 'opponent') sign = -sign as Sign
+    if (swap) sign = -sign as Sign
+    const name = sign === 1 ? 'Black' : 'White'
+    return word[0] === word[0].toLowerCase() ? name.toLowerCase() : name
+  })
+}
+
+export function parseText(text: string, t: Transform, idPrefix: string, player: Sign | null = null): Segment[] {
+  text = playerWords(text, t.swap, player)
   const out: Segment[] = []
   let last = 0, i = 0
   for (const m of text.matchAll(RE)) {

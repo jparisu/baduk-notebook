@@ -764,10 +764,9 @@ export function App() {
   const treeLegend = (
     <div class="legend">
       <span><MoveMark cat="main" />joseki</span>
-      <span><MoveMark cat="main" variation />new variation</span>
       <span><MoveMark cat="mistake" />mistake</span>
       <span>⚑ name starts</span>
-      <span class="unsaved">◌ unsaved</span>
+      <span class="unsaved">◌ dashed: not stored yet</span>
     </div>
   )
   const onOpenLabel = (id: string) => openStart({ kind: 'label', id })
@@ -816,6 +815,11 @@ export function App() {
       <div class="panel-head end">
         <button class="hide-btn" onClick={() => setSettings({ ...settings, hideRight: true })} aria-label="Hide right panel"><PanelRightClose size={16} /></button>
       </div>
+      <Card id="tree" title="Tree of moves" icon={<GitBranch size={15} />}>
+        {treeToolbar}
+        <div class="tree-box fixed">{treeView}</div>
+        {treeLegend}
+      </Card>
       {edit ? (
         <Card id="edit" title={`Edit · into ${target}`} icon={<Pencil size={15} />} class="edit-card">{editPanel}</Card>
       ) : (
@@ -823,11 +827,6 @@ export function App() {
           <LastMove {...common} onGoTo={(n) => go(path.slice(0, n + 1))} />
         </Card>
       )}
-      <Card id="tree" title="Tree of moves" icon={<GitBranch size={15} />}>
-        {treeToolbar}
-        <div class="tree-box">{treeView}</div>
-        {treeLegend}
-      </Card>
       <Card id="next" title={nextTitle} icon={<ArrowRight size={15} />}>{nextMoves}</Card>
     </aside>
   )
@@ -1053,7 +1052,7 @@ export function App() {
           <span><MoveMark cat="mistake" />mistake</span>
           <span><MoveMark cat="punish" />punishment</span>
           <span>⚑ name starts</span>
-          <span class="unsaved">◌ only in the browser cache</span>
+          <span class="unsaved">◌ dashed: only in the browser cache</span>
           <span>+n hidden</span>
           <span>right-click a move for more</span>
         </div>

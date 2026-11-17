@@ -160,3 +160,23 @@ test('the tree keeps the lines you leave (the trail), and a branch can be hidden
   expect(await nodes.count()).toBeLessThan(before)
   await expect(page.locator('.status')).toContainText('low approach') // hiding another branch does not move you
 })
+
+test('selecting another child does not move the tree: the node stays where it was drawn', async ({ page }) => {
+  for (const m of ['Linear', 'Proximity', 'Complete']) {
+    await page.goto('./?open=joseki/4-4+point')
+    await page.locator('.tree-toolbar').getByRole('button', { name: m }).click()
+    if (m === 'Linear') {
+      await clickPoint(page, 'R14') // low approach, then back: both lines are on the trail
+      await page.keyboard.press('ArrowLeft')
+      await clickPoint(page, 'R17')
+      await page.keyboard.press('ArrowLeft')
+    } else await page.locator('.tree-toolbar').getByRole('button', { name: m }).click()
+    const node = page.locator('.tree-box .tree-node', { has: page.locator('title', { hasText: /^White R17/ }) }).first()
+    // Its place in the drawing (not on the screen, which may scroll).
+    const at = async () => [await node.locator('circle').last().getAttribute('cx'), await node.locator('circle').last().getAttribute('cy')]
+    const before = await at()
+    await node.click()
+    await expect(page.locator('.status')).toContainText('Move')
+    expect(await at(), m).toEqual(before)
+  }
+})

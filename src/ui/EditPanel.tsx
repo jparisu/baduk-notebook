@@ -165,7 +165,7 @@ export function EditPanel(p: EditApi) {
               </button>
             ))}
           </div>
-          {field('XMW', 'Why', { area: true, id: 'f-node-XMW', placeholder: 'Why this move is good or bad' })}
+          {field('XMW', 'Why', { area: true, id: 'f-node-XMW', placeholder: 'Why this move is good or bad. {{Player}} = who played it, {{Opponent}} = the other.' })}
           {p.only === 'move' && (
             <>
               {!p.shapes && select('XSTY', 'Style', [['aggressive', 'Aggressive'], ['balanced', 'Balanced'], ['solid', 'Solid']])}
@@ -191,7 +191,7 @@ export function EditPanel(p: EditApi) {
             {select('XST', 'Status', [['progress', 'In progress'], ['end', 'Joseki end'], ['end-mistake', 'End after a mistake']])}
           </>
         )}
-        {field('XPW', 'Explanation', { area: true })}
+        {field('XPW', 'Explanation', { area: true, placeholder: '{{Player}} = who plays next, {{Opponent}} = the other; {{Black}} / {{White}} follow Swap colors.' })}
         {p.only === 'pos' && (
           <>
             {!p.shapes && field('XPBS', 'Points source', { placeholder: 'katago / book / estimate' })}

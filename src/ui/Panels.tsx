@@ -5,11 +5,11 @@
  */
 import type { ComponentChildren } from 'preact'
 import { CATEGORIES, EVAL_LABELS, type Category } from '../core/fields'
-import { ptName } from '../core/geometry'
+import { apply, ptName } from '../core/geometry'
 import { labelsAt } from '../core/graph'
 import type { Msg } from '../messages'
 import type { Settings } from '../settings'
-import { candidates, entryFields, inBook, labelStart, moveFields, positionFields, primaryLabel, type Candidate, type Ctx, type Step } from '../view'
+import { candidates, entryFields, frame, moveOf, inBook, labelStart, moveFields, positionFields, primaryLabel, type Candidate, type Ctx, type Step } from '../view'
 import { CONDITION_ICONS, IconLabel, PURPOSE_ICONS, SHAPE_ICONS, STATUS_ICONS, STYLE_ICONS } from './icons'
 import { Rich, type RefHandlers } from './Rich'
 import { Fold } from './Card'
@@ -231,6 +231,9 @@ export function LastMove(p: Common & { onGoTo: (n: number) => void }) {
   const mf = parent && step.edge ? moveFields(ctx, parent, step.edge) : null
   const cand: Candidate | undefined = parent && step.edge ? candidates(ctx, parent).find((c) => c.edge === step.edge) : undefined
   const k = cand?.cat ? CATEGORIES[cand.cat] : null
+  // The point actually played (a database move can be played in a mirrored orientation).
+  const m = moveOf(step)
+  const played = parent && m?.pt ? apply(frame(ctx, parent), m.pt) : cand?.pt ?? null
   const history = p.messages.filter((m) => m.place === 'history')
   const why = p.messages.filter((m) => m.place === 'move' && m.kind === 'move')
   const notes = p.messages.filter((m) => m.place === 'move' && m.kind === 'note')
@@ -250,7 +253,7 @@ export function LastMove(p: Common & { onGoTo: (n: number) => void }) {
       {cand && (
         <>
           <div class="why-head">
-            <span class="move-badge"><StoneIcon sign={cand.sign} size={22} />{colorWord(cand.sign)} {cand.pt ? ptName(cand.pt) : 'tenuki'}</span>
+            <span class="move-badge"><StoneIcon sign={cand.sign} size={22} />{colorWord(cand.sign)} {played ? ptName(played) : 'tenuki'}</span>
             {k && <span class="cat-pill">{k.label}</span>}
           </div>
           {why.map((m, i) => <p key={i} class="why-text"><Rich segments={m.segments} h={p.refs} /></p>)}

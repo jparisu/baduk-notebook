@@ -1,10 +1,12 @@
 /**
- * Tree of moves (docs/MODEL.md §6) with three modes and a zoom:
- * - linear:    the current line, before and ahead, plus the lines visited in this session (the trail);
+ * Tree of moves (docs/MODEL.md §6) with three modes and a zoom. The layout is always the one of the
+ * whole tree, in a fixed order, so the tree never moves when you move through it (like OGS):
+ * - linear:    shows the current line, before and ahead, plus the lines visited in this session (the trail);
  * - proximity: the same, plus the other moves from the current position;
  * - complete:  every move from the start of the line.
  * Hidden branches show a "+n" badge; "ahead" limits how far after the current move the tree goes.
  */
+import { useLayoutEffect, useRef } from 'preact/hooks'
 import { CATEGORIES, type Category } from '../core/fields'
 import { apply, applySign, ptName, type Pt } from '../core/geometry'
 import { candidates, frame, moveOf, type Candidate, type Ctx, type Step } from '../view'
@@ -74,6 +76,18 @@ interface Props {
 
 export function Tree(props: Props) {
   const { ctx, path, mode } = props
+  const svgRef = useRef<SVGSVGElement>(null)
+  // Scroll only when the current move would leave the box: the tree itself never moves.
+  useLayoutEffect(() => {
+    const svg = svgRef.current
+    const box = svg?.parentElement
+    const el = svg?.querySelector('.tree-node.cur')
+    if (!box || !el) return
+    // When it leaves the box, bring it back with room around it: a third from the left, in the middle vertically.
+    const b = box.getBoundingClientRect(), r = el.getBoundingClientRect(), pad = 16
+    if (r.left < b.left + pad || r.right > b.right - pad) box.scrollLeft += r.left - b.left - b.width / 3
+    if (r.top < b.top + pad || r.bottom > b.bottom - pad) box.scrollTop += r.top - b.top - b.height / 2 + r.height / 2
+  })
 
   /** Category, color and label of the move from `parent` to `child`. */
   const describe = (parent: Step, child: Step, cands?: Candidate[]) => {
@@ -125,68 +139,51 @@ export function Tree(props: Props) {
   const limit = props.ahead === undefined ? Infinity : path.length - 1 + props.ahead
   const hidden = (line: Step[]) => !props.showFolded && !!props.folded?.has(line[line.length - 1].key) && !onPath(line)
 
-  if (mode === 'complete') {
-    const seen = new Set([root.key])
-    const grow = (i: number) => {
-      const line = placed[i].line
-      const { cands, list } = childrenOf(line)
-      const shown = list.filter((c) => !props.keepChild || onPath([...line, c]) || props.keepChild(line[line.length - 1], c))
-      if (line.length - 1 >= limit) {
-        placed[i].more = shown.length > 0
-        return
+  // 1. The whole tree, in a fixed order (database moves best first, then your own moves). Every mode
+  //    uses this same layout, so moving around never reorders the rows; Linear and Proximity only hide nodes.
+  const seen = new Set([root.key])
+  const grow = (i: number) => {
+    const line = placed[i].line
+    const { cands, list } = childrenOf(line)
+    const shown = list.filter((c) => !props.keepChild || onPath([...line, c]) || props.keepChild(line[line.length - 1], c))
+    for (const child of shown) {
+      if (placed.length > MAX_NODES) return
+      const transposition = seen.has(child.key)
+      seen.add(child.key)
+      const cl = [...line, child]
+      const j = add({ step: child, line: cl, parent: i, ...describe(line[line.length - 1], child, cands), transposition })
+      if (transposition) continue
+      if (hidden(cl)) {
+        placed[j].folded = countBelow(cl)
+        continue
       }
-      for (const child of shown) {
-        if (placed.length > MAX_NODES) return
-        const transposition = seen.has(child.key)
-        seen.add(child.key)
-        const cl = [...line, child]
-        const j = add({ step: child, line: cl, parent: i, ...describe(line[line.length - 1], child, cands), transposition })
-        if (transposition) continue
-        if (hidden(cl)) {
-          placed[j].folded = countBelow(cl)
-          continue
-        }
-        grow(j)
-      }
+      grow(j)
     }
-    grow(0)
-  } else {
-    // The union of lines: this line and its future first, then the trail, then (proximity) the other moves from here.
-    const main = [...path, ...props.forward]
-    const lines: Step[][] = [main, ...(props.trail ?? [])]
-    if (mode === 'proximity') for (const c of childrenOf(path).list) lines.push([...path, c])
-    const insert = (line: Step[], isMain: boolean) => {
-      let i = 0
-      for (let d = 1; d < line.length && d <= limit; d++) {
-        let j = kids[i].find((k) => placed[k].step.key === line[d].key)
-        if (j === undefined) {
-          j = add({ step: line[d], line: line.slice(0, d + 1), parent: i, ...describe(line[d - 1], line[d]), ahead: isMain && d >= path.length })
-          if (hidden(line.slice(0, d + 1))) {
-            placed[j].folded = countBelow(line.slice(0, d + 1))
-            return
-          }
-        } else if (placed[j].folded) return
-        i = j
-      }
-    }
-    lines.forEach((l, k) => l[0]?.key === root.key && insert(l, k === 0))
-    // Leaves that have more moves get a "›".
-    placed.forEach((p, i) => {
-      if (!kids[i].length && !p.folded && i > 0) p.more = childrenOf(p.line).list.length > 0
-    })
   }
+  grow(0)
 
-  // Layout: each node one column to the right of its parent; the first child stays on the parent's row.
-  let row = 0
-  const lay = (i: number, y: number) => {
-    placed[i].y = y
-    // Keep the current line (and the line ahead) on the parent's row when possible.
-    const order = [...kids[i]].sort((a, b) => Number(onPath(placed[b].line) || placed[b].ahead) - Number(onPath(placed[a].line) || placed[a].ahead))
-    order.forEach((k, n) => lay(k, n === 0 ? y : ++row))
+  // 2. Lines that must be drawn even where the full tree stops (a transposition, the size cap):
+  //    the current line and what is ahead, and the lines visited in this session (the trail).
+  const main = [...path, ...props.forward]
+  const lines: Step[][] = [main, ...(props.trail ?? [])].filter((l) => l[0]?.key === root.key)
+  const visible = new Set<number>([0])
+  const follow = (line: Step[], isMain: boolean) => {
+    let i = 0
+    for (let d = 1; d < line.length; d++) {
+      let j = kids[i].find((k) => placed[k].step.key === line[d].key)
+      if (j === undefined) {
+        if (placed[i].folded) return
+        j = add({ step: line[d], line: line.slice(0, d + 1), parent: i, ...describe(line[d - 1], line[d]) })
+      }
+      placed[i].transposition = false
+      if (isMain && d >= path.length) placed[j].ahead = true
+      visible.add(j)
+      if (placed[j].folded) return
+      i = j
+    }
   }
-  lay(0, 0)
-  const rows = row + 1
-  // The current move: follow the line through the placed nodes.
+  lines.forEach((l, k) => follow(l, k === 0))
+  // The current move.
   let cur = 0
   for (let d = 1; d < path.length; d++) {
     const next = kids[cur].find((k) => placed[k].step.key === path[d].key)
@@ -194,19 +191,38 @@ export function Tree(props: Props) {
     cur = next
   }
 
+  // 3. Layout of the whole tree: each node one column right of its parent; the first child stays on its parent's row.
+  let row = 0
+  const lay = (i: number, y: number) => {
+    placed[i].y = y
+    kids[i].forEach((k, n) => lay(k, n === 0 ? y : ++row))
+  }
+  lay(0, 0)
+
+  // 4. What each mode shows: Complete everything, Linear the lines, Proximity also the moves from here.
+  if (mode === 'complete') placed.forEach((_, i) => visible.add(i))
+  if (mode === 'proximity') kids[cur].forEach((k) => visible.add(k))
+  const show = placed.map((p, i) => visible.has(i) && p.line.length - 1 <= Math.max(limit, path.length - 1))
+  // Leaves that hide more moves get a "›".
+  placed.forEach((p, i) => {
+    if (show[i] && !p.folded) p.more = kids[i].some((k) => !show[k]) || (!kids[i].length && i > 0 && !p.transposition && childrenOf(p.line).list.length > 0 && placed.length > MAX_NODES)
+  })
+  // Hidden rows keep their place (nothing moves); only the empty space below the last visible row is cut.
+  const rows = Math.max(...placed.filter((_, i) => show[i]).map((p) => p.y)) + 1
+
   const select = (i: number) => props.onSelect(placed[i].line)
   const onLine = new Set<number>()
   for (let i = cur; i >= 0; i = placed[i].parent) onLine.add(i)
 
-  const maxX = Math.max(...placed.map((p) => p.x))
+  const maxX = Math.max(...placed.filter((_, i) => show[i]).map((p) => p.x))
   const W = (maxX + 1) * DX + 24 + (placed[0].rootMove ? 24 : 0), H = rows * DY + 14
   const shiftX = placed[0].rootMove && (props.first ?? 0) > 1 ? 24 : 0
   const pos = (p: Placed) => [OX + shiftX + p.x * DX, OY + p.y * DY]
 
   return (
-    <svg width={W * props.zoom} height={H * props.zoom} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Tree of moves (${mode})`}>
+    <svg ref={svgRef} width={W * props.zoom} height={H * props.zoom} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Tree of moves (${mode})`}>
       {placed.map((p, i) => {
-        if (p.parent < 0) return null
+        if (p.parent < 0 || !show[i]) return null
         const [x1, y1] = pos(placed[p.parent]), [x2, y2] = pos(p)
         const strong = onLine.has(i) && !p.ahead && i <= cur
         return (
@@ -221,12 +237,13 @@ export function Tree(props: Props) {
         )
       })}
       {placed.map((p, i) => {
+        if (!show[i]) return null
         const [x, y] = pos(p)
         const k = p.cat ? CATEGORIES[p.cat] : null
         const ring = p.session ? 'var(--markup)' : k?.color ?? 'var(--muted)'
         const fill = p.sign === 1 ? '#151515' : '#f5f5f2'
         const ink = p.sign === 1 ? '#fff' : '#111'
-        const dashed = p.transposition || p.session || !!p.stub || (p.tag && !p.pass && p.parent >= 0)
+        const dashed = p.session // dashed means only one thing: not stored in a database
         return (
           <g
             key={'n' + i}

@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Data model (docs/MODEL.md)
+- Texts can say `{{Player}}`, `{{Opponent}}`, `{{Black}}`, `{{White}}`; they follow who moved and the Swap colors option.
 - The databases are JSON files of **positions** with a unique **id** (`joseki/4-4 point/3-3 invasion:5`); each move points to the id it leads to. A script converted the SGF files.
 - "Joseki" and "shape" are no longer separate kinds: the id (`joseki/…`, `life & death/…`) and nested **tags** organise everything.
 - Colors are never swapped when matching positions; Black to play and White to play are different positions, joined by a tenuki (shapes now start with Black to play, and a tenuki leads to White playing first).
@@ -12,6 +13,8 @@
 - **SGF**: load an SGF file into a database, download any position with what follows.
 
 ### Tree
+- The tree never moves when you move through it: it is always laid out like the complete tree, in a fixed order, and Linear / Proximity only hide parts of it. It sits at the top of the right panel with a fixed size.
+- Dashed nodes mean only one thing: not stored in a database yet.
 - **Trail**: the lines you visit stay in the tree, so going back and playing elsewhere never removes the line you left.
 - Linear / Proximity / Complete in Explore and Design, with **Ahead** (all, next 3 / 6 / 10) and zoom.
 - Right-click: **Hide this branch** (view only, with a "+n" badge and *Show hidden*), **Forget this branch**, remove moves that are not in a database.

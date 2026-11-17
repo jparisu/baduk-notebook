@@ -5,7 +5,7 @@ import { CATEGORY_ORDER, COLOR_PROPS, LIST_PROPS, TEXT_PROPS, flipValue, type Ca
 import GoBoard from '@sabaki/go-board'
 import { canonical } from './core/hash'
 import { apply, applySign, compose, inverse, parseSgfPtList, transformMap, type Pt, type Sign, type SignMap, type Transform } from './core/geometry'
-import { parseText, propMarks, transformMarks, type Mark, type Segment } from './core/refs'
+import { parseText, playerWords, propMarks, transformMarks, type Mark, type Segment } from './core/refs'
 
 /**
  * One step of the current line. `D` maps the node's canonical frame to the entry's stored frame.
@@ -125,7 +125,7 @@ export function candidates(ctx: Ctx, step: Step): Candidate[] {
       cat,
       pt: edge.pt ? apply(F, edge.pt) : null,
       sign: applySign(F, edge.sign),
-      label: shortLabel(why),
+      label: shortLabel(playerWords(why, F.swap, edge.sign)),
       dbs: [...new Set(edge.contribs.filter((c) => ctx.active.has(c.db)).map((c) => c.db))],
     }
   })
@@ -161,6 +161,8 @@ export class Fields {
     private contribs: Contribution[],
     private F: Transform,
     private idPrefix: string,
+    /** Who "{{Player}}" is in these texts, in canonical colors (the mover, or the player to move). */
+    private player: Sign | null = null,
   ) {}
 
   private visible() {
@@ -176,7 +178,7 @@ export class Fields {
 
   text(prop: string): TextValue[] {
     return this.visible().flatMap((c, i) =>
-      (c.props[prop] ?? []).map((t, j) => ({ db: c.db, segments: parseText(t, fileToDisplay(this.F, c), `${this.idPrefix}:${prop}:${i}:${j}`) })),
+      (c.props[prop] ?? []).map((t, j) => ({ db: c.db, segments: parseText(t, fileToDisplay(this.F, c), `${this.idPrefix}:${prop}:${i}:${j}`, this.player) })),
     )
   }
 
@@ -219,12 +221,12 @@ export function isList(prop: string) {
   return LIST_PROPS.has(prop)
 }
 
-export const positionFields = (ctx: Ctx, step: Step) => new Fields(ctx, node(ctx, step).contribs, frame(ctx, step), `p:${step.key}`)
+export const positionFields = (ctx: Ctx, step: Step) => new Fields(ctx, node(ctx, step).contribs, frame(ctx, step), `p:${step.key}`, node(ctx, step).toMove)
 export function moveFields(ctx: Ctx, parent: Step, edge: Edge) {
-  return new Fields(ctx, edge.contribs, frame(ctx, parent), `m:${edge.child}`)
+  return new Fields(ctx, edge.contribs, frame(ctx, parent), `m:${edge.child}`, edge.sign)
 }
 export const entryFields = (ctx: Ctx, entryId: string, rootStep: Step) =>
-  new Fields(ctx, ctx.graph.entries.get(entryId)!.contribs, frame(ctx, rootStep), `e:${entryId}`)
+  new Fields(ctx, ctx.graph.entries.get(entryId)!.contribs, frame(ctx, rootStep), `e:${entryId}`, node(ctx, rootStep).toMove)
 
 /* ---- Position-first navigation (SPEC §8.0) ---- */
 

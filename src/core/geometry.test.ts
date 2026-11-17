@@ -42,3 +42,12 @@ describe('canonical hash', () => {
     expect(canonical(a, -1).key).not.toBe(ka) // the player to move matters
   })
 })
+
+import { playerWords } from './refs'
+describe('player words in texts', () => {
+  it('follows the color swap and who made the move', () => {
+    expect(playerWords('{{Player}} cuts; {{opponent}} must connect.', false, -1)).toBe('White cuts; black must connect.')
+    expect(playerWords('{{Black}} lives.', true, null)).toBe('White lives.')
+    expect(playerWords('{{Player}} wins', true, 1)).toBe('White wins')
+  })
+})
