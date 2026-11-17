@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Layout v3
+- Left: foldable **Search** and **This joseki** cards (title, path of names, go to its first move, family, tags, foldable description and details).
+- Center: title with move and side to play, board, navigation, view options.
+- Right: foldable **Position evaluation**, **Last move**, **Tree of moves** and **Next moves** cards.
+- Both side panels can be hidden; folded cards are remembered.
+- New message shapes: a large "why" card in the move's category color, an amber "Watch out" card, yellow sticky notes.
+- Good moves that start another named variation are drawn as a **dashed ring** on the board, in the tree and in the list; next moves are grouped as Joseki, Variations, and Mistakes and traps.
+- Phone: the "why" card stays under the board; tabs Next · Position · Tree · About.
+
+
 ### Position first
 - The board is the starting point: play or set up a position and the app tells you what it is, how to continue, and the usual mistakes. It reopens on your last position, with buttons for the empty corner and the start of the current joseki.
 - Joseki and shapes are **labels on positions**: a name can be given to any move of a big tree, and the moves after it carry it until another label starts. Next moves show "→ name" when they enter another label.

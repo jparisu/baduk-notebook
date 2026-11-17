@@ -8,6 +8,8 @@ export interface BoardMarker {
   /** Move color, shown inside the marker when either side may play (shapes). */
   sign: number
   showColor: boolean
+  /** A good move that starts another named variation: drawn as a dashed ring. */
+  variation?: boolean
   cat: Category | null
   title: string
   highlight: boolean
@@ -177,7 +179,12 @@ export function Board({ window: win, board, last, numbers, markers, marks, coord
           <g key={`m${i}`} class="marker" onClick={m.onClick} role="button" aria-label={m.title}>
             <title>{m.title}</title>
             <circle cx={x} cy={y} r=".48" fill="transparent" />
-            {k.ring ? (
+            {m.variation ? (
+              <>
+                <circle cx={x} cy={y} r=".3" fill={`color-mix(in srgb, ${k.color} 22%, var(--board))`} stroke={k.color} stroke-width=".1" stroke-dasharray=".2 .13" />
+                {m.highlight && <circle cx={x} cy={y} r=".42" fill="none" stroke="var(--fg)" stroke-width=".04" />}
+              </>
+            ) : k.ring ? (
               <circle cx={x} cy={y} r=".3" fill="var(--board)" stroke={k.color} stroke-width=".1" />
             ) : (
               <>
