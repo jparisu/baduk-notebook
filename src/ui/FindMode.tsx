@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'preact/hooks'
 import GoBoard from '@sabaki/go-board'
 import * as sgf from '@sabaki/sgf'
+import { Workbench } from './Workbench'
 import { Board } from './Board'
 import { search, userViewFor, type Match } from '../core/search'
 import { parseSgfPt, parseSgfPtList, ptName, type DisplayOptions, type Pt, type Sign, type SignMap } from '../core/geometry'
@@ -135,7 +136,7 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
         </div>
       )}
       <h2>How it searches</h2>
-      <p class="hint">Each 10×10 corner is compared with every joseki position, in all 8 orientations and with colors swapped. Shapes are also found when moved along a side. Exact matches come first, then positions contained in yours, then positions that differ by up to 2 stones.</p>
+      <p class="hint">Each 10×10 corner is compared with every position fixed in the corner, in all 8 orientations (colors are never swapped). Positions that may slide, such as side and centre shapes, are also found where you placed them. Exact matches come first, then positions contained in yours, then positions that differ by up to 2 stones.</p>
     </div>
   )
 
@@ -169,17 +170,24 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
     </div>
   )
 
+  const center = (
+    <main class="pane center">
+      <div class="status"><b>Find position</b> · click to place stones</div>
+      <div class="board-wrap">
+        <Board window={[0, 18, 0, 18]} board={board} last={null} numbers={null} markers={[]} marks={[]} coordinates={props.settings.coordinates} onPoint={onPoint} />
+      </div>
+      {props.phone && tools}
+    </main>
+  )
+  if (props.phone) return <>{center}<aside class="pane right">{list}</aside></>
   return (
-    <>
-      {!props.phone && <aside class="pane left">{tools}</aside>}
-      <main class="pane center">
-        <div class="status"><b>Find position</b> · click to place stones</div>
-        <div class="board-wrap">
-          <Board window={[0, 18, 0, 18]} board={board} last={null} numbers={null} markers={[]} marks={[]} coordinates={props.settings.coordinates} onPoint={onPoint} />
-        </div>
-        {props.phone && tools}
-      </main>
-      <aside class="pane right">{list}</aside>
-    </>
+    <Workbench
+      id="find"
+      cols={[
+        { id: 'left', name: 'left', label: 'Tools', width: 280, min: 220, max: 480, node: <aside class="pane left">{tools}</aside> },
+        { id: 'center', node: center },
+        { id: 'right', name: 'right', label: 'Matches', width: 380, min: 260, max: 640, node: <aside class="pane right">{list}</aside> },
+      ]}
+    />
   )
 }

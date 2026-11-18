@@ -17,6 +17,7 @@ import {
 import { collectMessages } from './messages'
 import { Board } from './ui/Board'
 import { Tree } from './ui/Tree'
+import { Stack, Workbench } from './ui/Workbench'
 import { CategoryDot, JosekiInfo, LastMove, MoveMark, NextMoves, PositionEval, isVariation } from './ui/Panels'
 import { Card } from './ui/Card'
 import { type RefHandlers } from './ui/Rich'
@@ -102,7 +103,6 @@ export function App() {
   /** Moves that existed when Design was opened ("parent>child"): the others are new (Only new). */
   const known = useRef<Set<string> | null>(null)
   const [designTab, setDesignTab] = useState<'move' | 'pos' | 'name'>('move')
-  const [infoFolded, setInfoFolded] = useState(false)
   const [showFolded, setShowFolded] = useState(false)
   const [ctxMenu, setCtxMenu] = useState<{ line: Step[]; x: number; y: number } | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Step[] | null>(null)
@@ -819,38 +819,33 @@ export function App() {
   })()
   const nextMoves = <NextMoves {...common} side={side} setSide={setSide} highlighted={highlighted} onHighlight={setHighlighted} onPlay={playCandidate} />
 
-  /* Left: search + this joseki. Right: evaluation, last move, tree, next moves. Both can be hidden. */
+  /* Left: search, this joseki, evaluation. Right: tree, last move (or edit), next moves. Fixed-size panels. */
+  const josekiInfo = <JosekiInfo {...common} onOpenLabel={onOpenLabel} onCopyLink={(id) => copyLink(linkFor(ctx, { kind: 'label', id }, [startStep(ctx, { kind: 'label', id })], { corner: 'tr', mirror: false, swap: false }), entryName(id))} />
   const leftPanel = (
-    <aside class="side left" aria-label="Search and joseki information">
-      <div class="panel-head">
-        {startBar}
-        <button class="hide-btn" onClick={() => setSettings({ ...settings, hideLeft: true })} aria-label="Hide left panel"><PanelLeftClose size={16} /></button>
-      </div>
-      <Card id="search" title="Search positions" icon={<Search size={15} />}>{library}</Card>
-      <Card id="joseki" title="This joseki" icon={<BookOpen size={15} />}>
-        <JosekiInfo {...common} onOpenLabel={onOpenLabel} onCopyLink={(id) => copyLink(linkFor(ctx, { kind: 'label', id }, [startStep(ctx, { kind: 'label', id })], { corner: 'tr', mirror: false, swap: false }), entryName(id))} />
-      </Card>
-      {!edit && <Card id="eval" title="Position evaluation" icon={<Grid3x3 size={15} />}><PositionEval {...common} /></Card>}
+    <aside class="side-panel left" aria-label="Search and joseki information">
+      <Stack
+        id="explore-left"
+        head={startBar}
+        items={[
+          { id: 'search', title: 'Search positions', icon: <Search size={15} />, weight: 1.3, body: library },
+          { id: 'joseki', title: 'This joseki', icon: <BookOpen size={15} />, weight: 1, body: josekiInfo },
+          ...(!edit ? [{ id: 'eval', title: 'Position evaluation', icon: <Grid3x3 size={15} />, weight: 0.8, body: <PositionEval {...common} /> }] : []),
+        ]}
+      />
     </aside>
   )
   const rightPanel = (
-    <aside class="side right" aria-label="Evaluation, last move, tree and next moves">
-      <div class="panel-head end">
-        <button class="hide-btn" onClick={() => setSettings({ ...settings, hideRight: true })} aria-label="Hide right panel"><PanelRightClose size={16} /></button>
-      </div>
-      <Card id="tree" title="Tree of moves" icon={<GitBranch size={15} />}>
-        {treeToolbar}
-        <div class="tree-box fixed">{treeView}</div>
-        {treeLegend}
-      </Card>
-      {edit ? (
-        <Card id="edit" title={`Edit · into ${target}`} icon={<Pencil size={15} />} class="edit-card">{editPanel}</Card>
-      ) : (
-        <Card id="last" title="Last move" icon={<MessageSquare size={15} />} class="why" style={{ '--cat': lastCat }}>
-          <LastMove {...common} onGoTo={(n) => go(path.slice(0, n + 1))} />
-        </Card>
-      )}
-      <Card id="next" title={nextTitle} icon={<ArrowRight size={15} />}>{nextMoves}</Card>
+    <aside class="side-panel right" aria-label="Tree, last move and next moves">
+      <Stack
+        id="explore-right"
+        items={[
+          { id: 'tree', title: 'Tree of moves', icon: <GitBranch size={15} />, weight: 1, class: 'tree-card', body: <>{treeToolbar}<div class="tree-box fixed">{treeView}</div>{treeLegend}</> },
+          edit
+            ? { id: 'edit', title: `Edit · into ${target}`, icon: <Pencil size={15} />, weight: 1.6, class: 'edit-card', body: editPanel }
+            : { id: 'last', title: 'Last move', icon: <MessageSquare size={15} />, weight: 0.7, class: 'why', style: { '--cat': lastCat }, body: <LastMove {...common} onGoTo={(n) => go(path.slice(0, n + 1))} /> },
+          { id: 'next', title: nextTitle, icon: <ArrowRight size={15} />, weight: 1.1, body: nextMoves },
+        ]}
+      />
     </aside>
   )
 
@@ -989,10 +984,10 @@ export function App() {
         )}
         <button role="menuitem" onClick={() => { writeAt(ctxMenu.line, { XST: ['end'] }, 'Marked as joseki end'); setCtxMenu(null) }}>▣ Mark as joseki end</button>
         <button role="menuitem" onClick={() => { writeAt(ctxMenu.line, { XST: ['end-mistake'] }, 'Marked as end after a mistake'); setCtxMenu(null) }}>▣ Mark as end after a mistake</button>
-        <button role="menuitem" onClick={() => { setDesignTab('pos'); setInfoFolded(false); setCtxMenu(null); setTimeout(() => document.getElementById('f-XPB')?.focus(), 50) }}>Set the result…</button>
-        <button role="menuitem" onClick={() => { setDesignTab('move'); setInfoFolded(false); setCtxMenu(null); setTimeout(() => document.getElementById('f-node-XMW')?.focus(), 50) }}>Edit why…</button>
+        <button role="menuitem" onClick={() => { setDesignTab('pos'); setCtxMenu(null); setTimeout(() => document.getElementById('f-XPB')?.focus(), 50) }}>Set the result…</button>
+        <button role="menuitem" onClick={() => { setDesignTab('move'); setCtxMenu(null); setTimeout(() => document.getElementById('f-node-XMW')?.focus(), 50) }}>Edit why…</button>
         <hr />
-        <button role="menuitem" onClick={() => { setDesignTab('name'); setInfoFolded(false); setCtxMenu(null); setTimeout(() => document.getElementById('f-name-new')?.focus(), 50) }}>⚑ Name a joseki from here…</button>
+        <button role="menuitem" onClick={() => { setDesignTab('name'); setCtxMenu(null); setTimeout(() => document.getElementById('f-name-new')?.focus(), 50) }}>⚑ Name a joseki from here…</button>
         {ctxLast.edge && (
           <button role="menuitem" onClick={() => { if (promote(w, ctxMenu.line, target)) commit('This is now the main line'); else flash(`Only moves stored in ${target} can be reordered here.`); setCtxMenu(null) }}>Make this the main line</button>
         )}
@@ -1044,8 +1039,7 @@ export function App() {
       </button>
     </div>
   )
-  const design = (
-    <div class={`design ${infoFolded ? 'info-folded' : ''}`}>
+  const designBoard = (
       <section class="card design-board" aria-label="Board">
         {status}
         {sideSwitch}
@@ -1053,6 +1047,8 @@ export function App() {
         <div class="nav">{navButtons}</div>
         {editToolbar}
       </section>
+  )
+  const designTreeCard = (
       <section class="card design-tree" aria-label="Tree of moves">
         <div class="dtree-bar">
           {modeSeg}
@@ -1085,11 +1081,9 @@ export function App() {
           <button class={unsavedCount ? 'on' : ''} disabled={!unsavedCount} onClick={() => saveLines(unsaved.map((_, i) => i), target)}>Save to {target}</button>
         </div>
       </section>
+  )
+  const designInfo = (
       <section class="card design-info" aria-label="Selected move and position">
-        {infoFolded ? (
-          <button class="info-rail" onClick={() => setInfoFolded(false)} aria-label="Show the info panel">Selected move ▸</button>
-        ) : (
-          <>
             <div class="info-head">
               <div class="seg" role="tablist">
                 {(['move', 'pos', 'name'] as const).map((t) => (
@@ -1098,7 +1092,6 @@ export function App() {
                   </button>
                 ))}
               </div>
-              <button class="hide-btn" onClick={() => setInfoFolded(true)} aria-label="Fold the info panel"><PanelRightClose size={16} /></button>
             </div>
             <EditPanel
               ws={w}
@@ -1110,9 +1103,19 @@ export function App() {
               onFocusText={(el) => (lastText.current = el)}
               onDeleteMove={() => deleteAt(path)}
             />
-          </>
-        )}
       </section>
+  )
+  const design = (
+    <>
+      <Workbench
+        id="design"
+        class="design"
+        cols={[
+          { id: 'board', name: 'board', label: 'Board', width: 430, min: 300, max: 760, node: designBoard },
+          { id: 'tree', node: designTreeCard },
+          { id: 'info', name: 'info', label: 'Selected move', width: 370, min: 280, max: 640, node: designInfo },
+        ]}
+      />
       {ctxMenuEl}
       {confirmDelete && (
         <div class="modal" onClick={(e) => e.target === e.currentTarget && setConfirmDelete(null)}>
@@ -1132,7 +1135,7 @@ export function App() {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 
   const phoneTabs: [typeof phoneTab, string][] = edit
@@ -1165,36 +1168,24 @@ export function App() {
           {tab === 'next' && nextMoves}
           {tab === 'pos' && <PositionEval {...common} />}
           {tab === 'tree' && <>{treeToolbar}<div class="tree-box">{treeView}</div>{treeLegend}</>}
-          {tab === 'about' && <JosekiInfo {...common} onOpenLabel={onOpenLabel} onCopyLink={(id) => copyLink(linkFor(ctx, { kind: 'label', id }, [startStep(ctx, { kind: 'label', id })], { corner: 'tr', mirror: false, swap: false }), entryName(id))} />}
+          {tab === 'about' && josekiInfo}
         </div></div>
       </section>
       <div class="bottom-bar" role="toolbar" aria-label="Move navigation">{navButtons}</div>
     </>
   ) : (
-    <>
-      {settings.hideLeft ? (
-        <button class="rail left-rail" onClick={() => setSettings({ ...settings, hideLeft: false })} aria-label="Show left panel">
-          <PanelLeftOpen size={16} /><span>Search · Joseki</span>
-        </button>
-      ) : leftPanel}
-      <main class="center">
-        {status}
-        {sideSwitch}
-        {boardEl}
-        <div class="nav">{navButtons}</div>
-        {editToolbar}
-        {viewOptions}
-      </main>
-      {settings.hideRight ? (
-        <button class="rail right-rail" onClick={() => setSettings({ ...settings, hideRight: false })} aria-label="Show right panel">
-          <PanelRightOpen size={16} /><span>Evaluation · Moves</span>
-        </button>
-      ) : rightPanel}
-    </>
+    <Workbench
+      id="explore"
+      cols={[
+        { id: 'left', name: 'left', label: 'Search · Joseki', width: 300, min: 220, max: 560, node: leftPanel },
+        { id: 'center', node: <main class="center">{status}{sideSwitch}{boardEl}<div class="nav">{navButtons}</div>{editToolbar}{viewOptions}</main> },
+        { id: 'right', name: 'right', label: 'Tree · Moves', width: 390, min: 260, max: 640, node: rightPanel },
+      ]}
+    />
   )
 
   return (
-    <div class={`layout ${phone ? 'phone' : ''} mode-${mode} ${!phone && mode === 'explore' && settings.hideLeft ? 'hide-left' : ''} ${!phone && mode === 'explore' && settings.hideRight ? 'hide-right' : ''}`}>
+    <div class={`layout ${phone ? 'phone' : ''} mode-${mode}`}>
       {mode !== 'design' && ctxMenuEl}
       <header class="top">
         {phone && <button class="icon ghost" onClick={() => setDrawer(true)} aria-label="Open library and menu"><Menu size={20} /></button>}

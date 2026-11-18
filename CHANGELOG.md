@@ -18,6 +18,11 @@
 - Library: one tree of ids, tags matched with their deeper tags, **favourite tags** (common tags from `index.json` and your own stars).
 - **SGF**: load an SGF file into a database, download any position with what follows.
 
+### Layout
+- Fixed-size panels in every tab, like an editor's side bars: sizes depend only on the window, the zoom and what you set, never on the content, which scrolls inside each panel.
+- Columns are separated by vertical bars: drag a bar to resize, use its button to collapse or reopen the column (remembered). The empty row with the hide button is gone.
+- The side panels are a stack: each panel keeps its share of the height, its header collapses it, and the thin bar between two panels resizes them.
+
 ### Board marks
 - New **Eye** mark (◉ Eye in the Draw tools, `{{EYE:S19|the eye}}` in texts), stored as `XEYEM` on the position.
 

@@ -75,7 +75,7 @@ test('shapes: Black plays first; a tenuki leads to White playing first', async (
 
 test('side panels can be hidden and folded', async ({ page }) => {
   await page.getByRole('button', { name: 'Hide left panel' }).click()
-  await expect(page.locator('.side.left')).toHaveCount(0)
+  await expect(page.locator('.side-panel.left')).toHaveCount(0)
   await page.getByRole('button', { name: 'Show left panel' }).click()
   await page.locator('[data-card="search"] .card-head').click()
   await expect(page.locator('[data-card="search"] .card-body')).toHaveCount(0)
