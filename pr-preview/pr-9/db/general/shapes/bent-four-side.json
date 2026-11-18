@@ -6,33 +6,33 @@
       "toPlay": "B",
       "free": "horizontal",
       "name": "Bent four · side · enclosed",
-      "tags": [
-        "eye shape",
-        "eye space/4 points",
-        "surrounded/full",
-        "outside liberties/0",
-        "inside stones/0",
-        "arrangement/connected"
-      ],
       "notes": [
         "{{SQ:T16,T15,T14,S14|The 4-point eye space}} has {{CR:T15,T14|two middle points}}. {{White}} can take only one of them.",
         "One eye space of 4 points",
         "0 outside liberties"
       ],
-      "eval": {
-        "difficulty": "25k"
-      },
-      "extra": {
-        "XALIAS": [
+      "values": {
+        "black-first": "B-alive",
+        "white-first": "B-alive",
+        "tags": [
+          "eye shape"
+        ],
+        "eye-space": "4",
+        "surrounded": "full",
+        "outside-liberties": "0",
+        "inside-stones": "0",
+        "arrangement": "connected",
+        "difficulty": "25k",
+        "summary": "Four points with a bend, away from the corner. Alive: the two middle points are miai, just as in straight four. In the corner it is a different story: see \"Bent four in the corner\".",
+        "aliases": [
           "Kyokushi",
           "Magari yonmoku",
           "曲がり四目",
           "曲四"
         ],
-        "XSUM": "Four points with a bend, away from the corner. Alive: the two middle points are miai, just as in straight four. In the corner it is a different story: see \"Bent four in the corner\".",
-        "XSRC": "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search.",
-        "XSB": "B-alive",
-        "XSW": "B-alive"
+        "sources": [
+          "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search."
+        ]
       },
       "moves": [
         {
@@ -47,18 +47,20 @@
       "toPlay": "B",
       "free": "horizontal",
       "name": "White T15",
-      "extra": {
-        "XSB": "B-alive",
-        "XSW": "B-dead"
+      "values": {
+        "black-first": "B-alive",
+        "white-first": "B-dead"
       },
       "moves": [
         {
           "move": "sf",
           "to": "life & death/Bent four/Side, enclosed/White first:3b",
-          "status": "main",
           "notes": [
             "Takes the other one. {{SQ:T16}} and {{SQ:S14}} are two eyes."
-          ]
+          ],
+          "values": {
+            "category": "main"
+          }
         }
       ]
     },
@@ -72,18 +74,22 @@
         {
           "move": "se",
           "to": "life & death/Bent four/Side, enclosed/White first/White T15",
-          "status": "mistake",
           "notes": [
             "Takes one middle point."
-          ]
+          ],
+          "values": {
+            "category": "mistake"
+          }
         },
         {
           "move": "sf",
           "to": "life & death/Bent four/Side, enclosed/White first/White T14",
-          "status": "mistake",
           "notes": [
             "Takes the other middle point."
-          ]
+          ],
+          "values": {
+            "category": "mistake"
+          }
         }
       ]
     },
@@ -95,9 +101,9 @@
       "notes": [
         "Two eyes"
       ],
-      "extra": {
-        "XSB": "B-alive",
-        "XSW": "B-alive"
+      "values": {
+        "black-first": "B-alive",
+        "white-first": "B-alive"
       },
       "moves": []
     },
@@ -107,18 +113,20 @@
       "toPlay": "B",
       "free": "horizontal",
       "name": "White T14",
-      "extra": {
-        "XSB": "B-alive",
-        "XSW": "B-dead"
+      "values": {
+        "black-first": "B-alive",
+        "white-first": "B-dead"
       },
       "moves": [
         {
           "move": "se",
           "to": "life & death/Bent four/Side, enclosed/White first:3",
-          "status": "main",
           "notes": [
             "Takes the remaining middle point. {{TR:T14|The {{white}} stone}} is in atari, and {{SQ:T16}} is already an eye."
-          ]
+          ],
+          "values": {
+            "category": "main"
+          }
         }
       ]
     },
@@ -130,9 +138,9 @@
       "notes": [
         "Two eyes"
       ],
-      "extra": {
-        "XSB": "B-alive",
-        "XSW": "B-alive"
+      "values": {
+        "black-first": "B-alive",
+        "white-first": "B-alive"
       },
       "moves": []
     }

@@ -6,43 +6,45 @@
       "toPlay": "B",
       "free": "horizontal",
       "name": "Square four · side · enclosed",
-      "tags": [
-        "eye shape",
-        "dead shape",
-        "eye space/4 points",
-        "surrounded/full",
-        "outside liberties/0",
-        "inside stones/0",
-        "arrangement/connected"
-      ],
       "notes": [
         "{{SQ:T15,T16,S15,S16|The square}} is a single eye. {{Black}} has no move that splits it.",
         "One eye space of 4 points",
         "0 outside liberties"
       ],
-      "eval": {
-        "difficulty": "25k"
-      },
-      "extra": {
-        "XALIAS": [
+      "values": {
+        "black-first": "B-dead",
+        "white-first": "B-dead",
+        "tags": [
+          "eye shape",
+          "dead shape"
+        ],
+        "eye-space": "4",
+        "surrounded": "full",
+        "outside-liberties": "0",
+        "inside-stones": "0",
+        "arrangement": "connected",
+        "difficulty": "25k",
+        "summary": "Four points in a 2×2 block. Dead even if {{Black}} plays first: any move inside leaves a bent three, and {{White}} kills it at the bend.",
+        "aliases": [
           "Bulky four",
           "Shuushi",
           "集四",
           "方四"
         ],
-        "XSUM": "Four points in a 2×2 block. Dead even if {{Black}} plays first: any move inside leaves a bent three, and {{White}} kills it at the bend.",
-        "XSRC": "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search.",
-        "XSB": "B-dead",
-        "XSW": "B-dead"
+        "sources": [
+          "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search."
+        ]
       },
       "moves": [
         {
           "move": "rd",
           "to": "life & death/Square four/Side, enclosed/Black S16",
-          "status": "mistake",
           "notes": [
             "Any {{Black}} move inside leaves a bent three."
-          ]
+          ],
+          "values": {
+            "category": "mistake"
+          }
         }
       ]
     },
@@ -52,18 +54,20 @@
       "toPlay": "W",
       "free": "horizontal",
       "name": "Black S16",
-      "extra": {
-        "XSB": "B-alive",
-        "XSW": "B-dead"
+      "values": {
+        "black-first": "B-alive",
+        "white-first": "B-dead"
       },
       "moves": [
         {
           "move": "se",
           "to": "life & death/Square four/Side, enclosed/Black S16:2",
-          "status": "main",
           "notes": [
             "Takes the vital point of the bent three."
-          ]
+          ],
+          "values": {
+            "category": "main"
+          }
         }
       ]
     },
@@ -75,9 +79,9 @@
       "notes": [
         "One eye"
       ],
-      "extra": {
-        "XSB": "B-dead",
-        "XSW": "B-dead"
+      "values": {
+        "black-first": "B-dead",
+        "white-first": "B-dead"
       },
       "moves": []
     }

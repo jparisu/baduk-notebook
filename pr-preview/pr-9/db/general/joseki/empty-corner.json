@@ -5,79 +5,87 @@
       "stones": "",
       "toPlay": "B",
       "name": "Empty corner",
-      "tags": [
-        "opening",
-        "first move"
-      ],
       "notes": [
         "An empty corner. The first stone decides the balance between corner territory and influence toward the sides."
       ],
-      "eval": {
-        "difficulty": "25k"
-      },
-      "extra": {
-        "XSUM": "Choose where to play first in an empty corner. Each first move leads into the joseki that start from it. Example notes, to verify.",
-        "XST": "start"
+      "values": {
+        "status": "start",
+        "tags": [
+          "opening",
+          "first move"
+        ],
+        "difficulty": "25k",
+        "summary": "Choose where to play first in an empty corner. Each first move leads into the joseki that start from it. Example notes, to verify."
       },
       "moves": [
         {
           "move": "pd",
           "to": "joseki/4-4 point",
-          "status": "main",
           "notes": [
             "4-4 point (hoshi): takes the corner in one move and faces both sides. The {{CR:R17|3-3 point}} stays open for an invasion."
           ],
-          "extra": {
-            "XSTY": "balanced",
-            "XPUR": "influence"
+          "values": {
+            "category": "main",
+            "style": "balanced",
+            "purpose": [
+              "influence"
+            ]
           }
         },
         {
           "move": "qd",
           "to": "joseki/3-4 point",
-          "status": "main",
           "notes": [
             "3-4 point (komoku): a firmer corner that points toward one side. The opponent usually approaches from {{TR:R14,P17|the open side}}."
           ],
-          "extra": {
-            "XSTY": "solid",
-            "XPUR": "territory"
+          "values": {
+            "category": "main",
+            "style": "solid",
+            "purpose": [
+              "territory"
+            ]
           }
         },
         {
           "move": "qc",
           "to": "joseki/3-3 point",
-          "status": "alt",
           "notes": [
             "3-3 point (san-san): a secure corner in one move, but low and slow toward the center."
           ],
-          "extra": {
-            "XSTY": "solid",
-            "XPUR": "territory"
+          "values": {
+            "category": "alt",
+            "style": "solid",
+            "purpose": [
+              "territory"
+            ]
           }
         },
         {
           "move": "od",
           "to": "joseki:1",
-          "status": "situational",
           "notes": [
             "5-4 point (takamoku): faces the outside and the side. The opponent can still take the corner with a move {{SQ:R16,Q17,R17|deeper in the corner}}."
           ],
-          "extra": {
-            "XSTY": "aggressive",
-            "XPUR": "influence"
+          "values": {
+            "category": "situational",
+            "style": "aggressive",
+            "purpose": [
+              "influence"
+            ]
           }
         },
         {
           "move": "oc",
           "to": "joseki:1b",
-          "status": "situational",
           "notes": [
             "5-3 point (mokuhazushi): aims along the side. The opponent can still take the corner with a move {{SQ:R16,Q17,R17|deeper in the corner}}."
           ],
-          "extra": {
-            "XSTY": "balanced",
-            "XPUR": "influence"
+          "values": {
+            "category": "situational",
+            "style": "balanced",
+            "purpose": [
+              "influence"
+            ]
           }
         }
       ]
@@ -86,8 +94,8 @@
       "id": "joseki:1",
       "stones": "B:od",
       "toPlay": "W",
-      "extra": {
-        "XST": "start"
+      "values": {
+        "status": "start"
       },
       "moves": []
     },
@@ -95,8 +103,8 @@
       "id": "joseki:1b",
       "stones": "B:oc",
       "toPlay": "W",
-      "extra": {
-        "XST": "start"
+      "values": {
+        "status": "start"
       },
       "moves": []
     }

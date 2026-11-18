@@ -6,43 +6,45 @@
       "toPlay": "B",
       "free": "horizontal",
       "name": "Rabbity six · side · enclosed",
-      "tags": [
-        "eye shape",
-        "killable eye shape",
-        "eye space/6 points",
-        "surrounded/full",
-        "outside liberties/0",
-        "inside stones/0",
-        "arrangement/connected"
-      ],
       "notes": [
         "{{SQ:T15,T16,S15,S16,S14,R15|The rabbity six}}. {{CR:S15|The vital point}} touches four of the other points.",
         "One eye space of 6 points",
         "0 outside liberties"
       ],
-      "eval": {
-        "difficulty": "15k"
-      },
-      "extra": {
-        "XALIAS": [
+      "values": {
+        "black-first": "B-alive",
+        "white-first": "B-dead",
+        "tags": [
+          "eye shape",
+          "killable eye shape"
+        ],
+        "eye-space": "6",
+        "surrounded": "full",
+        "outside-liberties": "0",
+        "inside-stones": "0",
+        "arrangement": "connected",
+        "difficulty": "15k",
+        "summary": "The largest of the killable eye shapes. The point touching four others is the vital point.",
+        "aliases": [
           "Flower six",
           "Nutcracker",
           "Hanaroku",
           "花六"
         ],
-        "XSUM": "The largest of the killable eye shapes. The point touching four others is the vital point.",
-        "XSRC": "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search.",
-        "XSB": "B-alive",
-        "XSW": "B-dead"
+        "sources": [
+          "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search."
+        ]
       },
       "moves": [
         {
           "move": "re",
           "to": "life & death/Rabbity six/Side, enclosed/Black vital point",
-          "status": "main",
           "notes": [
             "Takes the vital point and splits the space into several eyes."
-          ]
+          ],
+          "values": {
+            "category": "main"
+          }
         },
         {
           "move": "tenuki",
@@ -59,9 +61,9 @@
       "notes": [
         "Two or more eyes"
       ],
-      "extra": {
-        "XSB": "B-alive",
-        "XSW": "B-alive"
+      "values": {
+        "black-first": "B-alive",
+        "white-first": "B-alive"
       },
       "moves": []
     },
@@ -74,9 +76,9 @@
       "notes": [
         "One eye"
       ],
-      "extra": {
-        "XSB": "B-dead",
-        "XSW": "B-dead"
+      "values": {
+        "black-first": "B-dead",
+        "white-first": "B-dead"
       },
       "moves": []
     },
@@ -90,10 +92,12 @@
         {
           "move": "re",
           "to": "life & death/Rabbity six/Side, enclosed/White first/White vital point",
-          "status": "main",
           "notes": [
             "Takes the vital point. {{Black}} can make only one eye."
-          ]
+          ],
+          "values": {
+            "category": "main"
+          }
         }
       ]
     }

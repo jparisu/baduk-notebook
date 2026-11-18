@@ -6,38 +6,42 @@
       "toPlay": "B",
       "free": "horizontal",
       "name": "Bulky five · side · enclosed",
-      "tags": [
-        "eye shape",
-        "killable eye shape",
-        "eye space/5 points",
-        "surrounded/full",
-        "outside liberties/0",
-        "inside stones/0",
-        "arrangement/connected"
-      ],
       "notes": [
         "{{SQ:T15,T16,S15,S16,S14|The bulky five}}. {{CR:S15|The vital point}} touches three of the other points.",
         "One eye space of 5 points",
         "0 outside liberties"
       ],
-      "eval": {
-        "difficulty": "20k"
-      },
-      "extra": {
-        "XALIAS": "刀把五",
-        "XSUM": "A 2×2 square with one point attached. The vital point is the point of the square next to the extra point (it touches three others).",
-        "XSRC": "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search.",
-        "XSB": "B-alive",
-        "XSW": "B-dead"
+      "values": {
+        "black-first": "B-alive",
+        "white-first": "B-dead",
+        "tags": [
+          "eye shape",
+          "killable eye shape"
+        ],
+        "eye-space": "5",
+        "surrounded": "full",
+        "outside-liberties": "0",
+        "inside-stones": "0",
+        "arrangement": "connected",
+        "difficulty": "20k",
+        "summary": "A 2×2 square with one point attached. The vital point is the point of the square next to the extra point (it touches three others).",
+        "aliases": [
+          "刀把五"
+        ],
+        "sources": [
+          "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search."
+        ]
       },
       "moves": [
         {
           "move": "re",
           "to": "life & death/Bulky five/Side, enclosed/Black vital point",
-          "status": "main",
           "notes": [
             "Takes the vital point and splits the space into two eyes."
-          ]
+          ],
+          "values": {
+            "category": "main"
+          }
         },
         {
           "move": "tenuki",
@@ -46,10 +50,12 @@
         {
           "move": "rf",
           "to": "life & death/Bulky five/Side, enclosed/Black S14",
-          "status": "mistake",
           "notes": [
             "Fills the extra point and leaves {{SQ:T15,T16,S15,S16|a square four}}, which is dead."
-          ]
+          ],
+          "values": {
+            "category": "mistake"
+          }
         }
       ]
     },
@@ -62,9 +68,9 @@
       "notes": [
         "Two eyes"
       ],
-      "extra": {
-        "XSB": "B-alive",
-        "XSW": "B-alive"
+      "values": {
+        "black-first": "B-alive",
+        "white-first": "B-alive"
       },
       "moves": []
     },
@@ -77,9 +83,9 @@
       "notes": [
         "One eye"
       ],
-      "extra": {
-        "XSB": "B-dead",
-        "XSW": "B-dead"
+      "values": {
+        "black-first": "B-dead",
+        "white-first": "B-dead"
       },
       "moves": []
     },
@@ -93,10 +99,12 @@
         {
           "move": "re",
           "to": "life & death/Bulky five/Side, enclosed/White first/White vital point",
-          "status": "main",
           "notes": [
             "Takes the vital point. {{Black}} can make only one eye."
-          ]
+          ],
+          "values": {
+            "category": "main"
+          }
         }
       ]
     },
@@ -106,9 +114,9 @@
       "toPlay": "W",
       "free": "horizontal",
       "name": "Black S14",
-      "extra": {
-        "XSB": "B-dead",
-        "XSW": "B-dead"
+      "values": {
+        "black-first": "B-dead",
+        "white-first": "B-dead"
       },
       "moves": []
     }
