@@ -1,21 +1,22 @@
-/** SGF property schema (SPEC §4) and display metadata for its values. */
+/**
+ * Properties of positions and moves inside the app. Values are described by the schema
+ * (core/schema.ts, db/schema.json); this module keeps the move categories in step with it.
+ */
+import { fieldOf, fieldOfProp, onSchema, swapValue, swapsValue, type Schema } from './schema'
 
 export type Props = Record<string, string[]>
 
-/** Properties that describe the move itself (stored on the edge). Everything else describes the position. */
-export const MOVE_PROPS = new Set(['B', 'W', 'XCAT', 'XSTY', 'XPUR', 'XCOND', 'XMW', 'XMN', 'XLINK', 'TE', 'BM', 'DO', 'IT'])
-/** Entry properties (root node only). */
-export const ENTRY_PROPS = new Set([
-  'XID', 'XTYPE', 'XNAME', 'XALIAS', 'XDIFF', 'XTAG', 'XSUM', 'XSRC', 'XFAM', 'XERA', 'XSTART',
-  'XRULE',
-])
-/** Free-text fields: every database's value is shown (SPEC §3.3). */
-export const TEXT_PROPS = new Set(['XMW', 'XMN', 'XPW', 'XPN', 'XAJI', 'XTEN', 'XRES', 'XSUM', 'XRULE', 'C'])
+/** Properties that always belong to the move (besides the move fields of the schema). */
+const MOVE_BASE = new Set(['B', 'W', 'XMW', 'XMN', 'XLINK', 'TE', 'BM', 'DO', 'IT'])
+/** True when a property describes the move (stored on the edge) rather than the position. */
+export const isMoveProp = (prop: string) => MOVE_BASE.has(prop) || fieldOfProp(prop)?.for === 'move'
+/** Free-text fields: every database's text is shown. */
+export const TEXT_PROPS = new Set(['XMW', 'XPW', 'XSUM'])
 /** List fields: values from all databases are joined. */
-export const LIST_PROPS = new Set(['XALIAS', 'XTAG', 'XSRC', 'XPUR', 'XCOND', 'XERA'])
+export const isListProp = (prop: string) => prop === 'XTAG' || ['list', 'multi'].includes(fieldOfProp(prop)?.type ?? '')
 
-/** One set of move categories for every position (joseki and life & death alike). */
-export type Category = 'main' | 'alt' | 'situational' | 'slack' | 'mistake' | 'overplay' | 'trick' | 'punish'
+/** A move category ("This move is"): one option of the schema's `category` key. */
+export type Category = string
 
 export interface CategoryInfo {
   label: string
@@ -23,31 +24,44 @@ export interface CategoryInfo {
   symbol: string
   ink: string
   ring?: boolean
-  /** Counts as a right answer (quiz, "correct move" proposals). */
+  /** Counts as a right answer (quiz, main lines). */
   good: boolean
 }
 
-export const CATEGORIES: Record<Category, CategoryInfo> = {
-  main: { label: 'Main move', color: '#1e9e4a', symbol: '●', ink: '#fff', good: true },
-  alt: { label: 'Alternative', color: '#138f8c', symbol: '●', ink: '#fff', good: true },
-  situational: { label: 'Situational', color: '#e0b000', symbol: '◆', ink: '#222', good: true },
-  slack: { label: 'Slack / passive', color: '#7d858f', symbol: '▼', ink: '#fff', good: false },
-  mistake: { label: 'Mistake', color: '#d33232', symbol: '✕', ink: '#fff', good: false },
-  overplay: { label: 'Overplay', color: '#e8741c', symbol: '!', ink: '#fff', good: false },
-  trick: { label: 'Trick play', color: '#8b47d6', symbol: '?', ink: '#fff', good: false },
-  punish: { label: 'Punishment', color: '#2563eb', symbol: '', ink: '#2563eb', ring: true, good: true },
-}
-export const MOVE_CATEGORIES: Category[] = ['main', 'alt', 'situational', 'slack', 'mistake', 'overplay', 'trick', 'punish']
-/** Older values (from the former shape categories or imported files). */
-const LEGACY: Record<string, Category> = { correct: 'main', wrong: 'mistake', ko: 'situational' }
-/** Order of next moves: best first. */
-export const CATEGORY_ORDER: Category[] = ['main', 'alt', 'punish', 'situational', 'slack', 'trick', 'overplay', 'mistake']
+/** Filled from the schema; kept as the same objects so every module sees the current categories. */
+export const CATEGORIES: Record<string, CategoryInfo> = {}
+export const MOVE_CATEGORIES: string[] = []
+/** Order of next moves: good moves first, in the schema's order. */
+export const CATEGORY_ORDER: string[] = []
 
-/** Category from XCAT, falling back to standard SGF marks. */
+/** Dark or light text on a color. */
+function inkOn(color: string) {
+  const m = color.match(/^#([0-9a-f]{6})$/i)
+  if (!m) return '#fff'
+  const n = parseInt(m[1], 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255
+  return 0.299 * r + 0.587 * g + 0.114 * b > 165 ? '#222' : '#fff'
+}
+
+function applySchema(_: Schema) {
+  for (const k of Object.keys(CATEGORIES)) delete CATEGORIES[k]
+  const opts = fieldOf('category')?.options ?? []
+  for (const o of opts) {
+    const color = o.color ?? '#7d858f'
+    CATEGORIES[o.value] = { label: o.label, color, symbol: o.ring ? '' : o.icon ?? '●', ink: o.ring ? color : inkOn(color), ring: o.ring, good: !!o.good }
+  }
+  MOVE_CATEGORIES.splice(0, MOVE_CATEGORIES.length, ...opts.map((o) => o.value))
+  CATEGORY_ORDER.splice(0, CATEGORY_ORDER.length, ...opts.filter((o) => o.good).map((o) => o.value), ...opts.filter((o) => !o.good).map((o) => o.value))
+}
+onSchema(applySchema)
+
+/** Older values (former shape categories, imported files). */
+const LEGACY: Record<string, string> = { correct: 'main', wrong: 'mistake', ko: 'situational' }
+
+/** Category of a move, also from standard SGF marks. */
 export function categoryOf(p: Props): Category | null {
   const c = p.XCAT?.[0]
-  if (c && c in CATEGORIES) return c as Category
-  if (c && LEGACY[c]) return LEGACY[c]
+  if (c && c in CATEGORIES) return c
+  if (c && LEGACY[c] && LEGACY[c] in CATEGORIES) return LEGACY[c]
   if (p.TE) return 'main'
   if (p.BM) return 'mistake'
   if (p.DO) return 'slack'
@@ -55,35 +69,6 @@ export function categoryOf(p: Props): Category | null {
   return null
 }
 
-export const EVAL_LABELS: Record<string, string> = {
-  'B++': 'Black clearly better',
-  'B+': 'Black slightly better',
-  '=': 'Even',
-  'W+': 'White slightly better',
-  'W++': 'White clearly better',
-}
-export const STATUS_LABELS: Record<string, string> = {
-  start: 'Start position',
-  progress: 'In progress',
-  end: 'Joseki end',
-  'end-mistake': 'End after a mistake',
-}
-/** Life & death result, naming the color of the group (if Black or White plays first). */
-export const RESULT_LABELS: Record<string, string> = {
-  'B-alive': 'Black lives', 'B-dead': 'Black dies', 'W-alive': 'White lives', 'W-dead': 'White dies',
-  ko: 'Ko', seki: 'Seki', unsettled: 'Unsettled',
-}
-export const RESULT_VALUES = Object.keys(RESULT_LABELS)
-
-/** Flips color-dependent values when the display swaps colors. */
-export function flipValue(prop: string, v: string): string {
-  if (prop === 'XEV') return v.replace(/^B/, '§').replace(/^W/, 'B').replace(/^§/, 'W')
-  if (prop === 'XSEN') return v === 'B' ? 'W' : v === 'W' ? 'B' : v
-  if (prop === 'XSB' || prop === 'XSW') return v.replace(/^B-/, '§-').replace(/^W-/, 'B-').replace(/^§-/, 'W-')
-  if (prop === 'XPB') {
-    const n = Number(v)
-    return Number.isFinite(n) ? String(-n) : v
-  }
-  return v
-}
-export const COLOR_PROPS = new Set(['XEV', 'XSEN', 'XPB', 'XSB', 'XSW'])
+/** Values that change with Swap colors. */
+export const flipValue = (prop: string, v: string) => swapValue(prop, v)
+export const isColorProp = (prop: string) => swapsValue(prop)

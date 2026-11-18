@@ -5,6 +5,10 @@ import { parseDbFile, type DbFile } from './core/model'
 import { buildGraph } from './core/graph'
 import { IDENTITY } from './core/geometry'
 import type { Ctx } from './view'
+import { parseSchema, setSchema } from './core/schema'
+
+// The value schema, as the app loads it before the databases.
+setSchema(parseSchema(readFileSync('db/schema.json', 'utf8')))
 
 export function listDb(dir = 'db'): string[] {
   return readdirSync(dir).sort().flatMap((n) => {

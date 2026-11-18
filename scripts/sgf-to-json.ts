@@ -10,7 +10,7 @@ import type { SgfNode } from '@sabaki/sgf'
 import GoBoard from '@sabaki/go-board'
 import { canonical } from '../src/core/hash'
 import { apply, inverse, parseSgfPt, parseSgfPtList, type Pt, type Sign, type SignMap, type Transform } from '../src/core/geometry'
-import { MOVE_PROPS, type Props } from '../src/core/fields'
+import { isMoveProp, type Props } from '../src/core/fields'
 import { colorOf, moveText, nextId, stonesOf, writeDbFile, type DbFile, type Free, type PosRec } from '../src/core/model'
 
 const ROOT = 'db'
@@ -90,7 +90,7 @@ for (const path of files) {
     const starts = !!(d.XID && d.XNAME)
     if (d.XID) label = d.XID[0]
     const moveData: Props = {}, posData: Props = {}
-    for (const [k, v] of Object.entries(d)) if (!DROP.has(k)) (MOVE_PROPS.has(k) ? moveData : posData)[k] = v
+    for (const [k, v] of Object.entries(d)) if (!DROP.has(k)) (isMoveProp(k) ? moveData : posData)[k] = v
     let pos = positions.get(key)
     if (!pos) positions.set(key, (pos = { key, board: map, toCanon, toMove: next, data: {}, label, isStart: starts, file: path, moves: [] }))
     else if (starts && !pos.isStart) Object.assign(pos, { label, isStart: true })

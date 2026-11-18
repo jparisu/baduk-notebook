@@ -2,7 +2,7 @@
 import type { DbFile } from './model'
 import { buildGraph } from './graph'
 import { playerWords } from './refs'
-import { CATEGORIES, RESULT_VALUES } from './fields'
+import { fieldOfProp, keyOf } from './schema'
 import { parsePt, parseSgfPt, parseSgfPtList } from './geometry'
 
 export interface Issue {
@@ -12,35 +12,11 @@ export interface Issue {
   message: string
 }
 
-const ENUMS: Record<string, string[]> = {
-  XTYPE: ['joseki', 'shape'],
-  XCAT: Object.keys(CATEGORIES),
-  XSTY: ['aggressive', 'balanced', 'solid'],
-  XST: ['start', 'progress', 'end', 'end-mistake'],
-  XEV: ['B++', 'B+', '=', 'W+', 'W++'],
-  XSEN: ['B', 'W', 'none'],
-  XSTART: ['empty', 'setup'],
-  XLOC: ['corner', 'side', 'center'],
-  XSURR: ['full', 'partial', 'open'],
-  XARR: ['connected', 'separated'],
-  XRESB: ['alive', 'dead', 'ko', 'seki', 'unsettled'],
-  XRESW: ['alive', 'dead', 'ko', 'seki', 'unsettled'],
-  XSB: RESULT_VALUES,
-  XSW: RESULT_VALUES,
-  XKOT: ['direct', 'approach1', 'approach2', '10000year'],
-  XPUR: ['territory', 'influence', 'sente', 'attack', 'defend', 'sabaki', 'probe', 'reduce', 'connect', 'cut', 'eye', 'kill'],
-  XERA: ['classic', 'modern', 'ai'],
-  PL: ['B', 'W'],
-}
-const INTS = ['XSIZE', 'XOLIB', 'XINSIDE']
-const POINT_LISTS = ['AB', 'AW', 'AE', 'TR', 'SQ', 'CR', 'MA', 'XVITAL', 'XREG', 'XTB', 'XTW', 'XCUT', 'XEYEM', 'XWEAK', 'XLAD']
+const POINT_LISTS = ['TR', 'SQ', 'CR', 'MA', 'XTB', 'XTW', 'XCUT', 'XEYEM', 'XWEAK', 'XLAD', 'XMOYO']
 const POINT_PAIRS = ['AR', 'LN', 'XWALL', 'XINF']
-const TEXT = ['XMW', 'XMN', 'XPW', 'XPN', 'XAJI', 'XTEN', 'XRES', 'XSUM', 'XRULE']
-const KNOWN = new Set([
-  ...Object.keys(ENUMS), ...INTS, ...POINT_LISTS, ...POINT_PAIRS, ...TEXT,
-  'FF', 'CA', 'GM', 'SZ', 'C', 'B', 'W', 'TE', 'BM', 'DO', 'IT', 'LB', 'XID', 'XNAME', 'XALIAS', 'XFAM', 'XDIFF', 'XTAG', 'XSRC',
-  'XCOND', 'XLINK', 'XPB', 'XPBS', 'XEYE', 'XLIB', 'XMOYO', 'GN', 'PB', 'PW', 'KM', 'RU', 'DT', 'EV', 'RE', 'AP', 'ST', 'N', 'MN', 'HA',
-])
+const TEXT = ['XMW', 'XPW', 'XSUM']
+/** Properties that are not schema values. */
+const OWN = new Set([...POINT_LISTS, ...POINT_PAIRS, ...TEXT, 'LB', 'XNAME', 'XTAG', 'XLINK'])
 const REF_TYPES = new Set(['TR', 'SQ', 'CR', 'MA', 'LB', 'AR', 'LN', 'WALL', 'INF', 'TB', 'TW', 'CUT', 'EYE'])
 
 function checkRefs(text: string, push: (m: string) => void) {
@@ -56,16 +32,28 @@ function checkRefs(text: string, push: (m: string) => void) {
 
 function checkProps(d: Record<string, string[]>, err: (m: string, sev?: Issue['severity']) => void) {
   for (const [k, vals] of Object.entries(d)) {
-    if (!KNOWN.has(k)) err(`Unknown field ${k}`, 'warning')
-    if (ENUMS[k]) for (const v of vals) if (!ENUMS[k].includes(v)) err(`${k}[${v}]: allowed values are ${ENUMS[k].join(', ')}`)
-    if (INTS.includes(k)) for (const v of vals) if (!/^\d+$/.test(v)) err(`${k}[${v}] must be a whole number`)
     if (POINT_LISTS.includes(k)) for (const v of vals) if (!parseSgfPtList(v).length) err(`${k}[${v}] is not a valid point`)
     if (POINT_PAIRS.includes(k))
       for (const v of vals) {
         const [a, b] = v.split(':')
         if (!a || !b || !parseSgfPt(a) || !parseSgfPt(b)) err(`${k}[${v}] must be two points like pd:qc`)
       }
-    if (TEXT.includes(k) || k === 'C') for (const v of vals) checkRefs(v, (m) => err(m, 'warning'))
+    if (TEXT.includes(k)) for (const v of vals) checkRefs(v, (m) => err(m, 'warning'))
+    if (OWN.has(k)) continue
+    // Values: the schema (db/schema.json) says which keys exist and what they accept.
+    const f = fieldOfProp(k)
+    const key = keyOf(k)
+    if (!f) {
+      err(`Unknown key "${key}": add it to db/schema.json`, 'warning')
+      continue
+    }
+    const opts = f.options?.map((o) => o.value) ?? []
+    for (const v of vals) {
+      if ((f.type === 'choice' || f.type === 'multi') && !opts.includes(v)) err(`${key}: "${v}" is not one of ${opts.join(', ')}`)
+      if (f.type === 'slider' && !(Number.isFinite(Number(v)) && Math.abs(Number(v)) <= 1)) err(`${key}: ${v} must be a number from -1 to 1`)
+      if (f.type === 'color' && !['B', 'W', 'none'].includes(v)) err(`${key}: ${v} must be B, W or none`)
+    }
+    if (f.type === 'choice' && vals.length > 1) err(`${key} takes one value`)
   }
   if (d.XDIFF && !/^([1-9]|[12]\d|30)k$|^[1-9]d$/.test(d.XDIFF[0])) err(`difficulty ${d.XDIFF[0]} must look like 15k or 2d`)
   if (d.XPB && !Number.isFinite(Number(d.XPB[0]))) err(`balance ${d.XPB[0]} must be a number`)

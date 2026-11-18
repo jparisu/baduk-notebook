@@ -3,7 +3,7 @@ import { clickPoint, fresh, openEntry } from './helpers'
 
 test.beforeEach(async ({ page }) => fresh(page))
 
-test('game scenario: mark the opponent\'s unknown move as a mistake and my answer as a punishment worth +3', async ({ page }) => {
+test('game scenario: mark the opponent\'s unknown move as a mistake and my answer as a punishment that leaves Black better', async ({ page }) => {
   await openEntry(page, '3-3 invasion')
   for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowRight') // ... B R15, White to play
   await clickPoint(page, 'S16') // opponent plays something not in the list
@@ -14,16 +14,15 @@ test('game scenario: mark the opponent\'s unknown move as a mistake and my answe
   await expect(page.locator('.offbook-pill')).toHaveCount(0)
   await clickPoint(page, 'S15') // my answer
   await page.locator('.cat-btn', { hasText: 'Punishment' }).click()
-  await page.locator('#f-XPB').fill('+3')
-  await page.locator('#f-XPB').press('Enter')
+  await page.locator('#f-XEV').fill('0.5') // the evaluation slider, toward Black
   await page.locator('#f-node-XMW').fill('Cuts off the hane stone.')
   await page.locator('#f-node-XMW').blur()
   await page.getByRole('button', { name: /Export \(1\)/ }).click()
   await expect(page.locator('.modal')).toContainText('All checks pass')
   await page.locator('summary', { hasText: 'Show the patch' }).click()
-  await expect(page.locator('.patch')).toContainText('"status": "mistake"')
-  await expect(page.locator('.patch')).toContainText('"status": "punish"')
-  await expect(page.locator('.patch')).toContainText('"balance": 3')
+  await expect(page.locator('.patch')).toContainText('"category": "mistake"')
+  await expect(page.locator('.patch')).toContainText('"category": "punish"')
+  await expect(page.locator('.patch')).toContainText('"evaluation": 0.5')
   const download = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Download .patch' }).click()
   expect((await download).suggestedFilename()).toMatch(/\.patch$/)
@@ -110,7 +109,8 @@ test('a position and a move can have several notes', async ({ page }) => {
 
 test('life & death results name the color, and Swap colors flips them', async ({ page }) => {
   await openEntry(page, 'Straight three', 'Side, enclosed')
-  await expect(page.locator('.pos-eval')).toContainText('Black plays first: Black lives')
+  const row = (label: string) => page.locator('.pos-values .f', { hasText: label })
+  await expect(row('Black plays first')).toContainText('Black lives')
   await page.getByRole('button', { name: /Swap colors/ }).click()
-  await expect(page.locator('.pos-eval')).toContainText('White plays first: White lives')
+  await expect(row('White plays first')).toContainText('White lives')
 })

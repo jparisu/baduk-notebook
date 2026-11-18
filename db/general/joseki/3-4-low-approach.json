@@ -5,43 +5,43 @@
       "stones": "B:qd W:oc",
       "toPlay": "B",
       "name": "3-4 point · low approach",
-      "tags": [
-        "approach",
-        "basic joseki"
-      ],
       "notes": [
         "{{TR:P17|{{White}}'s low approach}} to {{TR:R16|the 3-4 stone}}, from the open side. Low approach (small knight approach) on the 5-3 point. It stops {{Black}} from enclosing the corner and aims to settle along the top."
       ],
-      "eval": {
-        "difficulty": "20k"
-      },
-      "extra": {
-        "XALIAS": [
+      "values": {
+        "evaluation": 0,
+        "status": "start",
+        "tags": [
+          "approach",
+          "basic joseki"
+        ],
+        "difficulty": "20k",
+        "summary": "{{White}} approaches the 3-4 stone low, on the 5-3 point. {{Black}}'s main answers are the diagonal (Shusaku's kosumi), the small knight, the kick and the pincers. Sources: 34PointLowApproach, 34PointLowApproachDiagonal, 34PointLowApproachKeima, 34PointLowApproachKick, 34PointLowApproachOneSpaceLowPincer.",
+        "aliases": [
           "Komoku small knight approach",
           "Kogeima kakari",
           "小目小ゲイマガカリ"
         ],
-        "XSUM": "{{White}} approaches the 3-4 stone low, on the 5-3 point. {{Black}}'s main answers are the diagonal (Shusaku's kosumi), the small knight, the kick and the pincers. Sources: 34PointLowApproach, 34PointLowApproachDiagonal, 34PointLowApproachKeima, 34PointLowApproachKick, 34PointLowApproachOneSpaceLowPincer.",
-        "XSRC": "Sensei's Library (senseis.xmp.net), joseki pages listed in XSUM. Sequences copied from its diagrams and mirrored to the top-right corner.",
-        "XERA": [
+        "sources": [
+          "Sensei's Library (senseis.xmp.net), joseki pages listed in XSUM. Sequences copied from its diagrams and mirrored to the top-right corner."
+        ],
+        "era": [
           "classic",
           "modern",
           "ai"
-        ],
-        "XST": "start",
-        "XEV": "="
+        ]
       },
       "moves": [
         {
           "move": "pe",
           "to": "joseki/3-4 point/Low approach/Diagonal",
-          "status": "main",
           "notes": [
             "The diagonal (Shusaku's kosumi): steady, strengthens the corner and stops {{White}} from pressing at {{CR:P16}}. AI programs rate it highly."
           ],
-          "extra": {
-            "XSTY": "solid",
-            "XPUR": [
+          "values": {
+            "category": "main",
+            "style": "solid",
+            "purpose": [
               "defend",
               "attack"
             ]
@@ -50,13 +50,13 @@
         {
           "move": "pf",
           "to": "joseki/3-4 point/Low approach/Small knight",
-          "status": "main",
           "notes": [
             "Small knight: a faster alternative to the diagonal, with slightly more weaknesses."
           ],
-          "extra": {
-            "XSTY": "balanced",
-            "XPUR": [
+          "values": {
+            "category": "main",
+            "style": "balanced",
+            "purpose": [
               "defend",
               "territory"
             ]
@@ -65,36 +65,40 @@
         {
           "move": "pc",
           "to": "joseki/3-4 point/Low approach/Kick",
-          "status": "alt",
           "notes": [
             "The kick: {{Black}} presses {{White}} up and takes the corner."
           ],
-          "extra": {
-            "XSTY": "solid",
-            "XPUR": "territory"
+          "values": {
+            "category": "alt",
+            "style": "solid",
+            "purpose": [
+              "territory"
+            ]
           }
         },
         {
           "move": "mc",
           "to": "joseki/3-4 point/Low approach/One-space low pincer",
-          "status": "alt",
           "notes": [
             "One-space low pincer: denies {{White}} the top side."
           ],
-          "extra": {
-            "XSTY": "aggressive",
-            "XPUR": "attack"
+          "values": {
+            "category": "alt",
+            "style": "aggressive",
+            "purpose": [
+              "attack"
+            ]
           }
         },
         {
           "move": "tenuki",
           "to": "joseki/3-4 point/Low approach:3",
-          "status": "alt",
           "notes": [
             "Tenuki is common at a higher level when there is something bigger elsewhere."
           ],
-          "extra": {
-            "XSTY": "balanced"
+          "values": {
+            "category": "alt",
+            "style": "balanced"
           }
         }
       ]
@@ -107,49 +111,53 @@
       "notes": [
         "{{White}} usually extends along the top or plays elsewhere."
       ],
-      "eval": {
-        "difficulty": "20k"
-      },
-      "extra": {
-        "XALIAS": "Shusaku's kosumi",
-        "XSUM": "The strongest local answer: it strengthens the corner and stops {{White}} from pressing.",
-        "XST": "progress",
-        "XEV": "="
+      "values": {
+        "evaluation": 0,
+        "status": "progress",
+        "difficulty": "20k",
+        "summary": "The strongest local answer: it strengthens the corner and stops {{White}} from pressing.",
+        "aliases": [
+          "Shusaku's kosumi"
+        ]
       },
       "moves": [
         {
           "move": "kc",
           "to": "joseki/3-4 point/Low approach/Diagonal:4",
-          "status": "main",
           "notes": [
             "Three-space low extension: the most common way to make a base."
           ],
-          "extra": {
-            "XSTY": "balanced",
-            "XPUR": "eye"
+          "values": {
+            "category": "main",
+            "style": "balanced",
+            "purpose": [
+              "eye"
+            ]
           }
         },
         {
           "move": "lc",
           "to": "joseki/3-4 point/Low approach/Diagonal:4b",
-          "status": "alt",
           "notes": [
             "Two-space low extension: narrower but safer."
           ],
-          "extra": {
-            "XSTY": "solid",
-            "XPUR": "eye"
+          "values": {
+            "category": "alt",
+            "style": "solid",
+            "purpose": [
+              "eye"
+            ]
           }
         },
         {
           "move": "tenuki",
           "to": "joseki/3-4 point/Low approach/Diagonal:4c",
-          "status": "alt",
           "notes": [
             "Tenuki: the approach stone is light."
           ],
-          "extra": {
-            "XSTY": "balanced"
+          "values": {
+            "category": "alt",
+            "style": "balanced"
           }
         }
       ]
@@ -158,10 +166,10 @@
       "id": "joseki/3-4 point/Low approach/Diagonal:4",
       "stones": "B:pe,qd W:kc,oc",
       "toPlay": "B",
-      "extra": {
-        "XST": "end",
-        "XEV": "=",
-        "XSEN": "B"
+      "values": {
+        "evaluation": 0,
+        "status": "end",
+        "sente": "B"
       },
       "moves": []
     },
@@ -169,10 +177,10 @@
       "id": "joseki/3-4 point/Low approach/Diagonal:4b",
       "stones": "B:pe,qd W:lc,oc",
       "toPlay": "B",
-      "extra": {
-        "XST": "end",
-        "XEV": "=",
-        "XSEN": "B"
+      "values": {
+        "evaluation": 0,
+        "status": "end",
+        "sente": "B"
       },
       "moves": []
     },
@@ -183,9 +191,9 @@
       "notes": [
         "Tenuki: Possible, but a {{Black}} pincer on the top side is strong."
       ],
-      "extra": {
-        "XST": "progress",
-        "XEV": "="
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
       },
       "moves": []
     },
@@ -194,25 +202,25 @@
       "stones": "B:pf,qd W:oc",
       "toPlay": "W",
       "name": "3-4 point · low approach · small knight",
-      "eval": {
-        "difficulty": "20k"
-      },
-      "extra": {
-        "XSUM": "A faster alternative to the diagonal, with slightly more weaknesses.",
-        "XST": "progress",
-        "XEV": "="
+      "values": {
+        "evaluation": 0,
+        "status": "progress",
+        "difficulty": "20k",
+        "summary": "A faster alternative to the diagonal, with slightly more weaknesses."
       },
       "moves": [
         {
           "move": "kc",
           "to": "joseki/3-4 point/Low approach/Small knight:4",
-          "status": "main",
           "notes": [
             "Extends along the top to make a base."
           ],
-          "extra": {
-            "XSTY": "balanced",
-            "XPUR": "eye"
+          "values": {
+            "category": "main",
+            "style": "balanced",
+            "purpose": [
+              "eye"
+            ]
           }
         }
       ]
@@ -221,10 +229,10 @@
       "id": "joseki/3-4 point/Low approach/Small knight:4",
       "stones": "B:pf,qd W:kc,oc",
       "toPlay": "B",
-      "extra": {
-        "XST": "end",
-        "XEV": "=",
-        "XSEN": "B"
+      "values": {
+        "evaluation": 0,
+        "status": "end",
+        "sente": "B"
       },
       "moves": []
     },
@@ -233,25 +241,25 @@
       "stones": "B:pc,qd W:oc",
       "toPlay": "W",
       "name": "3-4 point · low approach · kick",
-      "eval": {
-        "difficulty": "20k"
-      },
-      "extra": {
-        "XSUM": "{{Black}} presses {{White}} up and takes the corner.",
-        "XST": "progress",
-        "XEV": "="
+      "values": {
+        "evaluation": 0,
+        "status": "progress",
+        "difficulty": "20k",
+        "summary": "{{Black}} presses {{White}} up and takes the corner."
       },
       "moves": [
         {
           "move": "od",
           "to": "joseki/3-4 point/Low approach/Kick:4",
-          "status": "main",
           "notes": [
             "Stands up."
           ],
-          "extra": {
-            "XSTY": "balanced",
-            "XPUR": "influence"
+          "values": {
+            "category": "main",
+            "style": "balanced",
+            "purpose": [
+              "influence"
+            ]
           }
         }
       ]
@@ -260,21 +268,21 @@
       "id": "joseki/3-4 point/Low approach/Kick:4",
       "stones": "B:pc,qd W:oc,od",
       "toPlay": "B",
-      "extra": {
-        "XST": "progress",
-        "XEV": "="
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
       },
       "moves": [
         {
           "move": "qf",
           "to": "joseki/3-4 point/Low approach/Kick:5",
-          "status": "main",
           "notes": [
             "Extends down the side to complete the corner."
           ],
-          "extra": {
-            "XSTY": "solid",
-            "XPUR": [
+          "values": {
+            "category": "main",
+            "style": "solid",
+            "purpose": [
               "territory",
               "eye"
             ]
@@ -289,10 +297,10 @@
       "notes": [
         "Outcome: {{Black}} has the corner; {{White}} has a light shape facing the top."
       ],
-      "extra": {
-        "XST": "end",
-        "XEV": "=",
-        "XSEN": "W"
+      "values": {
+        "evaluation": 0,
+        "status": "end",
+        "sente": "W"
       },
       "moves": []
     },
@@ -301,25 +309,25 @@
       "stones": "B:mc,qd W:oc",
       "toPlay": "W",
       "name": "3-4 point · low approach · one-space low pincer",
-      "eval": {
-        "difficulty": "15k"
-      },
-      "extra": {
-        "XSUM": "{{Black}} denies {{White}} the top side; {{White}} pushes in and builds outside while {{Black}} takes the corner.",
-        "XST": "progress",
-        "XEV": "="
+      "values": {
+        "evaluation": 0,
+        "status": "progress",
+        "difficulty": "15k",
+        "summary": "{{Black}} denies {{White}} the top side; {{White}} pushes in and builds outside while {{Black}} takes the corner."
       },
       "moves": [
         {
           "move": "pe",
           "to": "joseki/3-4 point/Low approach/One-space low pincer:4",
-          "status": "main",
           "notes": [
             "Pushes in at the shoulder of the corner."
           ],
-          "extra": {
-            "XSTY": "aggressive",
-            "XPUR": "sabaki"
+          "values": {
+            "category": "main",
+            "style": "aggressive",
+            "purpose": [
+              "sabaki"
+            ]
           }
         }
       ]
@@ -328,21 +336,23 @@
       "id": "joseki/3-4 point/Low approach/One-space low pincer:4",
       "stones": "B:mc,qd W:oc,pe",
       "toPlay": "B",
-      "extra": {
-        "XST": "progress",
-        "XEV": "="
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
       },
       "moves": [
         {
           "move": "qe",
           "to": "joseki/3-4 point/Low approach/One-space low pincer:5",
-          "status": "main",
           "notes": [
             "Crawls to keep the corner."
           ],
-          "extra": {
-            "XSTY": "solid",
-            "XPUR": "territory"
+          "values": {
+            "category": "main",
+            "style": "solid",
+            "purpose": [
+              "territory"
+            ]
           }
         }
       ]
@@ -351,18 +361,20 @@
       "id": "joseki/3-4 point/Low approach/One-space low pincer:5",
       "stones": "B:mc,qd,qe W:oc,pe",
       "toPlay": "W",
-      "extra": {
-        "XST": "progress",
-        "XEV": "="
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
       },
       "moves": [
         {
           "move": "pf",
           "to": "joseki/3-4 point/Low approach/One-space low pincer:6",
-          "status": "main",
-          "extra": {
-            "XSTY": "balanced",
-            "XPUR": "influence"
+          "values": {
+            "category": "main",
+            "style": "balanced",
+            "purpose": [
+              "influence"
+            ]
           }
         }
       ]
@@ -371,21 +383,23 @@
       "id": "joseki/3-4 point/Low approach/One-space low pincer:6",
       "stones": "B:mc,qd,qe W:oc,pe,pf",
       "toPlay": "B",
-      "extra": {
-        "XST": "progress",
-        "XEV": "="
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
       },
       "moves": [
         {
           "move": "qg",
           "to": "joseki/3-4 point/Low approach/One-space low pincer:7",
-          "status": "main",
           "notes": [
             "{{Black}} takes the corner and left side; {{White}} builds outside. Continuations are not entered yet."
           ],
-          "extra": {
-            "XSTY": "solid",
-            "XPUR": "territory"
+          "values": {
+            "category": "main",
+            "style": "solid",
+            "purpose": [
+              "territory"
+            ]
           }
         }
       ]
@@ -394,9 +408,9 @@
       "id": "joseki/3-4 point/Low approach/One-space low pincer:7",
       "stones": "B:mc,qd,qe,qg W:oc,pe,pf",
       "toPlay": "W",
-      "extra": {
-        "XST": "progress",
-        "XEV": "="
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
       },
       "moves": []
     },
@@ -407,9 +421,9 @@
       "notes": [
         "Tenuki: {{White}} can take the corner with a move at {{CR:Q17}} or press with {{CR:Q15}}."
       ],
-      "extra": {
-        "XST": "progress",
-        "XEV": "="
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
       },
       "moves": []
     }

@@ -1,4 +1,5 @@
 /** Settings dialog (SPEC §8.8). */
+import { getSchema } from '../core/schema'
 import { CATEGORIES, MOVE_CATEGORIES, type Category } from '../core/fields'
 import { DEFAULT_SETTINGS, type Settings, type Theme } from '../settings'
 import type { DatabaseInfo } from '../data/load'
@@ -54,10 +55,12 @@ export function SettingsDialog({ s, set, close, databases, active, toggleDb }: {
         {databases.map((d) => (
           <label key={d.id} class="cat-row db-row">
             <input type="checkbox" checked={active.has(d.id)} onChange={() => toggleDb(d.id)} />
-            <span class="swatch" style={{ background: d.color }} />
+            <input type="color" class="db-color" value={s.dbColors?.[d.id] ?? d.color} title="Your color for this database (only in this browser)" aria-label={`Color of ${d.name}`} onInput={(e) => up('dbColors', { ...(s.dbColors ?? {}), [d.id]: (e.target as HTMLInputElement).value })} />
             <span><b>{d.name}</b> <small class="hint">{d.description}</small></span>
           </label>
         ))}
+        {Object.keys(s.dbColors ?? {}).length > 0 && <button class="link small" onClick={() => up('dbColors', {})}>Use the databases' own colors</button>}
+        <p class="hint">Moves and titles from a database are underlined in its color. Give several databases the same color to stop telling them apart.</p>
         <h3>Next-move categories</h3>
         <div class="cat-grid">
           {MOVE_CATEGORIES.map((c) => (
@@ -65,6 +68,16 @@ export function SettingsDialog({ s, set, close, databases, active, toggleDb }: {
               <input type="checkbox" checked={!s.hiddenCategories.includes(c)} onChange={() => toggleCat(c)} />
               <span class={`dot ${CATEGORIES[c].ring ? 'ring' : ''}`} style={{ background: CATEGORIES[c].color, borderColor: CATEGORIES[c].color }} />
               {CATEGORIES[c].label}
+            </label>
+          ))}
+        </div>
+        <h3>Values shown</h3>
+        <p class="hint">The keys of positions and moves (db/schema.json) shown in the panels. They stay in the editor.</p>
+        <div class="cat-grid">
+          {getSchema().fields.filter((f) => f.key !== 'category').map((f) => (
+            <label key={f.key} class="cat-row">
+              <input type="checkbox" checked={!(s.hiddenKeys ?? []).includes(f.key)} onChange={() => up('hiddenKeys', (s.hiddenKeys ?? []).includes(f.key) ? s.hiddenKeys.filter((x) => x !== f.key) : [...(s.hiddenKeys ?? []), f.key])} />
+              {f.label} <small class="hint">{{ move: 'move', position: 'position', sequence: 'joseki' }[f.for]}</small>
             </label>
           ))}
         </div>

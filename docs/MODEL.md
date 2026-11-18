@@ -2,7 +2,7 @@
 
 Baduk Notebook stores one kind of thing: a **graph of positions joined by moves**.
 "Joseki", "shape" and "life & death" are not separate kinds of data. They are part of a
-position's `id` or of its `tags`.
+position's `id` or of its values (such as Tags).
 
 ## 1. Position (node)
 
@@ -13,18 +13,35 @@ A position is the stones on a local area of the board plus **who plays next**.
 | `id` | **Unique identifier** of the position, used by the moves to build the graph (§3). Example: `joseki/4-4 point/3-3 invasion` for the start of a sequence, `joseki/4-4 point/3-3 invasion:4` for a later position. |
 | `stones` | Black and white stones, in the upper-right corner frame (`B:pd,qf W:qc`). |
 | `toPlay` | `B` or `W`. The same stones with the other player to move is a **different** position. |
-| `tags` | Free nested tags for searching: `3-3`, `life & death/corner`, `ko`, `beginner`… |
 | `free` | Placement: `corner` (default), `horizontal`, `vertical` or `anywhere` (§4). |
 | `name` | Optional display name. Defaults to the last part of the sequence ("3-3 invasion"). |
-| `eval` | Optional: `balance` (points, from Black's view, local), `difficulty` (kyu/dan). |
-| `notes` | A list of notes (free text with board marks): what the position means, the outcome, what tenuki gives, what to watch out for… |
-| `extra` | Other details, with their SGF-style names: summary (`XSUM`), aliases, sources, evaluation symbol (`XEV`), status (`XST`), life & death results if Black / White plays first (`XSB`, `XSW`: `B-alive`, `B-dead`, `W-alive`, `W-dead`, `ko`, `seki`, `unsettled`, shown as "Black plays first: Black lives"), sente (`XSEN`), board marks (`TR`, `SQ`, `AR`…). The same fields exist for every position: joseki and life & death differ only by the first part of their id. |
+| `notes` | An ordered list of notes (free text with board marks). |
+| `values` | A dictionary of values: `{ "evaluation": 0.5, "status": "end", "black-first": "B-alive", "tags": ["eye shape"] }`. Which keys exist, and what they accept, is set by the **schema** (§1.1). |
+| `marks` | Board drawings: triangles, arrows, walls, eyes… (`TR`, `AR`, `XWALL`, `XEYEM`…). |
 | `moves` | The moves from this position (§2). |
 
-**Inherited fields:** a position without its own value shows the value of the closest earlier position of
-the line you played, until it sets its own. This holds for points, points source, evaluation, sente,
-explanation, outcome, tenuki, aji, note, tags, difficulty and the life & death results. Names, the
-joseki-end status, board marks and every move field are not inherited. Inheritance stops at the start
+### 1.1 Values and the schema (`db/schema.json`)
+Nothing about a position or a move is a fixed field except its id, stones, name, placement, notes and
+marks: everything else is a key of the `values` dictionary, described in `db/schema.json` and editable
+in the app (**Keys…**; exported like any other change). Each key has:
+
+| Property | Meaning |
+|---|---|
+| `key`, `label`, `icon`, `hint` | Its name in the files, how it is shown, a symbol or emoji, a help text. |
+| `for` | `move`, `position`, or `sequence` (the start of a joseki: description, difficulty, tags…). |
+| `type` | `choice` (dropdown, or buttons with `control: "buttons"`), `multi` (several options), `slider` (a bar between two `ends`, stored from -1 to 1, shown without numbers), `flag` (on or off), `color` (B / W / none), `text`, `list` (free words, like Tags). |
+| `options` | For choices: `value`, `label`, `icon`, `color`, and `swap`: the option it becomes with Swap colors ("B-alive" ⇄ "W-alive"). Move categories also say `good` and `ring`. |
+| `negate` | Slider: Swap colors turns it around. |
+| `swapKey` | The key it trades places with under Swap colors ("black-first" ⇄ "white-first"). |
+| `inherit` | Later positions show its value until they set their own. |
+
+The move key `category` ("This move is") is required: its options give the colors and symbols used on
+the board, in the tree and in the lists. You choose in Settings which keys are shown in the panels.
+
+**Inherited values:** a position without its own value shows the value of the closest earlier position of
+the line you played, until it sets its own. This holds for the notes, and for the keys whose schema
+says `inherit` (evaluation, sente, the life & death results). Names, board marks and every move value
+are not inherited. Inheritance stops at the start
 of a sequence (a named variation does not inherit the notes of the joseki it leaves). Nothing is
 copied: clearing your own value brings the inherited one back.
 
@@ -47,9 +64,9 @@ lead to. The app checks that playing the move really gives that position.
 |---|---|
 | `move` | A point (`qc`) or `tenuki` (play elsewhere: same stones, the other player to move). |
 | `to` | Id of the position it leads to. |
-| `status` | One set for every position: `main`, `alt`, `situational`, `slack`, `mistake`, `overplay`, `trick`, `punish`. |
-| `notes` | A list of notes: why the move is good or bad, and anything else about it. The first one is the short reason shown in Next moves. |
-| `extra` | Other details: style (`XSTY`), purpose (`XPUR`), conditions, board marks. |
+| `notes` | An ordered list of notes: why the move is good or bad, and anything else about it. The first one is the short reason shown in Next moves. |
+| `values` | Values for the move keys of the schema: `category` ("This move is"), style, purpose, conditions… |
+| `marks` | Board drawings. |
 
 Rules:
 - A move always adds exactly one move to the line: a stone (possibly capturing) or a tenuki.
@@ -168,12 +185,14 @@ Each database is a folder under `db/` with JSON files; any file may hold any pos
 {
   "positions": [
     { "id": "joseki", "stones": "", "toPlay": "B", "name": "Empty corner",
-      "moves": [{ "move": "pd", "to": "joseki/4-4 point", "status": "main" }] },
+      "moves": [{ "move": "pd", "to": "joseki/4-4 point", "values": { "category": "main" } }] },
     { "id": "joseki/4-4 point", "stones": "B:pd", "toPlay": "W",
-      "moves": [{ "move": "qc", "to": "joseki/4-4 point/3-3 invasion", "status": "main", "why": "Takes the corner." }] },
+      "moves": [{ "move": "qc", "to": "joseki/4-4 point/3-3 invasion",
+                  "notes": ["Takes the corner."], "values": { "category": "main", "style": "solid" } }] },
     { "id": "joseki/4-4 point/3-3 invasion", "stones": "B:pd W:qc", "toPlay": "B",
-      "eval": { "balance": 0, "difficulty": "20k" },
-      "moves": [{ "move": "pc", "to": "joseki/4-4 point/3-3 invasion:3", "status": "main" }] },
+      "notes": ["{{White}} lives small; {{Black}} gets the wall."],
+      "values": { "evaluation": 0, "difficulty": "20k", "tags": ["invasion"] },
+      "moves": [{ "move": "pc", "to": "joseki/4-4 point/3-3 invasion:3", "values": { "category": "main" } }] },
     { "id": "joseki/4-4 point/3-3 invasion:3", "stones": "B:pd,pc W:qc", "toPlay": "W", "moves": [] }
   ]
 }
@@ -189,13 +208,5 @@ Each database is a folder under `db/` with JSON files; any file may hold any pos
   - loading an SGF makes each node a position and each move a move;
   - comments become notes;
   - you can download any position with what follows it as SGF.
-- A script converts the current SGF database once. The `X*` properties map as follows:
-
-  | SGF property | New field |
-  |---|---|
-  | XFAM | the sequence part of `id`, under `joseki/` |
-  | XNAME | `name` |
-  | XTAG | `tags` |
-  | category | `status` |
-  | XPB | `balance` |
-  | XDIFF | `difficulty` |
+- Older files (SGF-style `extra` fields, `eval`, a move's `status` and `why`) are converted when read;
+  `npx vite-node scripts/normalize-db.ts` rewrites the database in the current format.

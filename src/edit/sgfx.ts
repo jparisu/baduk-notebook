@@ -5,7 +5,7 @@
 import * as sgf from '@sabaki/sgf'
 import type { SgfNode } from '@sabaki/sgf'
 import { parseSgfPt, parseSgfPtList, type Pt, type Sign } from '../core/geometry'
-import { MOVE_PROPS } from '../core/fields'
+import { isMoveProp } from '../core/fields'
 import { mergeNotes } from '../core/model'
 import { playerWords } from '../core/refs'
 import { candidates, displayBoard, frame, moveFields, playFree, positionFields, startStep, toMove, type Ctx, type Step } from '../view'
@@ -100,7 +100,7 @@ export function importSgf(ws: Workspace, ctxOf: () => Ctx, text: string, target:
             return
           }
         }
-      if (node !== root || Object.keys(d).some((k) => !MOVE_PROPS.has(k))) write(p, d)
+      if (node !== root || Object.keys(d).some((k) => !isMoveProp(k))) write(p, d)
       if (!node.children.length && p.length > 1) locate(ws, fresh(), p, target, null, true)
       for (const c of node.children) walk(c, p)
     }

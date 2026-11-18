@@ -6,35 +6,35 @@
       "toPlay": "B",
       "free": "horizontal",
       "name": "Straight three · side · enclosed",
-      "tags": [
-        "eye shape",
-        "eye space/3 points",
-        "surrounded/full",
-        "outside liberties/0",
-        "inside stones/0",
-        "arrangement/connected"
-      ],
       "notes": [
         "{{SQ:T14,T15,T16|The 3-point eye space}}. {{CR:T15|The middle point}} is the vital point.",
         "One eye space of 3 points",
         "0 outside liberties"
       ],
-      "eval": {
-        "difficulty": "25k"
-      },
-      "extra": {
-        "XSUM": "Three points in a row on the edge. Whoever plays the middle point decides the result.",
-        "XSB": "B-alive",
-        "XSW": "B-dead"
+      "values": {
+        "black-first": "B-alive",
+        "white-first": "B-dead",
+        "tags": [
+          "eye shape"
+        ],
+        "eye-space": "3",
+        "surrounded": "full",
+        "outside-liberties": "0",
+        "inside-stones": "0",
+        "arrangement": "connected",
+        "difficulty": "25k",
+        "summary": "Three points in a row on the edge. Whoever plays the middle point decides the result."
       },
       "moves": [
         {
           "move": "se",
           "to": "life & death/Straight three/Side, enclosed/Black vital point",
-          "status": "main",
           "notes": [
             "Takes the vital point and splits the space into two eyes."
-          ]
+          ],
+          "values": {
+            "category": "main"
+          }
         },
         {
           "move": "tenuki",
@@ -43,10 +43,12 @@
         {
           "move": "sf",
           "to": "life & death/Straight three/Side, enclosed/Black T14",
-          "status": "mistake",
           "notes": [
             "{{White}} answers at {{CR:T15}} and {{Black}} has only one eye."
-          ]
+          ],
+          "values": {
+            "category": "mistake"
+          }
         }
       ]
     },
@@ -59,9 +61,9 @@
       "notes": [
         "Two eyes"
       ],
-      "extra": {
-        "XSB": "B-alive",
-        "XSW": "B-alive"
+      "values": {
+        "black-first": "B-alive",
+        "white-first": "B-alive"
       },
       "moves": []
     },
@@ -74,9 +76,9 @@
       "notes": [
         "One eye"
       ],
-      "extra": {
-        "XSB": "B-dead",
-        "XSW": "B-dead"
+      "values": {
+        "black-first": "B-dead",
+        "white-first": "B-dead"
       },
       "moves": []
     },
@@ -90,10 +92,12 @@
         {
           "move": "se",
           "to": "life & death/Straight three/Side, enclosed/White first/White vital point",
-          "status": "main",
           "notes": [
             "Takes the vital point. {{Black}} can make only one eye."
-          ]
+          ],
+          "values": {
+            "category": "main"
+          }
         }
       ]
     },
@@ -103,9 +107,9 @@
       "toPlay": "W",
       "free": "horizontal",
       "name": "Black T14",
-      "extra": {
-        "XSB": "B-dead",
-        "XSW": "B-dead"
+      "values": {
+        "black-first": "B-dead",
+        "white-first": "B-dead"
       },
       "moves": []
     }

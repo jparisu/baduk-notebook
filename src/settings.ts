@@ -14,6 +14,10 @@ export interface Settings {
   moveNumbers: boolean
   showNext: boolean
   hiddenCategories: Category[]
+  /** Value keys (db/schema.json) you do not want to see in the panels. */
+  hiddenKeys: string[]
+  /** Your own colors for the databases (only in this browser; several may share one). */
+  dbColors: Record<string, string>
   overlays: boolean
   history: 'current' | 'last3' | 'line'
   aids: 'hover' | 'click' | 'always'
@@ -39,6 +43,8 @@ export const DEFAULT_SETTINGS: Settings = {
   moveNumbers: false,
   showNext: true,
   hiddenCategories: [],
+  hiddenKeys: [],
+  dbColors: {},
   overlays: true,
   history: 'current',
   aids: 'hover',

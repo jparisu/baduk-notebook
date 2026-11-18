@@ -24,7 +24,8 @@ interface Placed {
   sign: number
   pass: boolean
   label: string
-  extraDb: boolean
+  /** Color of the database the move comes from, when it is not the first one (drawn as a line under the node). */
+  extraDb: string | null
   transposition: boolean
   session: boolean
   tag: string | null
@@ -50,6 +51,8 @@ interface Props {
   mode: TreeMode
   zoom: number
   defaultDb: string
+  /** Color of a database (your own colors from Settings). */
+  dbColor?: (db: string) => string
   onSelect: (line: Step[]) => void
   /** Session moves (not in the databases) that continue the line given by these keys. */
   extra?: (keys: string[]) => Step[]
@@ -99,7 +102,7 @@ export function Tree(props: Props) {
     const label = session
       ? `${sign === 1 ? 'Black' : 'White'} ${pt ? ptName(pt) : 'tenuki'} — your move, not in the databases`
       : `${sign === 1 ? 'Black' : 'White'} ${pt ? ptName(pt) : 'tenuki'}${c!.cat ? ' — ' + CATEGORIES[c!.cat].label : ''}${c!.dbs.some((d) => d !== props.defaultDb) ? ` (${c!.dbs.join(', ')})` : ''}`
-    return { cat: c?.cat ?? null, sign, pass: m ? !m.pt : false, session, label, extraDb: !!c && !c.dbs.includes(props.defaultDb), pt }
+    return { cat: c?.cat ?? null, sign, pass: m ? !m.pt : false, session, label, extraDb: c && !c.dbs.includes(props.defaultDb) ? props.dbColor?.(c.dbs[0]) ?? 'var(--db-extra)' : null, pt }
   }
 
   const placed: Placed[] = []
@@ -115,7 +118,7 @@ export function Tree(props: Props) {
     const d = describe(props.rootParent, root)
     add({ step: root, line: [root], parent: -1, ...d, label: `Tree start · ${d.label}`, rootMove: true })
   } else {
-    add({ step: root, line: [root], parent: -1, cat: null, sign: 0, pass: false, label: 'Start of the line', extraDb: false, session: false, pt: null })
+    add({ step: root, line: [root], parent: -1, cat: null, sign: 0, pass: false, label: 'Start of the line', extraDb: null, session: false, pt: null })
   }
   /** Children of a position: database moves, then session moves. */
   const childrenOf = (line: Step[]) => {
@@ -279,7 +282,7 @@ export function Tree(props: Props) {
                 </text>
               </>
             )}
-            {p.extraDb && <circle cx={x + 9} cy={y - 9} r="3.5" fill="var(--db-extra)" />}
+            {p.extraDb && <rect class="db-line" x={x - 8} y={y + 12} width="16" height="3" rx="1.5" fill={p.extraDb} />}
             {p.rootMove && (props.first ?? 0) > 1 && (
               <g class="before-badge">
                 <rect x={x - 34} y={y - 7} width="20" height="14" rx="7" fill="var(--chip)" stroke="var(--muted)" />

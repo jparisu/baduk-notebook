@@ -25,11 +25,12 @@ import { SettingsDialog } from './ui/SettingsDialog'
 import { Library } from './ui/Library'
 import { useMedia } from './ui/useMedia'
 import { EditPanel } from './ui/EditPanel'
-import { ExportDialog, NewDatabaseDialog, NewEntryDialog, SaveLinesDialog, type SessionLineView } from './ui/Dialogs'
+import { ExportDialog, SchemaDialog, NewDatabaseDialog, NewEntryDialog, SaveLinesDialog, type SessionLineView } from './ui/Dialogs'
 import { FindMode } from './ui/FindMode'
 import { QuizMode } from './ui/QuizMode'
 import { download } from './edit/workspace'
 import { importSgf, toSgf } from './edit/sgfx'
+import { updateSchema } from './edit/workspace'
 import { changeCount, createWorkspace, discardDrafts, restoreDrafts, saveDrafts, type Workspace } from './edit/workspace'
 import { checkMove, createDatabase, createEntry, deleteMove, locate, promote, setProps } from './edit/ops'
 import { sgfPoint } from './edit/sgfio'
@@ -84,7 +85,7 @@ export function App() {
   const [hovered, setHovered] = useState<string | null>(null)
   const [pinned, setPinned] = useState<string | null>(null)
   const [highlighted, setHighlighted] = useState<string | null>(null)
-  const [dialog, setDialog] = useState<null | 'settings' | 'export' | 'new-start' | 'new-db' | 'save-lines'>(null)
+  const [dialog, setDialog] = useState<null | 'settings' | 'export' | 'new-start' | 'new-db' | 'save-lines' | 'keys'>(null)
   const [edit, setEdit] = useState(false)
   const [target, setTarget] = useState<string>('')
   const [tool, setTool] = useState<Tool>('move')
@@ -149,8 +150,8 @@ export function App() {
   // Load the databases, restore drafts, and reopen the last position.
   useEffect(() => {
     loadDatabases()
-      .then(async ({ databases, texts }) => {
-        const w = createWorkspace(databases, texts)
+      .then(async ({ databases, texts, schemaText }) => {
+        const w = createWorkspace(databases, texts, schemaText)
         const restored = await restoreDrafts(w)
         ws.current = w
         const g = buildGraph(w.files)
@@ -243,7 +244,7 @@ export function App() {
     document.querySelector('.tree-node.cur')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
   }, [path])
 
-  const dbColor = (id: string) => databases.find((d) => d.id === id)?.color ?? '#888'
+  const dbColor = (id: string) => settings.dbColors?.[id] ?? databases.find((d) => d.id === id)?.color ?? '#888'
   const entries = graph ? [...graph.entries.values()].filter((e) => e.defined && e.contribs.some((c) => shown.has(c.db))) : []
   const entryName = (id: string) => (ctx && ctx.graph.entries.has(id) ? entryFields(ctx, id, rootStep(ctx, id)).one('XNAME')?.value ?? seqName(id) : seqName(id))
 
@@ -623,6 +624,7 @@ export function App() {
           </select>
         </label>
       )}
+      {edit && <button onClick={() => setDialog('keys')} title="The keys positions and moves can have (db/schema.json): add, remove, change icons and options">Keys…</button>}
       {(edit || nChanges > 0) && (
         <button class={nChanges ? 'changes' : ''} onClick={() => setDialog('export')}>
           <Upload size={15} /> Export{nChanges ? ` (${nChanges})` : ''}
@@ -761,6 +763,7 @@ export function App() {
         ahead={ahead ?? undefined}
         keepChild={o.keepChild}
         defaultDb={databases[0]?.id ?? ''}
+        dbColor={dbColor}
         onSelect={(l0) => {
           const l = onPathFrame(full(l0))
           setCtxMenu(null)
@@ -854,7 +857,7 @@ export function App() {
       {phone ? (
         <button class="entry-title" onClick={() => setDrawer(true)}>{label ? entryName(label) : offBook ? 'Your own line' : 'Known position'}</button>
       ) : (
-        <h2>{label ? entryName(label) : offBook ? 'Your own line' : 'Known position'}</h2>
+        <h2>{label ? <span class="db-ul" style={{ textDecorationColor: dbColor(ctx.graph.entries.get(label)?.contribs[0]?.db ?? '') }} title={`From ${ctx.graph.entries.get(label)?.contribs[0]?.db}`}>{entryName(label)}</span> : offBook ? 'Your own line' : 'Known position'}</h2>
       )}
       {offBook && <span class="offbook-pill">Free play</span>}
       {offBook && firstFree > 0 && <button class="link small" onClick={() => go(path.slice(0, firstFree))}>back to the database</button>}
@@ -1034,6 +1037,7 @@ export function App() {
       <button onClick={() => download(`${(label ? entryName(label) : 'position').replace(/[^\w\- ]+/g, '').trim() || 'position'}.sgf`, toSgf(ctx, path[path.length - 1]), 'application/x-go-sgf')} title="Download this position and the moves after it as SGF">
         <FileDown size={15} /> SGF
       </button>
+      <button onClick={() => setDialog('keys')} title="The keys positions and moves can have (db/schema.json): add, remove, change icons and options">Keys…</button>
       <button class={nChanges ? 'changes' : ''} onClick={() => setDialog('export')} title="Download a patch or propose the changes on GitHub">
         <Upload size={15} /> Export / pull request{nChanges ? ` (${nChanges})` : ''}
       </button>
@@ -1197,7 +1201,7 @@ export function App() {
             {databases.map((d) => (
               <label key={d.id} class="layer" title={d.description}>
                 <input type="checkbox" checked={active.has(d.id)} onChange={() => toggleDb(d.id)} />
-                <span class="swatch" style={{ background: d.color }} />
+                <span class="swatch" style={{ background: dbColor(d.id) }} />
                 {d.name}
               </label>
             ))}
@@ -1229,7 +1233,7 @@ export function App() {
             {databases.map((d) => (
               <label key={d.id} class="layer wide">
                 <input type="checkbox" checked={active.has(d.id)} onChange={() => toggleDb(d.id)} />
-                <span class="swatch" style={{ background: d.color }} />
+                <span class="swatch" style={{ background: dbColor(d.id) }} />
                 {d.name}
               </label>
             ))}
@@ -1265,6 +1269,7 @@ export function App() {
       )}
       {mode === 'quiz' && <QuizMode ctx={ctx} phone={phone} settings={settings} entryName={entryName} />}
 
+      {dialog === 'keys' && <SchemaDialog schema={w.schema} close={() => setDialog(null)} save={(sc) => { updateSchema(w, sc); commit('Keys saved in this browser; use Export to propose them') }} />}
       {dialog === 'settings' && <SettingsDialog s={settings} set={setSettings} close={() => setDialog(null)} databases={databases} active={active} toggleDb={toggleDb} />}
       {dialog === 'export' && (
         <ExportDialog ws={w} close={() => setDialog(null)} onDiscard={async () => {

@@ -6,26 +6,24 @@
       "toPlay": "B",
       "free": "horizontal",
       "name": "Straight four · side · enclosed",
-      "tags": [
-        "eye shape",
-        "eye space/4 points",
-        "surrounded/full",
-        "outside liberties/0",
-        "inside stones/0",
-        "arrangement/connected"
-      ],
       "notes": [
         "{{SQ:T13,T14,T15,T16|The 4-point eye space}} has {{CR:T14,T15|two middle points}}. {{White}} can take only one of them.",
         "One eye space of 4 points",
         "0 outside liberties"
       ],
-      "eval": {
-        "difficulty": "25k"
-      },
-      "extra": {
-        "XSUM": "Four points in a row. Alive even if {{White}} plays first: {{Black}} always answers on the other middle point.",
-        "XSB": "B-alive",
-        "XSW": "B-alive"
+      "values": {
+        "black-first": "B-alive",
+        "white-first": "B-alive",
+        "tags": [
+          "eye shape"
+        ],
+        "eye-space": "4",
+        "surrounded": "full",
+        "outside-liberties": "0",
+        "inside-stones": "0",
+        "arrangement": "connected",
+        "difficulty": "25k",
+        "summary": "Four points in a row. Alive even if {{White}} plays first: {{Black}} always answers on the other middle point."
       },
       "moves": [
         {
@@ -40,18 +38,20 @@
       "toPlay": "B",
       "free": "horizontal",
       "name": "White T14",
-      "extra": {
-        "XSB": "B-alive",
-        "XSW": "B-alive"
+      "values": {
+        "black-first": "B-alive",
+        "white-first": "B-alive"
       },
       "moves": [
         {
           "move": "se",
           "to": "life & death/Straight four/Side, enclosed/White first:3b",
-          "status": "main",
           "notes": [
             "Takes the other middle point. Two eyes."
-          ]
+          ],
+          "values": {
+            "category": "main"
+          }
         }
       ]
     },
@@ -65,18 +65,22 @@
         {
           "move": "sf",
           "to": "life & death/Straight four/Side, enclosed/White first/White T14",
-          "status": "mistake",
           "notes": [
             "Takes one middle point."
-          ]
+          ],
+          "values": {
+            "category": "mistake"
+          }
         },
         {
           "move": "se",
           "to": "life & death/Straight four/Side, enclosed/White first/White T15",
-          "status": "mistake",
           "notes": [
             "Takes the other middle point."
-          ]
+          ],
+          "values": {
+            "category": "mistake"
+          }
         }
       ]
     },
@@ -88,9 +92,9 @@
       "notes": [
         "Two eyes"
       ],
-      "extra": {
-        "XSB": "B-alive",
-        "XSW": "B-alive"
+      "values": {
+        "black-first": "B-alive",
+        "white-first": "B-alive"
       },
       "moves": []
     },
@@ -100,18 +104,20 @@
       "toPlay": "B",
       "free": "horizontal",
       "name": "White T15",
-      "extra": {
-        "XSB": "B-alive",
-        "XSW": "B-alive"
+      "values": {
+        "black-first": "B-alive",
+        "white-first": "B-alive"
       },
       "moves": [
         {
           "move": "sf",
           "to": "life & death/Straight four/Side, enclosed/White first:3",
-          "status": "main",
           "notes": [
             "Takes the remaining middle point. Two eyes."
-          ]
+          ],
+          "values": {
+            "category": "main"
+          }
         }
       ]
     },
@@ -123,9 +129,9 @@
       "notes": [
         "Two eyes"
       ],
-      "extra": {
-        "XSB": "B-alive",
-        "XSW": "B-alive"
+      "values": {
+        "black-first": "B-alive",
+        "white-first": "B-alive"
       },
       "moves": []
     }

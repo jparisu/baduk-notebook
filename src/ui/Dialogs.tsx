@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'preact/hooks'
 import type { ComponentChildren } from 'preact'
 import { validateAll } from '../core/validate'
+import type { FieldDef, FieldOption, FieldType, Schema } from '../core/schema'
 import { changes, download, makePatch, makeZip, type Workspace } from '../edit/workspace'
 import { parsePt, type Pt, type Sign } from '../core/geometry'
 import type { Free } from '../core/model'
@@ -284,6 +285,120 @@ export function SaveLinesDialog(props: {
           </div>
         </>
       )}
+    </Shell>
+  )
+}
+
+const TYPES: [FieldType, string][] = [
+  ['choice', 'Choice (dropdown or buttons)'], ['multi', 'Several choices'], ['slider', 'Slider (a bar between two ends)'],
+  ['flag', 'Flag (on or off)'], ['color', 'Color (Black / White)'], ['text', 'Text'], ['list', 'List of words (like Tags)'],
+]
+
+/** Edits the value schema (db/schema.json): keys, their type, options, icons, colors and swap behavior. */
+export function SchemaDialog({ schema, save, close }: { schema: Schema; save: (s: Schema) => void; close: () => void }) {
+  const [fields, setFields] = useState<FieldDef[]>(() => JSON.parse(JSON.stringify(schema.fields)))
+  const [sel, setSel] = useState(0)
+  const [error, setError] = useState<string | null>(null)
+  const f = fields[sel]
+  const upd = (patch: Partial<FieldDef>) => setFields(fields.map((x, i) => (i === sel ? { ...x, ...patch } : x)))
+  const opts = f?.options ?? []
+  const updOpt = (k: number, patch: Partial<FieldOption>) => upd({ options: opts.map((o, i) => (i === k ? { ...o, ...patch } : o)) })
+  const move = <T,>(list: T[], i: number, d: number) => {
+    const j = i + d
+    if (j < 0 || j >= list.length) return list
+    const out = [...list]
+    ;[out[i], out[j]] = [out[j], out[i]]
+    return out
+  }
+  const submit = () => {
+    const keys = fields.map((x) => x.key)
+    const bad = fields.find((x) => !/^[a-z0-9][a-z0-9-]*$/.test(x.key))
+    if (bad) return setError(`"${bad.key || '(empty)'}": keys use lowercase letters, digits and hyphens.`)
+    if (new Set(keys).size !== keys.length) return setError('Two keys have the same name.')
+    if (!keys.includes('category')) return setError('The "category" key (This move is) is needed by the app.')
+    save({ fields })
+    close()
+  }
+  return (
+    <Shell title="Keys of positions and moves" close={close}>
+      <p class="hint">Every position and move has a list of notes and values for these keys. Changes are saved in this browser; <b>Export / pull request</b> proposes them as <code>db/schema.json</code>.</p>
+      <div class="schema-edit">
+        <div class="schema-list" role="listbox" aria-label="Keys">
+          {fields.map((x, i) => (
+            <button key={i} role="option" aria-selected={i === sel} class={i === sel ? 'on' : ''} onClick={() => setSel(i)}>
+              <span>{x.icon ?? ''} {x.label || x.key}</span>
+              <small>{{ move: 'move', position: 'position', sequence: 'joseki' }[x.for]} · {x.type}</small>
+            </button>
+          ))}
+          <button class="add" onClick={() => { setFields([...fields, { key: `key-${fields.length + 1}`, label: 'New key', for: 'position', type: 'choice', options: [] }]); setSel(fields.length) }}>+ New key</button>
+        </div>
+        {f && (
+          <div class="schema-field">
+            <div class="grp">
+              <button onClick={() => { setFields(move(fields, sel, -1)); setSel(Math.max(0, sel - 1)) }} disabled={sel === 0}>↑</button>
+              <button onClick={() => { setFields(move(fields, sel, 1)); setSel(Math.min(fields.length - 1, sel + 1)) }} disabled={sel === fields.length - 1}>↓</button>
+              <span class="spacer" />
+              <button class="danger-text" disabled={f.key === 'category'} onClick={() => { setFields(fields.filter((_, i) => i !== sel)); setSel(Math.max(0, sel - 1)) }}>Remove key</button>
+            </div>
+            <label class="f"><span class="fl">Label</span><input id="schema-label" value={f.label} onInput={(e) => upd({ label: (e.target as HTMLInputElement).value })} /></label>
+            <label class="f"><span class="fl">Key</span><input id="schema-key" value={f.key} onInput={(e) => upd({ key: (e.target as HTMLInputElement).value.trim() })} disabled={f.key === 'category'} /></label>
+            <label class="f"><span class="fl">Applies to</span>
+              <select value={f.for} onChange={(e) => upd({ for: (e.target as HTMLSelectElement).value as FieldDef['for'] })}>
+                <option value="move">Moves</option><option value="position">Positions</option><option value="sequence">Joseki (start of a sequence)</option>
+              </select>
+            </label>
+            <label class="f"><span class="fl">Type</span>
+              <select id="schema-type" value={f.type} onChange={(e) => upd({ type: (e.target as HTMLSelectElement).value as FieldType })}>
+                {TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </label>
+            <label class="f"><span class="fl">Icon</span><input value={f.icon ?? ''} placeholder="a symbol or emoji" onInput={(e) => upd({ icon: (e.target as HTMLInputElement).value || undefined })} /></label>
+            <label class="f"><span class="fl">Hint</span><input value={f.hint ?? ''} onInput={(e) => upd({ hint: (e.target as HTMLInputElement).value || undefined })} /></label>
+            {f.for === 'position' && <label class="f"><span class="fl">Inherited</span><span><input type="checkbox" checked={!!f.inherit} onChange={(e) => upd({ inherit: (e.target as HTMLInputElement).checked || undefined })} /> later positions show it until they set their own</span></label>}
+            {f.type === 'choice' && (
+              <label class="f"><span class="fl">Shown as</span>
+                <select value={f.control ?? 'dropdown'} onChange={(e) => upd({ control: (e.target as HTMLSelectElement).value as 'buttons' | 'dropdown' })}><option value="dropdown">Dropdown</option><option value="buttons">Buttons</option></select>
+              </label>
+            )}
+            {f.type === 'slider' && (
+              <>
+                <label class="f"><span class="fl">Left end</span><input value={f.ends?.[0] ?? ''} onInput={(e) => upd({ ends: [(e.target as HTMLInputElement).value, f.ends?.[1] ?? ''] })} /></label>
+                <label class="f"><span class="fl">Right end</span><input value={f.ends?.[1] ?? ''} onInput={(e) => upd({ ends: [f.ends?.[0] ?? '', (e.target as HTMLInputElement).value] })} /></label>
+                <label class="f"><span class="fl">Swap colors</span><span><input type="checkbox" checked={!!f.negate} onChange={(e) => upd({ negate: (e.target as HTMLInputElement).checked || undefined })} /> turns the bar around</span></label>
+              </>
+            )}
+            <label class="f"><span class="fl">Swaps with key</span>
+              <select value={f.swapKey ?? ''} onChange={(e) => upd({ swapKey: (e.target as HTMLSelectElement).value || undefined })}>
+                <option value="">— (none)</option>
+                {fields.filter((x) => x.key !== f.key).map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
+              </select>
+            </label>
+            {(f.type === 'choice' || f.type === 'multi') && (
+              <div class="schema-opts">
+                <div class="fam">Options</div>
+                {opts.map((o, k) => (
+                  <div class="opt-row" key={k}>
+                    <input class="o-icon" value={o.icon ?? ''} placeholder="icon" aria-label="Icon" onInput={(e) => updOpt(k, { icon: (e.target as HTMLInputElement).value || undefined })} />
+                    <input class="o-label" value={o.label} placeholder="label" aria-label="Label" onInput={(e) => updOpt(k, { label: (e.target as HTMLInputElement).value })} />
+                    <input class="o-value" value={o.value} placeholder="value" aria-label="Stored value" onInput={(e) => updOpt(k, { value: (e.target as HTMLInputElement).value.trim() })} />
+                    <input class="o-color" type="color" value={o.color ?? '#888888'} aria-label="Color" onInput={(e) => updOpt(k, { color: (e.target as HTMLInputElement).value })} />
+                    <select aria-label="With Swap colors it becomes" value={o.swap ?? ''} onChange={(e) => updOpt(k, { swap: (e.target as HTMLSelectElement).value || undefined })}>
+                      <option value="">no swap</option>
+                      {opts.filter((x) => x.value !== o.value).map((x) => <option key={x.value} value={x.value}>⇄ {x.label}</option>)}
+                    </select>
+                    {f.key === 'category' && <label title="Counts as a good move"><input type="checkbox" checked={!!o.good} onChange={(e) => updOpt(k, { good: (e.target as HTMLInputElement).checked || undefined })} />good</label>}
+                    <button class="icon ghost" aria-label="Move up" onClick={() => upd({ options: move(opts, k, -1) })}>↑</button>
+                    <button class="icon ghost" aria-label="Remove option" onClick={() => upd({ options: opts.filter((_, i) => i !== k) })}>×</button>
+                  </div>
+                ))}
+                <button onClick={() => upd({ options: [...opts, { value: `option-${opts.length + 1}`, label: 'New option' }] })}>+ Add option</button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      {error && <p class="error">{error}</p>}
+      <div class="actions"><button onClick={close}>Cancel</button><button class="on" onClick={submit}>Save keys</button></div>
     </Shell>
   )
 }

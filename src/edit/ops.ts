@@ -2,7 +2,7 @@
 import GoBoard from '@sabaki/go-board'
 import { apply, applySign, inverse, transformMap, type Pt, type Sign, type SignMap, type Transform } from '../core/geometry'
 import { canonical } from '../core/hash'
-import { MOVE_PROPS, type Props } from '../core/fields'
+import { isMoveProp, type Props } from '../core/fields'
 import type { Graph } from '../core/graph'
 import { boardOf, colorOf, isStartId, moveText, nOf, nextId, seqOf, signOf, stonesOf, type PosRec, type MoveRec, type Free } from '../core/model'
 import { displayBoard, frame, node as nodeOf, type Ctx, type Step } from '../view'
@@ -36,7 +36,7 @@ const findPos = (ws: Workspace, db: string, id: string) => {
 
 /** A property bag that routes move fields to the move and the rest (plus XFREE) to the position. */
 function bag(pos: PosRec, move: MoveRec | null): { data: Props } {
-  const target = (k: string): Props | null => (MOVE_PROPS.has(k) ? move?.data ?? null : pos.data)
+  const target = (k: string): Props | null => (isMoveProp(k) ? move?.data ?? null : pos.data)
   const data = new Proxy({} as Props, {
     get: (_, k: string) => (k === 'XFREE' ? [pos.free] : target(k)?.[k]),
     set: (_, k: string, v: string[]) => {

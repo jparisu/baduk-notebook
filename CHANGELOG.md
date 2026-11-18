@@ -3,6 +3,10 @@
 ## Unreleased
 
 ### Data model (docs/MODEL.md)
+- **Values and keys**: a position or move is its notes plus a dictionary of values. The keys live in `db/schema.json` and are edited in the app (**Keys…**): label, icon, type (choice, several choices, slider, flag, color, text, list), options with icons and colors, what Swap colors does, and inheritance. "This move is", Evaluation, Status, Black/White plays first, Sente, Ko, Tags, Difficulty… are all keys.
+- Points are gone. Evaluation is a slider between White and Black, shown as a bar without numbers.
+- Tags are a key; the shape descriptors became keys of their own (eye space, surrounded, outside liberties, inside stones, arrangement, ko type).
+- Settings choose which keys the panels show.
 - **Notes**: positions and moves have one list of notes (add as many as you like). Explanation, Outcome, Tenuki here, Watch out, Note, Eyes, Liberties and the rules note became notes with their lead word; a move's Why and note became its notes. Notes from a personal database show as cards in its color.
 - Life & death results name the color: "Black plays first: Black lives / Black dies / White lives / White dies / Ko / Seki / Unsettled"; Swap colors flips them.
 - One set of move categories for everything: Main move, Alternative, Situational, Slack, Mistake, Overplay, Trick play, Punishment (shape moves: correct → main, wrong → mistake, ko → situational). The editor shows the same fields for every position.
@@ -19,6 +23,8 @@
 - **SGF**: load an SGF file into a database, download any position with what follows.
 
 ### Layout
+- **This joseki** keeps its sub-panels (Description, Details) in view; each scrolls inside its share.
+- Databases are shown by color: titles are underlined in their database's color, and tree nodes from a database other than the first have a line in its color under them. Colors can be changed in Settings (only in this browser; several databases may share one).
 - Fixed-size panels in every tab, like an editor's side bars: sizes depend only on the window, the zoom and what you set, never on the content, which scrolls inside each panel.
 - Columns are separated by vertical bars: drag a bar to resize, use its button to collapse or reopen the column (remembered). The empty row with the hide button is gone.
 - The side panels are a stack: each panel keeps its share of the height, its header collapses it, and the thin bar between two panels resizes them.

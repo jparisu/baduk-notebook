@@ -5,38 +5,42 @@
       "stones": "B:qc W:od",
       "toPlay": "B",
       "name": "3-3 point · high approach",
-      "tags": [
-        "influence"
-      ],
       "notes": [
         "{{TR:P16|{{White}}'s knight's move approach}} to {{TR:R17|the 3-3 stone}}. Knight's move approach on the fourth line."
       ],
-      "eval": {
-        "difficulty": "15k"
-      },
-      "extra": {
-        "XALIAS": [
+      "values": {
+        "evaluation": 0,
+        "status": "start",
+        "tags": [
+          "influence"
+        ],
+        "difficulty": "15k",
+        "summary": "{{White}} approaches the 3-3 stone with a knight's move on the fourth line. {{Black}} pushes along the side and {{White}} builds a wall. Source: 33PointHighApproach.",
+        "aliases": [
           "Knight's move approach",
           "San-san keima kakari",
           "三々ケイマガカリ"
         ],
-        "XSUM": "{{White}} approaches the 3-3 stone with a knight's move on the fourth line. {{Black}} pushes along the side and {{White}} builds a wall. Source: 33PointHighApproach.",
-        "XSRC": "Sensei's Library (senseis.xmp.net), joseki pages listed in XSUM. Sequences copied from its diagrams and mirrored to the top-right corner.",
-        "XERA": "classic",
-        "XST": "start",
-        "XEV": "="
+        "sources": [
+          "Sensei's Library (senseis.xmp.net), joseki pages listed in XSUM. Sequences copied from its diagrams and mirrored to the top-right corner."
+        ],
+        "era": [
+          "classic"
+        ]
       },
       "moves": [
         {
           "move": "pe",
           "to": "joseki/3-3 point/High approach:3",
-          "status": "main",
           "notes": [
             "Pushes underneath {{White}}'s stone."
           ],
-          "extra": {
-            "XSTY": "balanced",
-            "XPUR": "territory"
+          "values": {
+            "category": "main",
+            "style": "balanced",
+            "purpose": [
+              "territory"
+            ]
           }
         }
       ]
@@ -45,18 +49,20 @@
       "id": "joseki/3-3 point/High approach:3",
       "stones": "B:pe,qc W:od",
       "toPlay": "W",
-      "extra": {
-        "XST": "progress",
-        "XEV": "="
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
       },
       "moves": [
         {
           "move": "oe",
           "to": "joseki/3-3 point/High approach:4",
-          "status": "main",
-          "extra": {
-            "XSTY": "solid",
-            "XPUR": "influence"
+          "values": {
+            "category": "main",
+            "style": "solid",
+            "purpose": [
+              "influence"
+            ]
           }
         }
       ]
@@ -65,18 +71,20 @@
       "id": "joseki/3-3 point/High approach:4",
       "stones": "B:pe,qc W:od,oe",
       "toPlay": "B",
-      "extra": {
-        "XST": "progress",
-        "XEV": "="
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
       },
       "moves": [
         {
           "move": "pf",
           "to": "joseki/3-3 point/High approach:5",
-          "status": "main",
-          "extra": {
-            "XSTY": "solid",
-            "XPUR": "territory"
+          "values": {
+            "category": "main",
+            "style": "solid",
+            "purpose": [
+              "territory"
+            ]
           }
         }
       ]
@@ -85,18 +93,20 @@
       "id": "joseki/3-3 point/High approach:5",
       "stones": "B:pe,pf,qc W:od,oe",
       "toPlay": "W",
-      "extra": {
-        "XST": "progress",
-        "XEV": "="
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
       },
       "moves": [
         {
           "move": "of",
           "to": "joseki/3-3 point/High approach:6",
-          "status": "main",
-          "extra": {
-            "XSTY": "solid",
-            "XPUR": "influence"
+          "values": {
+            "category": "main",
+            "style": "solid",
+            "purpose": [
+              "influence"
+            ]
           }
         }
       ]
@@ -105,21 +115,23 @@
       "id": "joseki/3-3 point/High approach:6",
       "stones": "B:pe,pf,qc W:od,oe,of",
       "toPlay": "B",
-      "extra": {
-        "XST": "progress",
-        "XEV": "="
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
       },
       "moves": [
         {
           "move": "pg",
           "to": "joseki/3-3 point/High approach:7",
-          "status": "main",
           "notes": [
             "{{Black}} has territory on the side; {{White}} has a wall. {{White}} now finishes the top."
           ],
-          "extra": {
-            "XSTY": "solid",
-            "XPUR": "territory"
+          "values": {
+            "category": "main",
+            "style": "solid",
+            "purpose": [
+              "territory"
+            ]
           }
         }
       ]
@@ -128,21 +140,23 @@
       "id": "joseki/3-3 point/High approach:7",
       "stones": "B:pe,pf,pg,qc W:od,oe,of",
       "toPlay": "W",
-      "extra": {
-        "XST": "progress",
-        "XEV": "="
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
       },
       "moves": [
         {
           "move": "pc",
           "to": "joseki/3-3 point/High approach:8",
-          "status": "main",
           "notes": [
             "Hane on top, reducing the corner."
           ],
-          "extra": {
-            "XSTY": "aggressive",
-            "XPUR": "territory"
+          "values": {
+            "category": "main",
+            "style": "aggressive",
+            "purpose": [
+              "territory"
+            ]
           }
         }
       ]
@@ -151,21 +165,23 @@
       "id": "joseki/3-3 point/High approach:8",
       "stones": "B:pe,pf,pg,qc W:od,oe,of,pc",
       "toPlay": "B",
-      "extra": {
-        "XST": "progress",
-        "XEV": "="
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
       },
       "moves": [
         {
           "move": "qb",
           "to": "joseki/3-3 point/High approach:9",
-          "status": "main",
           "notes": [
             "Blocks underneath."
           ],
-          "extra": {
-            "XSTY": "solid",
-            "XPUR": "defend"
+          "values": {
+            "category": "main",
+            "style": "solid",
+            "purpose": [
+              "defend"
+            ]
           }
         }
       ]
@@ -174,21 +190,21 @@
       "id": "joseki/3-3 point/High approach:9",
       "stones": "B:pe,pf,pg,qb,qc W:od,oe,of,pc",
       "toPlay": "W",
-      "extra": {
-        "XST": "progress",
-        "XEV": "="
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
       },
       "moves": [
         {
           "move": "jd",
           "to": "joseki/3-3 point/High approach:10",
-          "status": "main",
           "notes": [
             "Extends along the top to use the wall."
           ],
-          "extra": {
-            "XSTY": "balanced",
-            "XPUR": [
+          "values": {
+            "category": "main",
+            "style": "balanced",
+            "purpose": [
               "eye",
               "influence"
             ]
@@ -203,10 +219,10 @@
       "notes": [
         "Outcome: {{Black}} has the corner and left side; {{White}} has a wall and the top side."
       ],
-      "extra": {
-        "XST": "end",
-        "XEV": "=",
-        "XSEN": "B"
+      "values": {
+        "evaluation": 0,
+        "status": "end",
+        "sente": "B"
       },
       "moves": []
     }

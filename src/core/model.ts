@@ -5,6 +5,7 @@
  * can read and write them the same way for positions and moves.
  */
 import type { Props } from './fields'
+import { fieldOf, getSchema, keyOf, propOf } from './schema'
 import { SIZE, parseSgfPt, type Pt, type Sign, type SignMap } from './geometry'
 
 export type Free = 'corner' | 'horizontal' | 'vertical' | 'anywhere'
@@ -96,21 +97,6 @@ export const moveText = (pt: Pt | null) => (pt ? sgfPt(pt) : 'tenuki')
 
 /* ---- JSON (de)serialization ---- */
 
-/** Position fields with their own JSON name; everything else goes to `extra` with its SGF name. */
-const POS_FIELDS: [string, string, 'one' | 'list' | 'num'][] = [
-  ['name', 'XNAME', 'one'],
-  ['tags', 'XTAG', 'list'],
-  ['notes', 'XPW', 'list'],
-]
-const EVAL_FIELDS: [string, string, 'one' | 'num'][] = [
-  ['balance', 'XPB', 'num'],
-  ['difficulty', 'XDIFF', 'one'],
-]
-const MOVE_FIELDS: [string, string, 'one' | 'list'][] = [
-  ['status', 'XCAT', 'one'],
-  ['notes', 'XMW', 'list'],
-]
-
 /**
  * Older separate texts that are now notes (docs/MODEL.md §1): each becomes one more note, with its lead word.
  * Applied when reading, so old files, drafts and imports convert the same way.
@@ -126,47 +112,81 @@ export function mergeNotes(data: Props, into: 'XPW' | 'XMW') {
     delete data[k]
   }
 }
-const EXTRA_ORDER = [
-  'XALIAS', 'XSUM', 'XSRC', 'XERA', 'XST', 'XEV', 'XPBS', 'XSEN', 'XSB', 'XSW', 'XRESB', 'XRESW', 'XEYE', 'XLIB', 'XRES', 'XTEN', 'XAJI', 'XPN',
-  'XSIZE', 'XSURR', 'XOLIB', 'XINSIDE', 'XARR', 'XVITAL', 'XKOT', 'XRULE', 'XREG',
-  'XSTY', 'XPUR', 'XCOND', 'XLINK', 'TE', 'BM', 'DO', 'IT',
-  'TR', 'SQ', 'CR', 'MA', 'LB', 'AR', 'LN', 'XWALL', 'XINF', 'XTB', 'XTW', 'XMOYO', 'XCUT', 'XEYEM', 'XWEAK', 'XLAD',
-]
-const rank = (k: string) => {
-  const i = EXTRA_ORDER.indexOf(k)
-  return i < 0 ? EXTRA_ORDER.length : i
-}
+
+/** Board drawings: stored apart from the values, under `marks`. */
+export const MARK_PROPS = ['TR', 'SQ', 'CR', 'MA', 'LB', 'AR', 'LN', 'XWALL', 'XINF', 'XTB', 'XTW', 'XMOYO', 'XCUT', 'XEYEM', 'XWEAK', 'XLAD']
+/** Older fields that no longer exist. */
+const DROPPED = new Set(['XPB', 'XPBS', 'TE', 'BM', 'DO', 'IT', 'XREG'])
+/** The former five-step evaluation, as a slider value. */
+const OLD_EVAL: Record<string, string> = { 'B++': '1', 'B+': '0.5', '=': '0', 'W+': '-0.5', 'W++': '-1' }
+const OWN = new Set(['XNAME', 'XPW', 'XMW', ...MARK_PROPS])
 
 type Json = Record<string, unknown>
 const packList = (v: string[]) => (v.length === 1 ? v[0] : v)
-const unpack = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : v === undefined || v === null || v === '' ? [] : [String(v)])
+const unpack = (v: unknown): string[] =>
+  Array.isArray(v) ? v.map(String) : v === undefined || v === null || v === '' || v === false ? [] : v === true ? ['1'] : [String(v)]
 
-function extraOf(data: Props, skip: Set<string>): Json | undefined {
-  const keys = Object.keys(data).filter((k) => !skip.has(k) && data[k]?.length).sort((a, b) => rank(a) - rank(b) || a.localeCompare(b))
+/** The `values` dictionary of a record: schema keys, in the schema's order, typed as the schema says. */
+function valuesOf(data: Props): Json | undefined {
+  const order = getSchema().fields.map((f) => f.key)
+  const keys = Object.keys(data)
+    .filter((p) => !OWN.has(p) && !DROPPED.has(p) && data[p]?.length)
+    .map((p) => [keyOf(p), p] as const)
+    .sort((a, b) => (order.indexOf(a[0]) + 1 || 999) - (order.indexOf(b[0]) + 1 || 999) || a[0].localeCompare(b[0]))
   if (!keys.length) return undefined
-  return Object.fromEntries(keys.map((k) => [k, packList(data[k])]))
+  return Object.fromEntries(
+    keys.map(([k, p]) => {
+      const f = fieldOf(k), v = data[p]
+      if (f?.type === 'flag') return [k, true]
+      if (f?.type === 'slider') return [k, Number(v[0])]
+      if (f?.type === 'list' || f?.type === 'multi') return [k, v]
+      return [k, packList(v)]
+    }),
+  )
+}
+function marksOf(data: Props): Json | undefined {
+  const keys = MARK_PROPS.filter((k) => data[k]?.length)
+  return keys.length ? Object.fromEntries(keys.map((k) => [k, packList(data[k])])) : undefined
+}
+/** Reads `values`, `marks` and the fields of older files into a property bag. */
+function readFields(j: Json, data: Props) {
+  for (const [k, v] of Object.entries((j.extra ?? {}) as Json)) data[k] = unpack(v) // older files
+  const ev = (j.eval ?? {}) as Json // older files
+  if (ev.difficulty !== undefined) data.XDIFF = unpack(ev.difficulty)
+  if (j.status !== undefined) data.XCAT = unpack(j.status) // older move files
+  for (const [k, v] of Object.entries((j.values ?? {}) as Json)) data[propOf(k)] = unpack(v)
+  for (const [k, v] of Object.entries((j.marks ?? {}) as Json)) data[k] = unpack(v)
+  if (data.XEV && OLD_EVAL[data.XEV[0]]) data.XEV = [OLD_EVAL[data.XEV[0]]]
+  // Older descriptor tags ("eye space/4 points") are keys of their own now.
+  if (data.XTAG) {
+    const keep: string[] = []
+    for (const t of data.XTAG) {
+      const m = t.match(/^(eye space|surrounded|outside liberties|inside stones|arrangement|ko)\/(.+)$/)
+      if (!m) keep.push(t)
+      else data[m[1] === 'ko' ? 'ko-type' : m[1].replace(/ /g, '-')] = [m[2].replace(/ points$/, '')]
+    }
+    if (keep.length) data.XTAG = keep
+    else delete data.XTAG
+  }
+  for (const k of DROPPED) delete data[k]
 }
 
 export function positionToJson(p: PosRec): Json {
   const out: Json = { id: p.id, stones: p.stones, toPlay: p.toPlay }
   if (p.free !== 'corner') out.free = p.free
-  for (const [name, prop, kind] of POS_FIELDS) {
-    const v = p.data[prop]
-    if (v?.length) out[name] = kind === 'list' ? v : v[0]
-  }
-  const ev: Json = {}
-  for (const [name, prop, kind] of EVAL_FIELDS) {
-    const v = p.data[prop]?.[0]
-    if (v !== undefined && v !== '') ev[name] = kind === 'num' && Number.isFinite(Number(v)) ? Number(v) : v
-  }
-  if (Object.keys(ev).length) out.eval = ev
-  const extra = extraOf(p.data, new Set([...POS_FIELDS.map((f) => f[1]), ...EVAL_FIELDS.map((f) => f[1])]))
-  if (extra) out.extra = extra
+  if (p.data.XNAME?.length) out.name = p.data.XNAME[0]
+  if (p.data.XPW?.length) out.notes = p.data.XPW
+  const values = valuesOf(p.data)
+  if (values) out.values = values
+  const marks = marksOf(p.data)
+  if (marks) out.marks = marks
   out.moves = p.moves.map((m) => {
     const mo: Json = { move: m.move, to: m.to }
-    for (const [name, prop, kind] of MOVE_FIELDS) if (m.data[prop]?.length) mo[name] = kind === 'list' ? m.data[prop] : m.data[prop][0]
-    const ex = extraOf(m.data, new Set(MOVE_FIELDS.map((f) => f[1])))
-    if (ex) mo.extra = ex
+    if (m.data.XMW?.length) mo.notes = m.data.XMW
+    const mv = valuesOf(m.data)
+    if (mv) mo.values = mv
+    const mm = marksOf(m.data)
+    if (mm) mo.marks = mm
     return mo
   })
   return out
@@ -174,28 +194,18 @@ export function positionToJson(p: PosRec): Json {
 
 export function positionFromJson(j: Json): PosRec {
   const data: Props = {}
-  for (const [name, prop] of POS_FIELDS) {
-    const v = unpack(j[name])
-    if (v.length) data[prop] = v
-  }
-  const ev = (j.eval ?? {}) as Json
-  for (const [name, prop] of EVAL_FIELDS) {
-    const v = unpack(ev[name])
-    if (v.length) data[prop] = v
-  }
-  for (const [k, v] of Object.entries((j.extra ?? {}) as Json)) data[k] = unpack(v)
+  if (j.name) data.XNAME = unpack(j.name)
+  if (j.tags) data.XTAG = unpack(j.tags)
+  if (j.notes) data.XPW = unpack(j.notes)
+  readFields(j, data)
   mergeNotes(data, 'XPW')
   // Older life & death results did not name the color; every stored shape is a Black group.
   for (const k of ['XSB', 'XSW']) if (data[k]?.[0] === 'alive' || data[k]?.[0] === 'dead') data[k] = ['B-' + data[k][0]]
   const moves = ((j.moves ?? []) as Json[]).map((m) => {
     const md: Props = {}
-    for (const [name, prop] of MOVE_FIELDS) {
-      const v = unpack(m[name])
-      if (v.length) md[prop] = v
-    }
-    // Older files: "why" and a separate "notes" text; both become notes, the why first.
-    if (m.why !== undefined) md.XMW = [...unpack(m.why), ...unpack(m.notes)]
-    for (const [k, v] of Object.entries((m.extra ?? {}) as Json)) md[k] = unpack(v)
+    if (m.why !== undefined) md.XMW = [...unpack(m.why), ...unpack(m.notes)] // older files: "why" and a separate note
+    else if (m.notes) md.XMW = unpack(m.notes)
+    readFields(m, md)
     mergeNotes(md, 'XMW')
     return { move: String(m.move), to: String(m.to), data: md }
   })

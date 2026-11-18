@@ -1,9 +1,10 @@
 /** View model: turns the canonical graph into what the screen shows, after transforms and database filters. */
 import type { Graph, Contribution, Edge, PosNode } from './core/graph'
 import { edgeCategory, labelsAt, visibleEdges } from './core/graph'
-import { CATEGORY_ORDER, COLOR_PROPS, LIST_PROPS, TEXT_PROPS, flipValue, type Category } from './core/fields'
+import { CATEGORY_ORDER, TEXT_PROPS, flipValue, isColorProp, isListProp, type Category } from './core/fields'
 import GoBoard from '@sabaki/go-board'
 import { isStartId } from './core/model'
+import { fieldOfProp } from './core/schema'
 import { canonical } from './core/hash'
 import { apply, applySign, compose, inverse, parseSgfPtList, transformMap, type Pt, type Sign, type SignMap, type Transform } from './core/geometry'
 import { parseText, playerWords, propMarks, transformMarks, type Mark, type Segment } from './core/refs'
@@ -188,7 +189,7 @@ export class Fields {
     const vals = this.visible().flatMap((c) => {
       const v = c.props[prop]?.[0]
       if (v === undefined || v === '') return []
-      return [{ db: c.db, value: COLOR_PROPS.has(prop) && this.swapped(c) ? flipValue(prop, v) : v }]
+      return [{ db: c.db, value: isColorProp(prop) && this.swapped(c) ? flipValue(prop, v) : v }]
     })
     if (!vals.length) return null
     const last = vals[vals.length - 1]
@@ -219,7 +220,7 @@ export function isText(prop: string) {
   return TEXT_PROPS.has(prop)
 }
 export function isList(prop: string) {
-  return LIST_PROPS.has(prop)
+  return isListProp(prop)
 }
 
 /**
@@ -227,7 +228,8 @@ export function isList(prop: string) {
  * value (docs/MODEL.md §1). Inheritance stops at the start of a sequence. Names, the joseki-end status,
  * board marks and every move field are never inherited.
  */
-export const INHERITED = new Set(['XPB', 'XEV', 'XSEN', 'XPW', 'XTAG', 'XDIFF', 'XSB', 'XSW'])
+/** Notes and tags are inherited; values when their schema key says so. */
+export const isInherited = (prop: string) => prop === 'XPW' || prop === 'XTAG' || !!fieldOfProp(prop)?.inherit
 
 const startsSequence = (ctx: Ctx, step: Step) => node(ctx, step).contribs.some((c) => ctx.active.has(c.db) && isStartId(c.pos.id))
 
@@ -243,7 +245,7 @@ export class LineFields extends Fields {
     for (let i = last; i >= 0; i--) {
       const own = positionFields(this.ctx, this.path[i])
       if (own.one(prop) || own.list(prop).length) return i
-      if (!INHERITED.has(prop) || startsSequence(this.ctx, this.path[i])) return null
+      if (!isInherited(prop) || startsSequence(this.ctx, this.path[i])) return null
     }
     return null
   }
