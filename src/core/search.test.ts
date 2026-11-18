@@ -55,3 +55,18 @@ describe('find position', () => {
     expect(search(g, active, m).some((r) => r.entryId === shape.id && r.kind === 'exact')).toBe(true)
   })
 })
+
+describe('find position: one result per set of stones', () => {
+  it('does not also list the same stones after a tenuki', () => {
+    const shape = [...g.entries.values()].find((e) => e.id === 'life & death/Straight three/Side, enclosed')!
+    const stored = g.nodes.get(shape.root)!.contribs[0].pos.stones
+    const m = empty()
+    for (const part of stored.split(' ')) {
+      const [c, list] = part.split(':')
+      for (const v of list.split(',')) m[v.charCodeAt(1) - 97][v.charCodeAt(0) - 97] = c === 'B' ? 1 : -1
+    }
+    const exact = search(g, active, m).filter((r) => r.kind === 'exact')
+    expect(exact.length).toBe(1)
+    expect(exact[0].entryId).toBe(shape.id) // the start, not "White first" after the tenuki
+  })
+})

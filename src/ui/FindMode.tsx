@@ -1,5 +1,6 @@
 /** Find position (SPEC §7): set up stones or load an SGF, then see matching joseki and shapes. */
-import { useMemo, useState } from 'preact/hooks'
+import { useEffect, useMemo, useState } from 'preact/hooks'
+import { storageKey } from '../storage'
 import GoBoard from '@sabaki/go-board'
 import * as sgf from '@sabaki/sgf'
 import { Workbench } from './Workbench'
@@ -12,6 +13,23 @@ import { CATEGORIES } from '../core/fields'
 import { IDENTITY } from '../core/geometry'
 
 type Tool = 'B' | 'W' | 'alt' | 'erase'
+const FIND_KEY = storageKey('baduk-notebook.find.v1')
+function loadFind(): { boards: SignMap[]; at: number } {
+  try {
+    const h = JSON.parse(localStorage.getItem(FIND_KEY) ?? 'null')
+    if (h && Array.isArray(h.boards) && h.boards.length) return { boards: h.boards, at: Math.min(h.at ?? 0, h.boards.length - 1) }
+  } catch {
+    /* ignore */
+  }
+  return { boards: [empty()], at: 0 }
+}
+function saveFind(h: { boards: SignMap[]; at: number }) {
+  try {
+    localStorage.setItem(FIND_KEY, JSON.stringify(h))
+  } catch {
+    /* ignore */
+  }
+}
 const empty = (): SignMap => Array.from({ length: 19 }, () => Array<Sign>(19).fill(0))
 
 interface Game {
@@ -57,7 +75,31 @@ function lineSteps(ctx: Ctx, entryId: string, keys: string[]): Step[] {
 
 export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; entryName: (id: string) => string; onOpen: (id: string, keys: string[], display: DisplayOptions) => void }) {
   const { ctx } = props
-  const [board, setBoard] = useState<SignMap>(empty)
+  // The board and its history stay when you open a match and come back (and after a reload).
+  const [hist, setHist] = useState<{ boards: SignMap[]; at: number }>(loadFind)
+  const board = hist.boards[hist.at]
+  const setBoard = (next: SignMap) => {
+    const h = { boards: [...hist.boards.slice(0, hist.at + 1), next].slice(-200), at: 0 }
+    h.at = h.boards.length - 1
+    setHist(h)
+    saveFind(h)
+  }
+  const go = (at: number) => {
+    const h = { ...hist, at: Math.max(0, Math.min(hist.boards.length - 1, at)) }
+    setHist(h)
+    saveFind(h)
+  }
+  const undo = () => go(hist.at - 1)
+  const redo = () => go(hist.at + 1)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || (e.target as HTMLElement).closest('input, textarea')) return
+      if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
+      if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); redo() }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
   const [tool, setTool] = useState<Tool>('alt')
   const [nextAlt, setNextAlt] = useState<Sign>(1)
   const [game, setGame] = useState<Game | null>(null)
@@ -108,7 +150,6 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
         ))}
       </div>
       <div class="grp">
-        <button onClick={() => { setBoard(empty()); setGame(null); setNextAlt(1) }}>Clear board</button>
         <label class="file-btn">
           Load SGF file…
           <input type="file" accept=".sgf,application/x-go-sgf,text/plain" onChange={async (e) => {
@@ -175,6 +216,11 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
       <div class="status"><b>Find position</b> · click to place stones</div>
       <div class="board-wrap">
         <Board window={[0, 18, 0, 18]} board={board} last={null} numbers={null} markers={[]} marks={[]} coordinates={props.settings.coordinates} onPoint={onPoint} />
+      </div>
+      <div class="nav find-nav">
+        <button onClick={undo} disabled={hist.at === 0} title="Undo (Ctrl+Z)">↶ Undo</button>
+        <button onClick={redo} disabled={hist.at === hist.boards.length - 1} title="Redo (Ctrl+Y)">↷ Redo</button>
+        <button onClick={() => { setBoard(empty()); setGame(null); setNextAlt(1) }} disabled={!board.some((r) => r.some(Boolean))}>Clear board</button>
       </div>
       {props.phone && tools}
     </main>

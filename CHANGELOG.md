@@ -29,6 +29,10 @@
 - Columns are separated by vertical bars: drag a bar to resize, use its button to collapse or reopen the column (remembered). The empty row with the hide button is gone.
 - The side panels are a stack: each panel keeps its share of the height, its header collapses it, and the thin bar between two panels resizes them.
 
+### Find
+- One result per set of stones: the same stones after a tenuki (other player to move) are no longer listed again.
+- The board is kept when you open a match and come back (and after a reload). **Undo**, **Redo** (Ctrl+Z / Ctrl+Y) and **Clear board** under the board.
+
 ### Board marks
 - New **Eye** mark (◉ Eye in the Draw tools, `{{EYE:S19|the eye}}` in texts), stored as `XEYEM` on the position.
 

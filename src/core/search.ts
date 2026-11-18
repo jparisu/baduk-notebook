@@ -5,6 +5,7 @@
  */
 import { SIZE, SYMMETRIES, compose, cornerWindow, inverse, transformMap, userTransform, type Corner, type DisplayOptions, type Sign, type SignMap, type Transform } from './geometry'
 import { freeOf, labelsAt, type Graph } from './graph'
+import { canonical } from './hash'
 
 export type MatchKind = 'exact' | 'contained' | 'near'
 
@@ -139,7 +140,22 @@ export function search(g: Graph, active: Set<string>, user: SignMap, maxNear = 2
         }
       }
 
-  return dedupe([...best.values()])
+  return sameStones(g, dedupe([...best.values()]))
+}
+
+/**
+ * Find sees only stones, not who plays next: a position and the one after a tenuki have the same
+ * stones. Keep one result per set of stones: the one with the shortest line (reached without the tenuki).
+ */
+function sameStones(g: Graph, list: Match[]): Match[] {
+  const seen = new Map<string, Match>()
+  const stonesKey = (m: Match) => canonical(g.nodes.get(m.keys[m.keys.length - 1])!.board, 0).key + '|' + m.kind
+  for (const m of list) {
+    const k = stonesKey(m)
+    const cur = seen.get(k)
+    if (!cur || m.keys.length < cur.keys.length) seen.set(k, m)
+  }
+  return list.filter((m) => seen.get(stonesKey(m)) === m)
 }
 
 /**
