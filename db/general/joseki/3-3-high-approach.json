@@ -1,0 +1,230 @@
+{
+  "positions": [
+    {
+      "id": "joseki/3-3 point/High approach",
+      "stones": "B:qc W:od",
+      "toPlay": "B",
+      "name": "3-3 point · high approach",
+      "notes": [
+        "{{TR:P16|{{White}}'s knight's move approach}} to {{TR:R17|the 3-3 stone}}. Knight's move approach on the fourth line."
+      ],
+      "values": {
+        "evaluation": 0,
+        "status": "start",
+        "tags": [
+          "influence"
+        ],
+        "difficulty": "15k",
+        "summary": "{{White}} approaches the 3-3 stone with a knight's move on the fourth line. {{Black}} pushes along the side and {{White}} builds a wall. Source: 33PointHighApproach.",
+        "aliases": [
+          "Knight's move approach",
+          "San-san keima kakari",
+          "三々ケイマガカリ"
+        ],
+        "sources": [
+          "Sensei's Library (senseis.xmp.net), joseki pages listed in XSUM. Sequences copied from its diagrams and mirrored to the top-right corner."
+        ],
+        "era": [
+          "classic"
+        ]
+      },
+      "moves": [
+        {
+          "move": "pe",
+          "to": "joseki/3-3 point/High approach:3",
+          "notes": [
+            "Pushes underneath {{White}}'s stone."
+          ],
+          "values": {
+            "category": "main",
+            "style": "balanced",
+            "purpose": [
+              "territory"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/3-3 point/High approach:3",
+      "stones": "B:pe,qc W:od",
+      "toPlay": "W",
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
+      },
+      "moves": [
+        {
+          "move": "oe",
+          "to": "joseki/3-3 point/High approach:4",
+          "values": {
+            "category": "main",
+            "style": "solid",
+            "purpose": [
+              "influence"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/3-3 point/High approach:4",
+      "stones": "B:pe,qc W:od,oe",
+      "toPlay": "B",
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
+      },
+      "moves": [
+        {
+          "move": "pf",
+          "to": "joseki/3-3 point/High approach:5",
+          "values": {
+            "category": "main",
+            "style": "solid",
+            "purpose": [
+              "territory"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/3-3 point/High approach:5",
+      "stones": "B:pe,pf,qc W:od,oe",
+      "toPlay": "W",
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
+      },
+      "moves": [
+        {
+          "move": "of",
+          "to": "joseki/3-3 point/High approach:6",
+          "values": {
+            "category": "main",
+            "style": "solid",
+            "purpose": [
+              "influence"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/3-3 point/High approach:6",
+      "stones": "B:pe,pf,qc W:od,oe,of",
+      "toPlay": "B",
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
+      },
+      "moves": [
+        {
+          "move": "pg",
+          "to": "joseki/3-3 point/High approach:7",
+          "notes": [
+            "{{Black}} has territory on the side; {{White}} has a wall. {{White}} now finishes the top."
+          ],
+          "values": {
+            "category": "main",
+            "style": "solid",
+            "purpose": [
+              "territory"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/3-3 point/High approach:7",
+      "stones": "B:pe,pf,pg,qc W:od,oe,of",
+      "toPlay": "W",
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
+      },
+      "moves": [
+        {
+          "move": "pc",
+          "to": "joseki/3-3 point/High approach:8",
+          "notes": [
+            "Hane on top, reducing the corner."
+          ],
+          "values": {
+            "category": "main",
+            "style": "aggressive",
+            "purpose": [
+              "territory"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/3-3 point/High approach:8",
+      "stones": "B:pe,pf,pg,qc W:od,oe,of,pc",
+      "toPlay": "B",
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
+      },
+      "moves": [
+        {
+          "move": "qb",
+          "to": "joseki/3-3 point/High approach:9",
+          "notes": [
+            "Blocks underneath."
+          ],
+          "values": {
+            "category": "main",
+            "style": "solid",
+            "purpose": [
+              "defend"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/3-3 point/High approach:9",
+      "stones": "B:pe,pf,pg,qb,qc W:od,oe,of,pc",
+      "toPlay": "W",
+      "values": {
+        "evaluation": 0,
+        "status": "progress"
+      },
+      "moves": [
+        {
+          "move": "jd",
+          "to": "joseki/3-3 point/High approach:10",
+          "notes": [
+            "Extends along the top to use the wall."
+          ],
+          "values": {
+            "category": "main",
+            "style": "balanced",
+            "purpose": [
+              "eye",
+              "influence"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "joseki/3-3 point/High approach:10",
+      "stones": "B:pe,pf,pg,qb,qc W:jd,od,oe,of,pc",
+      "toPlay": "B",
+      "notes": [
+        "Outcome: {{Black}} has the corner and left side; {{White}} has a wall and the top side."
+      ],
+      "values": {
+        "evaluation": 0,
+        "status": "end",
+        "sente": "B"
+      },
+      "moves": []
+    }
+  ]
+}
