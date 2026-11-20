@@ -943,3 +943,17 @@ body.dragging-y, body.dragging-y * { cursor: row-resize !important; user-select:
 /* Where something comes from: underlined in its database's color (Settings can change the colors). */
 .db-ul { text-decoration-line: underline; text-decoration-thickness: 3px; text-underline-offset: 5px; text-decoration-skip-ink: none; }
 .db-color { width: 28px; height: 22px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: none; cursor: pointer; }
+
+/* Tags in the editor (docs/MODEL.md §8): each row has its control and a remove button; "Add a tag" below. */
+.edit-panel h3.tags-h { margin: 8px 0 2px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.tag-control { display: flex; gap: 4px; align-items: center; min-width: 0; }
+.tag-control > input, .tag-control > select, .tag-control > textarea, .tag-control > .chips, .tag-control > .seg, .tag-control > .slider-col { flex: 1; min-width: 0; }
+.slider-col { display: flex; flex-direction: column; gap: 2px; }
+.tag-control > .tag-x { flex: none; padding: 2px 6px; }
+.tag-f.free-key .fl { font-style: italic; }
+.edit-f input.invalid { border-color: #d33232; }
+.add-tag { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin-top: 2px; }
+.add-tag.open { flex-direction: column; align-items: stretch; padding: 8px; border: 1px dashed var(--line); border-radius: var(--radius-sm); }
+.add-tag.open .grp { flex-wrap: wrap; }
+.add-tag.open .grp input { flex: 1 1 140px; min-width: 0; }
+.values.free-tag { font-style: italic; }

@@ -1,5 +1,5 @@
 /**
- * Library (docs/MODEL.md §5): every sequence as a tree that follows the ids (joseki › 4-4 point ›
+ * Library (docs/MODEL.md §6): every sequence as a tree that follows the ids (joseki › 4-4 point ›
  * 3-3 invasion), with search by name, nested tags (favourites first) and a difficulty filter.
  */
 import { useMemo, useState } from 'preact/hooks'
@@ -119,9 +119,9 @@ export function Library(props: {
         .filter((e) => e.contribs.some((c) => ctx.active.has(c.db)))
         .map((e) => {
           const f = entryFields(ctx, e.id, rootStep(ctx, e.id))
-          const name = f.one('XNAME')?.value ?? seqName(e.id)
+          const name = f.text('name') || seqName(e.id)
           const fam = e.id.split('/').map((s) => s.trim()).filter(Boolean)
-          return { e, name, diff: f.one('XDIFF')?.value ?? '', fam, tags: f.list('XTAG'), mistake: isMistakeEntry(e) }
+          return { e, name, diff: f.text('difficulty'), fam, tags: f.list('topics'), mistake: isMistakeEntry(e) }
         }),
     [props.entries, ctx.graph, ctx.active],
   )

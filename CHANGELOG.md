@@ -1,8 +1,24 @@
 # Changelog
 
-## Unreleased
+## v0.2.0
 
-### Data model (docs/MODEL.md)
+### Positions, moves, comments and tags (docs/MODEL.md)
+- **Two kinds of record**: positions (nodes) and moves (edges). A file holds `positions` and `moves`; a move is just `from` and `to`, and the point played is worked out from the two positions. When only the player changes, the move is a tenuki.
+- **Comments and tags** on both: a list of comments (the texts shown, with board references you can hover or click), and a free dictionary of tags. Any key can be used on any position or move without declaring it, with a text, number, yes/no or list value. A new position or move starts with no tags.
+- **Known tags** (`db/tags.json`, replaces `db/schema.json`): only describes the keys the interface shows its own way (`kind` with its colors, `intention`, `evaluation` bar, `sente` stone, `status`, life & death results, `difficulty` rank…). Other keys are shown as key: value. Descriptions say where a key is offered (`for`), whether it is always offered (`suggest`), and whether it belongs to **This joseki** (`panel: "sequence"`).
+- **Editor**: each record shows only the tags it has (plus suggested ones, values other databases set there, and inherited ones), each with a × to remove it. **+ Add a tag** picks a known key, a key used elsewhere, or creates a new one with its type; **Rename a key…** renames one.
+- **Settings › Tags shown** lists every key, described or used in the databases, to hide any of them.
+- Renamed keys: `category` → `kind`, `style` → `intention` (now several options), `tags` → `topics`. The name and other names are one `name` list; a sequence's summary became the first comment of its start position; notes became comments.
+- **Board shapes** are the `board` tag, in the same `TYPE:points` syntax as references in comments (`TR:Q16`, `AR:Q16-R14`, `EYE:S18`).
+- **Two tenukis are like none**: a tenuki back to the position a tenuki came from is refused, so the tree cannot loop.
+- **SGF**: downloads carry tags in an `XT` property and comments as SGF comments, and load back with them.
+- `scripts/migrate-0.2.mjs` converted the databases (same 165 positions and 161 moves); the old one-off SGF conversion scripts were removed.
+- Drafts saved in the browser by an earlier version are not restored (new storage key).
+
+### Fixes
+- Right after a deploy, the site could fail with "Could not load the databases: JSON.parse…" because the browser reused the previous version's file list. Database files are now always revalidated, and only `.json` files are loaded.
+
+### Data model, first JSON version (superseded above where they differ)
 - **Values and keys**: a position or move is its notes plus a dictionary of values. The keys live in `db/schema.json` and are edited in the app (**Keys…**): label, icon, type (choice, several choices, slider, flag, color, text, list), options with icons and colors, what Swap colors does, and inheritance. "This move is", Evaluation, Status, Black/White plays first, Sente, Ko, Tags, Difficulty… are all keys.
 - Points are gone. Evaluation is a slider between White and Black, shown as a bar without numbers.
 - Tags are a key; the shape descriptors became keys of their own (eye space, surrounded, outside liberties, inside stones, arrangement, ko type).

@@ -68,7 +68,7 @@ export function savePosition(line: Line) {
   }
 }
 
-/** The trail (docs/MODEL.md §6): every line visited in this session, so the tree keeps the branches you left. */
+/** The trail (docs/MODEL.md §7): every line visited in this session, so the tree keeps the branches you left. */
 export function loadTrail(): Line[] {
   try {
     return JSON.parse(localStorage.getItem(TRAIL) ?? '[]')

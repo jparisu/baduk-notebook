@@ -6,8 +6,8 @@ import {
 } from 'lucide-preact'
 import { loadDatabases, type DatabaseInfo } from './data/load'
 import { buildGraph, type Graph } from './core/graph'
-import { CATEGORIES, MOVE_CATEGORIES } from './core/fields'
-import { apply, applySign, compose, cornerWindow, inverse, parseSgfPtList, ptName, userTransform, type Corner, type Pt, type Sign } from './core/geometry'
+import { CATEGORIES, MOVE_CATEGORIES } from './core/kinds'
+import { apply, applySign, compose, cornerWindow, inverse, ptName, userTransform, type Corner, type Pt, type Sign } from './core/geometry'
 import type { Mark } from './core/refs'
 import { applyTheme, loadSettings, saveSettings, type Settings } from './settings'
 import {
@@ -25,15 +25,16 @@ import { SettingsDialog } from './ui/SettingsDialog'
 import { Library } from './ui/Library'
 import { useMedia } from './ui/useMedia'
 import { EditPanel } from './ui/EditPanel'
-import { ExportDialog, SchemaDialog, NewDatabaseDialog, NewEntryDialog, SaveLinesDialog, type SessionLineView } from './ui/Dialogs'
+import { ExportDialog, TagsDialog, NewDatabaseDialog, NewEntryDialog, SaveLinesDialog, type SessionLineView } from './ui/Dialogs'
 import { FindMode } from './ui/FindMode'
 import { QuizMode } from './ui/QuizMode'
 import { download } from './edit/workspace'
 import { importSgf, toSgf } from './edit/sgfx'
-import { updateSchema } from './edit/workspace'
+import { updateRegistry } from './edit/workspace'
 import { changeCount, createWorkspace, discardDrafts, restoreDrafts, saveDrafts, type Workspace } from './edit/workspace'
-import { checkMove, createDatabase, createEntry, deleteMove, locate, promote, setProps } from './edit/ops'
-import { sgfPoint } from './edit/sgfio'
+import { checkMove, createDatabase, createEntry, deleteMove, locate, promote, setTags, type On } from './edit/ops'
+import { asList, sortKeys, type TagValue } from './core/tags'
+import { boardMarks, writeBoard, type MarkType } from './core/refs'
 import { boardOf, seqName, stonesOf } from './core/model'
 import { previewName, storageKey } from './storage'
 import { decodeLine, linkFor, readUrl } from './share'
@@ -43,7 +44,7 @@ import { erase, loadPosition, loadSession, loadTrail, record, remove, savePositi
 const REF_PALETTE = ['#d81b60', '#1e88e5', '#00897b', '#f4511e', '#8e24aa', '#6d4c41', '#3949ab', '#c0ca33']
 
 type Mode = 'explore' | 'design' | 'find' | 'quiz'
-type Tool = 'move' | 'TR' | 'SQ' | 'CR' | 'MA' | 'LB' | 'XCUT' | 'XEYEM' | 'XWALL' | 'XINF' | 'AR' | 'AB' | 'AW' | 'AE'
+type Tool = 'move' | MarkType | 'AB' | 'AW' | 'AE'
 /** Edit tools: id, button text, explanation (shown on hover and long-press). */
 const TOOLS: [Tool, string, string][] = [
   ['move', 'Play', 'Play moves (saved when you annotate them or use Save lines)'],
@@ -52,16 +53,16 @@ const TOOLS: [Tool, string, string][] = [
   ['CR', '○ Circle', 'Circle mark on a point'],
   ['MA', '✕ Cross', 'X mark on a point'],
   ['LB', 'A Letter', 'Letters A, B, C… on points'],
-  ['XCUT', '✂ Cut', 'Cutting point'],
-  ['XEYEM', '◉ Eye', 'Eye: a point that is (or becomes) an eye'],
-  ['XWALL', '▬ Wall', 'Wall: a barrier of stones that stops influence (click start and end)'],
-  ['XINF', '⇢ Influence', 'Direction where a wall or group exerts influence (click start and end)'],
+  ['CUT', '✂ Cut', 'Cutting point'],
+  ['EYE', '◉ Eye', 'Eye: a point that is (or becomes) an eye'],
+  ['WALL', '▬ Wall', 'Wall: a barrier of stones that stops influence (click start and end)'],
+  ['INF', '⇢ Influence', 'Direction where a wall or group exerts influence (click start and end)'],
   ['AR', '→ Arrow', 'Plain arrow (click start and end)'],
   ['AB', '● Black stone', 'Set-up black stone (start position only)'],
   ['AW', '○ White stone', 'Set-up white stone (start position only)'],
   ['AE', '⌫ Erase stone', 'Remove a set-up stone (start position only)'],
 ]
-const PAIR_TOOLS = new Set<Tool>(['XWALL', 'XINF', 'AR'])
+const PAIR_TOOLS = new Set<Tool>(['WALL', 'INF', 'AR'])
 const SETUP_TOOLS = new Set<Tool>(['AB', 'AW', 'AE'])
 const REF_TYPES: [string, string][] = [
   ['TR', 'Triangle'], ['SQ', 'Square'], ['CR', 'Circle'], ['MA', 'Cross'], ['CUT', 'Cutting point'], ['EYE', 'Eye'], ['WALL', 'Wall'], ['INF', 'Influence'], ['AR', 'Arrow'],
@@ -150,8 +151,8 @@ export function App() {
   // Load the databases, restore drafts, and reopen the last position.
   useEffect(() => {
     loadDatabases()
-      .then(async ({ databases, texts, schemaText }) => {
-        const w = createWorkspace(databases, texts, schemaText)
+      .then(async ({ databases, texts, tagsText }) => {
+        const w = createWorkspace(databases, texts, tagsText)
         const restored = await restoreDrafts(w)
         ws.current = w
         const g = buildGraph(w.files)
@@ -246,7 +247,7 @@ export function App() {
 
   const dbColor = (id: string) => settings.dbColors?.[id] ?? databases.find((d) => d.id === id)?.color ?? '#888'
   const entries = graph ? [...graph.entries.values()].filter((e) => e.defined && e.contribs.some((c) => shown.has(c.db))) : []
-  const entryName = (id: string) => (ctx && ctx.graph.entries.has(id) ? entryFields(ctx, id, rootStep(ctx, id)).one('XNAME')?.value ?? seqName(id) : seqName(id))
+  const entryName = (id: string) => (ctx && ctx.graph.entries.has(id) ? entryFields(ctx, id, rootStep(ctx, id)).text('name') || seqName(id) : seqName(id))
 
   const toggleDb = (id: string) => {
     const next = new Set(active)
@@ -330,13 +331,13 @@ export function App() {
       const styles: Record<string, string> = { a: 'aggressive', b: 'balanced', s: 'solid' }
       if (/^[1-8]$/.test(k) && path.length > 1 && cats[Number(k) - 1]) {
         const c = cats[Number(k) - 1]
-        writeNode({ XCAT: [c] }, `Saved as ${CATEGORIES[c].label.toLowerCase()} in ${target}`)
+        writeNode('move', { kind: c }, `Saved as ${CATEGORIES[c].label.toLowerCase()} in ${target}`)
       } else if (styles[k] && path.length > 1) {
-        writeNode({ XSTY: [styles[k]] }, `Style: ${styles[k]}`)
+        writeNode('move', { intention: [styles[k]] }, `Intention: ${styles[k]}`)
       } else if (k === 'p') {
         playFreeMove(null)
       } else if (e.key === 'Enter') {
-        document.getElementById('f-node-XMW')?.focus()
+        document.getElementById('f-move-comment')?.focus()
       } else return
       e.preventDefault()
     }
@@ -381,22 +382,13 @@ export function App() {
     resetMarks()
   }
 
-  function writeNode(values: Record<string, string[] | null>, msg?: string) {
-    writeAt(path, values, msg)
+  function writeNode(on: On, values: Record<string, TagValue | null>, msg?: string) {
+    writeAt(path, on, values, msg)
   }
-  /** Writes properties on the move/position at the end of `at` (saving the line up to it). */
-  function writeAt(at: Step[], values: Record<string, string[] | null>, msg?: string) {
+  /** Writes tags on the move or position at the end of `at` (saving the line up to it). */
+  function writeAt(at: Step[], on: On, values: Record<string, TagValue | null>, msg?: string) {
     const loc = locate(w, ctx!, at, target, primaryLabel(ctx!, at), true)!
-    if (values.XCAT) {
-      const c = values.XCAT[0]
-      Object.assign(values, {
-        TE: ['main', 'alt', 'punish'].includes(c) ? ['1'] : null,
-        BM: ['mistake', 'overplay'].includes(c) ? ['1'] : null,
-        DO: c === 'slack' ? [''] : null,
-        IT: ['situational', 'trick'].includes(c) ? [''] : null,
-      })
-    }
-    setProps(w, loc, values)
+    setTags(w, loc, on, values)
     commit(msg)
   }
 
@@ -410,8 +402,13 @@ export function App() {
     const first = setup && start.kind === 'label' && ctx!.graph.entries.has(start.id) ? rootStep(ctx!, start.id) : path[0]
     const loc = locate(w, ctx!, setup ? [first] : path, target, label, true)!
     const toDisplay = compose(setup ? frame(ctx!, first) : F, loc.T)
-    const sp = sgfPoint(apply(inverse(toDisplay), pt))
-    const d = loc.node.data
+    const sp = apply(inverse(toDisplay), pt)
+    const marks = boardMarks(asList(loc.pos.tags.board))
+    const same = (a: Pt, b: Pt) => a[0] === b[0] && a[1] === b[1]
+    const saveMarks = (list: Mark[]) => {
+      setTags(w, loc, 'pos', { board: writeBoard(list) })
+      commit()
+    }
     if (setup) {
       // Set-up stones change the start position itself, so only while it has no moves yet.
       if (loc.pos.moves.length) return flash('Set-up stones can only change while the start position has no moves.')
@@ -419,25 +416,21 @@ export function App() {
       const [x, y] = apply(inverse(toDisplay), pt)
       b[y][x] = tool === 'AE' ? 0 : (tool === 'AB') !== toDisplay.swap ? 1 : -1
       loc.pos.stones = stonesOf(b)
-      setProps(w, loc, {})
+      setTags(w, loc, 'pos', {})
       return commit()
     }
+    const type = tool as MarkType
     if (PAIR_TOOLS.has(tool)) {
       if (!pending.length) return setPending([pt])
-      const first = sgfPoint(apply(inverse(toDisplay), pending[0]))
+      const from = apply(inverse(toDisplay), pending[0])
       setPending([])
-      setProps(w, loc, { [tool]: [...(d[tool] ?? []), `${first}:${sp}`] })
-      return commit()
+      return saveMarks([...marks, { type, pts: [from, sp] }])
     }
-    if (tool === 'LB') {
-      const vals = d.LB ?? []
-      const has = vals.find((v) => v.startsWith(sp + ':'))
-      setProps(w, loc, { LB: has ? vals.filter((v) => v !== has) : [...vals, `${sp}:${String.fromCharCode(65 + vals.length)}`] })
-      return commit()
-    }
-    const list = (d[tool] ?? []).flatMap(parseSgfPtList).map(sgfPoint)
-    setProps(w, loc, { [tool]: list.includes(sp) ? list.filter((x) => x !== sp) : [...list, sp] })
-    commit()
+    // Point marks: a second click on the same point removes it.
+    const has = marks.find((m) => m.type === type && same(m.pts[0], sp))
+    if (has) return saveMarks(marks.filter((m) => m !== has))
+    const letter = type === 'LB' ? String.fromCharCode(65 + marks.filter((m) => m.type === 'LB').length) : undefined
+    saveMarks([...marks, { type, pts: [sp], label: letter }])
   }
 
   function insertRef() {
@@ -458,7 +451,7 @@ export function App() {
   function clearMarks() {
     const loc = locate(w, ctx!, path, target, label, false)
     if (!loc) return
-    setProps(w, loc, Object.fromEntries(['TR', 'SQ', 'CR', 'MA', 'LB', 'XCUT', 'XWALL', 'XINF', 'AR', 'LN', 'XTB', 'XTW'].map((k) => [k, null])))
+    setTags(w, loc, 'pos', { board: null })
     commit('Marks cleared on this position')
   }
 
@@ -546,7 +539,7 @@ export function App() {
   for (const m of messages) for (const s of m.segments) if ('ref' in s) refMarks.set(s.id, s.ref)
   if (label) {
     const ef = entryFields(ctx, label, path[labelStart(ctx, path, label)])
-    for (const t of ef.text('XSUM')) for (const s of t.segments) if ('ref' in s) refMarks.set(s.id, s.ref)
+    for (const t of ef.comments()) for (const s of t.segments) if ('ref' in s) refMarks.set(s.id, s.ref)
   }
   const colors = settings.aids === 'always' ? new Map([...refMarks.keys()].map((id, i) => [id, REF_PALETTE[i % REF_PALETTE.length]])) : null
   const shownRefs = colors ? [...refMarks.keys()] : [hovered ?? pinned].filter((x): x is string => !!x)
@@ -624,7 +617,7 @@ export function App() {
           </select>
         </label>
       )}
-      {edit && <button onClick={() => setDialog('keys')} title="The keys positions and moves can have (db/schema.json): add, remove, change icons and options">Keys…</button>}
+      {edit && <button onClick={() => setDialog('keys')} title="Known tags (db/tags.json): how the interface shows and edits a key — type, options, icons, colors. Any other key still works, shown as key: value">Keys…</button>}
       {(edit || nChanges > 0) && (
         <button class={nChanges ? 'changes' : ''} onClick={() => setDialog('export')}>
           <Upload size={15} /> Export{nChanges ? ` (${nChanges})` : ''}
@@ -977,7 +970,7 @@ export function App() {
             <div class="ctx-h">This move is…</div>
             <div class="ctx-cats">
               {cats.map((c, i) => (
-                <button key={c} role="menuitem" title={`${CATEGORIES[c].label} (key ${i + 1})`} onClick={() => { writeAt(ctxMenu.line, { XCAT: [c] }, `Saved as ${CATEGORIES[c].label.toLowerCase()} in ${target}`); setCtxMenu(null) }}>
+                <button key={c} role="menuitem" title={`${CATEGORIES[c].label} (key ${i + 1})`} onClick={() => { writeAt(ctxMenu.line, 'move', { kind: c }, `Saved as ${CATEGORIES[c].label.toLowerCase()} in ${target}`); setCtxMenu(null) }}>
                   <CategoryDot cat={c} /> {CATEGORIES[c].label}
                 </button>
               ))}
@@ -985,10 +978,10 @@ export function App() {
             <hr />
           </>
         )}
-        <button role="menuitem" onClick={() => { writeAt(ctxMenu.line, { XST: ['end'] }, 'Marked as joseki end'); setCtxMenu(null) }}>▣ Mark as joseki end</button>
-        <button role="menuitem" onClick={() => { writeAt(ctxMenu.line, { XST: ['end-mistake'] }, 'Marked as end after a mistake'); setCtxMenu(null) }}>▣ Mark as end after a mistake</button>
-        <button role="menuitem" onClick={() => { setDesignTab('pos'); setCtxMenu(null); setTimeout(() => document.getElementById('f-XPB')?.focus(), 50) }}>Set the result…</button>
-        <button role="menuitem" onClick={() => { setDesignTab('move'); setCtxMenu(null); setTimeout(() => document.getElementById('f-node-XMW')?.focus(), 50) }}>Edit why…</button>
+        <button role="menuitem" onClick={() => { writeAt(ctxMenu.line, 'pos', { status: 'end' }, 'Marked as joseki end'); setCtxMenu(null) }}>▣ Mark as joseki end</button>
+        <button role="menuitem" onClick={() => { writeAt(ctxMenu.line, 'pos', { status: 'end-mistake' }, 'Marked as end after a mistake'); setCtxMenu(null) }}>▣ Mark as end after a mistake</button>
+        <button role="menuitem" onClick={() => { setDesignTab('pos'); setCtxMenu(null); setTimeout(() => document.getElementById('f-pos-status')?.focus(), 50) }}>Set the result…</button>
+        <button role="menuitem" onClick={() => { setDesignTab('move'); setCtxMenu(null); setTimeout(() => document.getElementById('f-move-comment')?.focus(), 50) }}>Edit why…</button>
         <hr />
         <button role="menuitem" onClick={() => { setDesignTab('name'); setCtxMenu(null); setTimeout(() => document.getElementById('f-name-new')?.focus(), 50) }}>⚑ Name a joseki from here…</button>
         {ctxLast.edge && (
@@ -1037,7 +1030,7 @@ export function App() {
       <button onClick={() => download(`${(label ? entryName(label) : 'position').replace(/[^\w\- ]+/g, '').trim() || 'position'}.sgf`, toSgf(ctx, path[path.length - 1]), 'application/x-go-sgf')} title="Download this position and the moves after it as SGF">
         <FileDown size={15} /> SGF
       </button>
-      <button onClick={() => setDialog('keys')} title="The keys positions and moves can have (db/schema.json): add, remove, change icons and options">Keys…</button>
+      <button onClick={() => setDialog('keys')} title="Known tags (db/tags.json): how the interface shows and edits a key — type, options, icons, colors. Any other key still works, shown as key: value">Keys…</button>
       <button class={nChanges ? 'changes' : ''} onClick={() => setDialog('export')} title="Download a patch or propose the changes on GitHub">
         <Upload size={15} /> Export / pull request{nChanges ? ` (${nChanges})` : ''}
       </button>
@@ -1269,8 +1262,8 @@ export function App() {
       )}
       {mode === 'quiz' && <QuizMode ctx={ctx} phone={phone} settings={settings} entryName={entryName} />}
 
-      {dialog === 'keys' && <SchemaDialog schema={w.schema} close={() => setDialog(null)} save={(sc) => { updateSchema(w, sc); commit('Keys saved in this browser; use Export to propose them') }} />}
-      {dialog === 'settings' && <SettingsDialog s={settings} set={setSettings} close={() => setDialog(null)} databases={databases} active={active} toggleDb={toggleDb} />}
+      {dialog === 'keys' && <TagsDialog registry={w.registry} close={() => setDialog(null)} save={(r) => { updateRegistry(w, r); commit('Tags saved in this browser; use Export to propose them') }} />}
+      {dialog === 'settings' && <SettingsDialog s={settings} tagKeys={sortKeys([...w.registry.tags.map((d) => d.key), ...w.files.flatMap((f) => f.positions.flatMap((p) => [...Object.keys(p.tags), ...p.moves.flatMap((m) => Object.keys(m.tags))]))])} set={setSettings} close={() => setDialog(null)} databases={databases} active={active} toggleDb={toggleDb} />}
       {dialog === 'export' && (
         <ExportDialog ws={w} close={() => setDialog(null)} onDiscard={async () => {
           await discardDrafts(w)

@@ -1,6 +1,6 @@
 /** Quiz cards and spaced repetition (SPEC §9): SM-2 style scheduling with Again / Hard / Good / Easy. */
 import type { Graph } from '../core/graph'
-import { CATEGORIES, categoryOf } from '../core/fields'
+import { CATEGORIES, categoryOf } from '../core/kinds'
 import { edgeCategory } from '../core/graph'
 import { indexLines } from '../core/search'
 import { storageKey } from '../storage'
@@ -72,7 +72,7 @@ export function buildCards(g: Graph, active: Set<string>, order: string[]): Card
       for (const o of [...owners].sort((a, b) => a.keys.length - b.keys.length).slice(0, 1)) {
         // Was the move that led here a mistake? Then this card is about punishing it.
         const prev = o.keys.length > 1 ? g.nodes.get(o.keys[o.keys.length - 2])!.edges.find((e) => e.child === key) : undefined
-        const prevCat = prev ? prev.contribs.map((c) => categoryOf(c.props)).find(Boolean) : null
+        const prevCat = prev ? prev.contribs.map((c) => categoryOf(c.rec.tags)).find(Boolean) : null
         const kind = good.some((e) => edgeCategory(e, active, order) === 'punish') ? 'punish' : prevCat && !CATEGORIES[prevCat].good ? 'mistake' : 'main'
         out.push({ id: `${o.entryId}|${key}|${sign}`, entryId: o.entryId, keys: o.keys, sign, kind })
       }

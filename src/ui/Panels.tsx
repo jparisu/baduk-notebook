@@ -4,14 +4,13 @@
  * right — position evaluation, last move (the "why"), next moves.
  */
 import type { ComponentChildren } from 'preact'
-import { CATEGORIES, type Category } from '../core/fields'
-import { fieldsFor, propOf, valueLabel, type FieldDef } from '../core/schema'
+import { CATEGORIES, type Category } from '../core/kinds'
+import { defOf, labelOf, typeOf, valueLabel, asList } from '../core/tags'
 import { apply, ptName } from '../core/geometry'
 import { labelsAt } from '../core/graph'
 import type { Msg } from '../messages'
 import type { Settings } from '../settings'
-import { candidates, entryFields, frame, lineFields, moveOf, type Fields, inBook, labelStart, moveFields, positionFields, primaryLabel, type Candidate, type Ctx, type Step } from '../view'
-import { CONDITION_ICONS, IconLabel, PURPOSE_ICONS, SHAPE_ICONS, STATUS_ICONS, STYLE_ICONS } from './icons'
+import { candidates, entryFields, frame, lineFields, moveOf, type Fields, inBook, labelStart, moveFields, primaryLabel, type Candidate, type Ctx, type Step } from '../view'
 import { Rich, type RefHandlers } from './Rich'
 import { Fold } from './Card'
 
@@ -71,19 +70,6 @@ export function NoteCard({ who, color, children }: { who: string; color: string;
   )
 }
 
-/** Amber card for warnings (aji). */
-export function WarnCard({ children, db, color }: { children: ComponentChildren; db: string; color: string }) {
-  return (
-    <div class="warn-card" role="note">
-      <span class="warn-badge" aria-hidden>!</span>
-      <div>
-        <b>Watch out</b> <DbTag db={db} color={color} />
-        <div>{children}</div>
-      </div>
-    </div>
-  )
-}
-
 /** Names of the labels met along the line, in order (Empty corner › 3-3 invasion › hane). */
 export function crumbsOf(ctx: Ctx, path: Step[]): string[] {
   const out: string[] = []
@@ -96,10 +82,56 @@ export function crumbsOf(ctx: Ctx, path: Step[]): string[] {
   return out
 }
 
-/* ---------- Left: This joseki ---------- */
+/* ---------- Tags ---------- */
 
-/** Keys shown at the top of This joseki; the others go to Details. */
-const MAIN_KEYS = ['difficulty', 'tags']
+/** Keys shown in "This joseki" (db/tags.json `panel: "sequence"`), read from the start of the sequence. */
+export const isSequenceKey = (k: string) => defOf(k)?.panel === 'sequence'
+
+/**
+ * Tags as rows. Keys described in db/tags.json are shown their own way (a balance bar, a stone for a color,
+ * option icons and colors); any other key is shown as key: value.
+ */
+export function TagRows({ keys, f, icons, only, hidden = [] }: { keys: string[]; f: Fields; icons: boolean; only?: 'bars' | 'rows'; hidden?: string[] }) {
+  const out = keys.filter((k) => !hidden.includes(k) && k !== 'board').flatMap((key) => {
+    const r = f.get(key)
+    if (!r) return []
+    const d = defOf(key)
+    const type = typeOf(key, r.value)
+    if (type === 'slider') {
+      if (only === 'rows' || typeof r.value !== 'number') return []
+      const v = r.value
+      return [
+        <div key={key} class="eval-bar-row" title={labelOf(key)}>
+          <span class="bar-end">{d?.ends?.[0] ?? ''}</span>
+          <div class="balance-bar" role="img" aria-label={`${labelOf(key)}: ${v > 0.15 ? d?.ends?.[1] : v < -0.15 ? d?.ends?.[0] : 'even'}`}><i style={{ left: `${50 + Math.max(-1, Math.min(1, v)) * 50}%` }} /></div>
+          <span class="bar-end">{d?.ends?.[1] ?? ''}</span>
+        </div>,
+      ]
+    }
+    if (only === 'bars') return []
+    const icon = icons && d?.icon ? <span class="ico" aria-hidden>{d.icon}</span> : null
+    if (type === 'flag') return r.value === true ? [<Row key={key} label={labelOf(key)}>{icon}Yes</Row>] : []
+    if (type === 'color') {
+      const v = String(r.value)
+      return [<Row key={key} label={labelOf(key)}><span class="value">{v === 'B' || v === 'W' ? <StoneIcon sign={v === 'B' ? 1 : -1} size={14} /> : icon}{valueLabel(key, v)}</span></Row>]
+    }
+    const vals = type === 'list' || type === 'multi' ? f.list(key) : asList(r.value)
+    const show = (v: string) => {
+      const o = d?.options?.find((x) => x.value === v)
+      return (
+        <span key={v} class="value">
+          {o?.color && <span class="dot" style={{ background: o.color, borderColor: o.color }} />}
+          {icons && o?.icon && !o.color && <span class="ico" aria-hidden>{o.icon}</span>}
+          {valueLabel(key, v)}
+        </span>
+      )
+    }
+    return [<Row key={key} label={labelOf(key)}><span class={`values ${d ? '' : 'free-tag'}`}>{icon}{vals.map(show)}</span></Row>]
+  })
+  return <>{out}</>
+}
+
+/* ---------- Left: This joseki ---------- */
 
 export function JosekiInfo(p: Common & { onOpenLabel: (id: string) => void; onCopyLink?: (id: string) => void }) {
   const { ctx, path } = p
@@ -113,7 +145,10 @@ export function JosekiInfo(p: Common & { onOpenLabel: (id: string) => void; onCo
   const icons = p.settings.icons
   const crumbs = crumbsOf(ctx, path)
   const others = labelsAt(ctx.graph, path[path.length - 1].key, ctx.active).filter((l) => l !== label && ctx.graph.entries.get(l)?.defined)
-  const details = fieldsFor('sequence').filter((f) => f.key !== 'summary' && !MAIN_KEYS.includes(f.key))
+  const keys = ef.keys().filter((k) => isSequenceKey(k) && k !== 'name')
+  const alias = ef.list('name').slice(1)
+  // The start's comments describe the whole sequence; at the start itself they are in the position panel.
+  const about = at < path.length - 1 ? ef.comments() : []
   return (
     <div class="joseki-info subpanels">
       <div class="sub-main">
@@ -136,17 +171,13 @@ export function JosekiInfo(p: Common & { onOpenLabel: (id: string) => void; onCo
       </div>
       <div class="kvs">
         <Row label="Sequence">{entry.id.replace(/\//g, ' › ')}</Row>
-        <ValueRows fields={fieldsFor('sequence').filter((f) => MAIN_KEYS.includes(f.key))} f={ef} icons={icons} hidden={p.settings.hiddenKeys} />
+        {alias.length > 0 && !p.settings.hiddenKeys.includes('name') && <Row label="Also called">{alias.join(' · ')}</Row>}
+        <TagRows keys={keys} f={ef} icons={icons} hidden={p.settings.hiddenKeys} />
       </div>
       </div>
-      {ef.text('XSUM').length > 0 && !p.settings.hiddenKeys.includes('summary') && (
-        <Fold id="joseki-description" title="Description">
-          {ef.text('XSUM').map((t, i) => <p key={i} class="desc"><Rich segments={t.segments} h={p.refs} /></p>)}
-        </Fold>
-      )}
-      {details.some((fd) => ef.one(propOf(fd.key)) || ef.list(propOf(fd.key)).length) && (
-        <Fold id="joseki-details" title="Details">
-          <div class="kvs"><ValueRows fields={details} f={ef} icons={icons} hidden={p.settings.hiddenKeys} /></div>
+      {about.length > 0 && (
+        <Fold id="joseki-description" title="About">
+          {about.map((t, i) => <p key={i} class="desc"><Rich segments={t.segments} h={p.refs} /></p>)}
         </Fold>
       )}
       {others.length > 0 && (
@@ -158,64 +189,20 @@ export function JosekiInfo(p: Common & { onOpenLabel: (id: string) => void; onCo
 
 /* ---------- Right: Position evaluation ---------- */
 
-/** The keys of the schema that have a value here, each shown the way its type asks for. */
-export function ValueRows({ fields: all, f, icons, only, hidden = [] }: { fields: FieldDef[]; f: Fields; icons: boolean; only?: 'bars' | 'rows'; hidden?: string[] }) {
-  const fields = all.filter((fd) => !hidden.includes(fd.key))
-  // A key that trades places with another one under Swap colors ("Black plays first" ↔ "White plays first").
-  const shown = (fd: FieldDef) => {
-    const prop = propOf(fd.key)
-    if (!fd.swapKey) return prop
-    const c = f.firstWith(prop) ?? f.firstWith(propOf(fd.swapKey))
-    return c && f.swapped(c) ? propOf(fd.swapKey) : prop
-  }
-  const out = fields.flatMap((fd) => {
-    const prop = shown(fd)
-    if (fd.type === 'slider') {
-      if (only === 'rows') return []
-      const v = Number(f.one(prop)?.value)
-      if (!Number.isFinite(v)) return []
-      return [
-        <div key={fd.key} class="eval-bar-row" title={fd.label}>
-          <span class="bar-end">{fd.ends?.[0] ?? ''}</span>
-          <div class="balance-bar" role="img" aria-label={`${fd.label}: ${v > 0.15 ? fd.ends?.[1] : v < -0.15 ? fd.ends?.[0] : 'even'}`}><i style={{ left: `${50 + Math.max(-1, Math.min(1, v)) * 50}%` }} /></div>
-          <span class="bar-end">{fd.ends?.[1] ?? ''}</span>
-        </div>,
-      ]
-    }
-    if (only === 'bars') return []
-    const vals = fd.type === 'list' || fd.type === 'multi' ? f.list(prop) : [f.one(prop)?.value].filter((x): x is string => !!x)
-    if (!vals.length || (fd.type === 'flag' && vals[0] !== '1')) return []
-    const opt = (v: string) => fd.options?.find((o) => o.value === v)
-    const show = (v: string) => {
-      const o = opt(v)
-      return (
-        <span key={v} class="value">
-          {o?.color && <span class="dot" style={{ background: o.color, borderColor: o.color }} />}
-          {icons && o?.icon && !o.color && <span class="ico" aria-hidden>{o.icon}</span>}
-          {valueLabel(fd, v)}
-        </span>
-      )
-    }
-    if (fd.type === 'flag') return [<Row key={fd.key} label={fd.label}>{icons && fd.icon ? <span class="ico" aria-hidden>{fd.icon}</span> : null}Yes</Row>]
-    return [<Row key={fd.key} label={fd.label}><span class="values">{vals.map(show)}</span></Row>]
-  })
-  return <>{out}</>
-}
-
 export function PositionEval(p: Common) {
   const { ctx, path } = p
   const step = path[path.length - 1]
   if (!inBook(ctx, step)) return <p class="hint">Not in your databases. Keep playing, or save your line.</p>
   const pf = lineFields(ctx, path) // values inherited from earlier positions of the line count too
   const icons = p.settings.icons
-  const fields = fieldsFor('position')
+  const keys = pf.keys().filter((k) => !isSequenceKey(k))
   const here = p.messages.filter((m) => m.place === 'position')
-  const hasValue = fields.some((fd) => pf.one(propOf(fd.key)) || pf.list(propOf(fd.key)).length)
+  const hasValue = keys.some((k) => k !== 'board' && !p.settings.hiddenKeys.includes(k))
   return (
     <div class="pos-eval">
-      <ValueRows fields={fields} f={pf} icons={icons} only="bars" hidden={p.settings.hiddenKeys} />
-      <div class="kvs pos-values"><ValueRows fields={fields} f={pf} icons={icons} only="rows" hidden={p.settings.hiddenKeys} /></div>
-      {/* Notes: the first database's as plain text, other databases' (your own notes) as cards with their color. */}
+      <TagRows keys={keys} f={pf} icons={icons} only="bars" hidden={p.settings.hiddenKeys} />
+      <div class="kvs pos-values"><TagRows keys={keys} f={pf} icons={icons} only="rows" hidden={p.settings.hiddenKeys} /></div>
+      {/* Comments: the first database's as plain text, other databases' (your own notes) as cards with their color. */}
       {here.filter((m) => m.kind === 'pos').map((m, i) =>
         m.db === ctx.order[0] ? (
           <p key={'p' + i} class="pos-text"><Rich segments={m.segments} h={p.refs} /></p>
@@ -223,12 +210,6 @@ export function PositionEval(p: Common) {
           <NoteCard key={'p' + i} who={m.db} color={p.dbColor(m.db)}><Rich segments={m.segments} h={p.refs} /></NoteCard>
         ),
       )}
-      {here.filter((m) => m.kind === 'warn').map((m, i) => (
-        <WarnCard key={'w' + i} db={m.db} color={p.dbColor(m.db)}><Rich segments={m.segments} h={p.refs} /></WarnCard>
-      ))}
-      {here.filter((m) => m.kind === 'note').map((m, i) => (
-        <NoteCard key={'n' + i} who={`${m.db} · ${m.title.toLowerCase()}`} color={p.dbColor(m.db)}><Rich segments={m.segments} h={p.refs} /></NoteCard>
-      ))}
       {!hasValue && !here.length && <p class="hint">Nothing stored about this position yet.</p>}
     </div>
   )
@@ -247,8 +228,10 @@ export function LastMove(p: Common & { onGoTo: (n: number) => void }) {
   const m = moveOf(step)
   const played = parent && m?.pt ? apply(frame(ctx, parent), m.pt) : cand?.pt ?? null
   const history = p.messages.filter((m) => m.place === 'history')
-  const why = p.messages.filter((m) => m.place === 'move' && m.kind === 'move')
-  const notes = p.messages.filter((m) => m.place === 'move' && m.kind === 'note')
+  // Comments: the first database's as the explanation, other databases' (your own notes) as cards with their color.
+  const comments = p.messages.filter((m) => m.place === 'move' && m.kind === 'move')
+  const why = comments.filter((m) => m.db === ctx.order[0])
+  const notes = comments.filter((m) => m.db !== ctx.order[0])
   return (
     <div class="why-card" style={{ '--cat': k?.color ?? 'var(--line)' } as never}>
       {history.length > 0 && (
@@ -269,14 +252,16 @@ export function LastMove(p: Common & { onGoTo: (n: number) => void }) {
             {k && <span class="cat-pill">{k.label}</span>}
           </div>
           {why.map((m, i) => <p key={i} class="why-text"><Rich segments={m.segments} h={p.refs} /></p>)}
-          {!why.length && <p class="hint">No explanation stored for this move.</p>}
+          {!comments.length && <p class="hint">No explanation stored for this move.</p>}
           <div class="tags">
-            {mf && fieldsFor('move').filter((fd) => fd.key !== 'category' && !(s.hiddenKeys ?? []).includes(fd.key)).flatMap((fd) => {
-              const prop = propOf(fd.key)
-              const vals = fd.type === 'list' || fd.type === 'multi' ? mf.list(prop) : [mf.one(prop)?.value].filter((x): x is string => !!x)
-              return vals.map((v) => {
-                const o = fd.options?.find((x) => x.value === v)
-                return <span key={fd.key + v} class="tag" title={fd.label}>{s.icons && o?.icon ? <span class="ico" aria-hidden>{o.icon}</span> : null}{fd.type === 'flag' ? fd.label : valueLabel(fd, v)}</span>
+            {mf && mf.keys().filter((k) => k !== 'kind' && k !== 'board' && !(s.hiddenKeys ?? []).includes(k)).flatMap((k) => {
+              const d = defOf(k)
+              const v = mf.get(k)!.value
+              if (typeOf(k, v) === 'flag') return v === true ? [<span key={k} class="tag" title={labelOf(k)}>{s.icons && d?.icon ? <span class="ico" aria-hidden>{d.icon}</span> : null}{labelOf(k)}</span>] : []
+              return mf.list(k).map((x) => {
+                const o = d?.options?.find((y) => y.value === x)
+                // Keys the interface knows show their value; others say which key it is.
+                return <span key={k + x} class="tag" title={labelOf(k)}>{s.icons && o?.icon ? <span class="ico" aria-hidden>{o.icon}</span> : null}{d?.options ? valueLabel(k, x) : `${labelOf(k)}: ${valueLabel(k, x)}`}</span>
               })
             })}
           </div>

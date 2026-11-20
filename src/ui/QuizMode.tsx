@@ -4,7 +4,7 @@ import { Workbench } from './Workbench'
 import { Board } from './Board'
 import { Message } from './Message'
 import { Rich, type RefHandlers } from './Rich'
-import { CATEGORIES } from '../core/fields'
+import { CATEGORIES } from '../core/kinds'
 import { SYMMETRIES, apply, applySign, cornerWindow, ptName, userTransform, withSwap, type Pt, type Transform } from '../core/geometry'
 import { candidates, displayBoard, entryFields, frame, moveFields, rootStep, type Ctx, type Step } from '../view'
 import { buildCards, loadProgress, queue, review, saveProgress, streak, type Card, type Progress, type Rating } from '../quiz/srs'
@@ -52,7 +52,7 @@ export function QuizMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
       if (kind === 'main' && c.kind !== 'main') return false
       if (kind === 'punish' && c.kind === 'main') return false
       if (maxRank !== 'any') {
-        const d = entryFields(ctx, c.entryId, rootStep(ctx, c.entryId)).one('XDIFF')?.value
+        const d = entryFields(ctx, c.entryId, rootStep(ctx, c.entryId)).text('difficulty')
         if (d && RANK(d) > RANK(maxRank)) return false
       }
       return true
@@ -185,7 +185,7 @@ export function QuizMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
 
   const shown = answer || reveal ? (reveal ? cands : good) : []
   const refs: RefHandlers = { hovered, pinned: null, colors: null, onHover: setHovered, onPin: () => {} }
-  const why = best ? moveFields(qctx, step, best.edge).text('XMW') : []
+  const why = best ? moveFields(qctx, step, best.edge).comments() : []
   const marks = hovered ? why.flatMap((t) => t.segments.flatMap((s) => ('ref' in s && s.id === hovered ? s.ref : []))) : []
   const answerName = (pt: Pt | null) => (pt ? ptName(pt) : 'tenuki')
   const entryName = props.entryName(card.entryId)

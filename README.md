@@ -9,10 +9,10 @@ A personal web app to study, store and annotate Go joseki and shapes (eye shapes
 ## What it does
 
 - **Explore** joseki and shapes on a board with a variation tree. Next moves are colored by category (main, alternative, situational, slack, mistake, overplay, trick, punishment), tenuki included.
-- **Notes with visual aids**: "why" explanations, position notes and warnings. Words in a note can point at stones: hover them to see the marks on the board.
+- **Comments with visual aids**: comments on moves ("why") and positions. Words in a comment can point at stones: hover or click them to see the marks on the board.
 - **Databases** you can switch on and off (`general`, `jparisu`, …). Positions are recognized in any corner, orientation, color or move order, so notes from one database land on the right moves of another.
 - **Orientation**: show any line in another corner, mirrored, or with colors swapped.
-- **Edit**: add moves, mistakes and punishments, fill in every field, draw marks and walls, create entries and databases. Changes are kept in your browser until you export them as a patch for a pull request.
+- **Edit**: add moves, mistakes and punishments, write comments, add any tag you like (known tags such as kind, intention, evaluation or status have their own controls; new keys can be created on the spot), draw marks and walls, create entries and databases. Changes are kept in your browser until you export them as a patch for a pull request.
 - **Find position**: place stones or load an SGF game; the app finds matching positions (exact, contained, or up to 2 stones different), sliding side and centre shapes along the directions they allow.
 - **Quiz** with spaced repetition: find the right move (or the punishment) in a random orientation.
 - Works on phones (drawer, bottom navigation bar, swipe on the board). Three themes: Modern, Simple, Minimalist, each light or dark.
@@ -44,7 +44,7 @@ Fast keys in Edit mode (when the board has focus):
 
 **Sharing**: the address bar always links to what is on the board, and the 🔗 buttons copy it. For example `https://jparisu.github.io/baduk-notebook/?open=joseki/3-4+point/Low+approach` opens that sequence at its first position; `&line=…` adds moves and `&view=br` the orientation (SPEC.md §8.9).
 
-**By hand**: the databases are JSON files of positions in `db/<database>/` (the data model is in [docs/MODEL.md](docs/MODEL.md)). Each position has an id such as `joseki/4-4 point/3-3 invasion:5`, and each move names the id it leads to. New databases also need a line in `db/index.json`, which can list `commonTags` for the library.
+**By hand**: the databases are JSON files in `db/<database>/` with a list of positions and a list of moves (the data model is in [docs/MODEL.md](docs/MODEL.md)). Each position has an id such as `joseki/4-4 point/3-3 invasion:5`; each move goes `from` one id `to` another. Both have `comments` and free `tags`; `db/tags.json` describes the tags the interface knows. New databases also need a line in `db/index.json`, which can list `commonTags` for the library.
 
 ## Development
 

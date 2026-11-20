@@ -3,7 +3,7 @@ import { clickPoint, fresh, openEntry } from './helpers'
 
 test.beforeEach(async ({ page }) => fresh(page))
 
-test('a new key added in the Keys dialog can be set in the editor and is exported in db/schema.json', async ({ page }) => {
+test('a key described in the Known tags dialog can be added in the editor and is exported in db/tags.json', async ({ page }) => {
   await clickPoint(page, 'Q16')
   await page.getByRole('button', { name: 'Edit' }).click()
   await page.getByRole('button', { name: 'Keys…' }).click()
@@ -11,14 +11,37 @@ test('a new key added in the Keys dialog can be set in the editor and is exporte
   await page.locator('#schema-label').fill('Ladder')
   await page.locator('#schema-key').fill('ladder')
   await page.locator('#schema-type').selectOption('flag')
-  await page.getByRole('button', { name: 'Save keys' }).click()
-  await expect(page.locator('.toast')).toContainText('Keys saved')
-  await page.locator('#f-ladder').check()
+  await page.getByRole('button', { name: 'Save tags' }).click()
+  await expect(page.locator('.toast')).toContainText('Tags saved')
+  await expect(page.locator('#f-pos-ladder')).toHaveCount(0) // a position only shows the tags it has
+  await page.locator('#add-tag-pos').click()
+  await page.locator('#add-tag-key-pos').fill('ladder')
+  await page.locator('.add-tag.open').getByRole('button', { name: 'Add' }).click()
+  await page.locator('#f-pos-ladder').check()
   await expect(page.locator('.pos-values')).toHaveCount(0) // the evaluation card is replaced by the editor in Edit mode
   await page.locator('.top').getByRole('button', { name: 'Editing' }).click()
   await expect(page.locator('.pos-values')).toContainText('Ladder')
   await page.getByRole('button', { name: /Export/ }).click()
-  await expect(page.locator('.file-list')).toContainText('db/schema.json')
+  await expect(page.locator('.file-list')).toContainText('db/tags.json')
+})
+
+test('a brand-new key can be created on a move, is shown as key: value, and can be removed', async ({ page }) => {
+  await clickPoint(page, 'Q16')
+  await clickPoint(page, 'R13') // not in the databases
+  await page.getByRole('button', { name: 'Edit' }).click()
+  await page.locator('#add-tag-move').click()
+  await page.locator('#add-tag-key-move').fill('my plan')
+  await page.getByLabel('Type of the new tag').selectOption('number')
+  await page.locator('.add-tag.open').getByRole('button', { name: 'Add' }).click()
+  await page.locator('#f-move-my-plan').fill('3')
+  await page.locator('#f-move-my-plan').blur()
+  await page.locator('.top').getByRole('button', { name: 'Editing' }).click()
+  await expect(page.locator('.why-card .tags')).toContainText('My plan: 3')
+  await page.getByRole('button', { name: 'Edit' }).click()
+  await page.getByRole('button', { name: 'Remove My plan' }).click()
+  await expect(page.locator('#f-move-my-plan')).toHaveCount(0)
+  await page.getByRole('button', { name: /Export/ }).click()
+  await expect(page.locator('.file-list')).not.toContainText('db/tags.json') // a plain new key needs no description
 })
 
 test('Settings hide the keys you do not want to see', async ({ page }) => {
@@ -31,16 +54,17 @@ test('Settings hide the keys you do not want to see', async ({ page }) => {
   await expect(page.locator('.pos-values')).toContainText('White plays first')
 })
 
-test('This joseki keeps its sub-panel headers in view, whatever the content', async ({ page }) => {
+test('This joseki shows the tags of the sequence and keeps its About header in view', async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 })
   await openEntry(page, 'Bent four', 'Corner')
+  // Topics are one group of chips, on one row.
+  await expect(page.locator('[data-card=joseki] .f', { hasText: 'Topics' }).locator('.value')).toHaveCount(3)
+  await expect(page.locator('[data-card=joseki] .fold-head', { hasText: 'About' })).toHaveCount(0) // at the start, its comments are the position's
+  await openEntry(page, '3-3 invasion')
+  await page.keyboard.press('ArrowRight')
   const card = (await page.locator('[data-card=joseki]').boundingBox())!
-  for (const t of ['Description', 'Details']) {
-    const h = (await page.locator('[data-card=joseki] .fold-head', { hasText: t }).boundingBox())!
-    expect(h.y + h.height, t).toBeLessThanOrEqual(card.y + card.height + 1)
-  }
-  // Tags are one group of chips, on one row.
-  await expect(page.locator('[data-card=joseki] .f', { hasText: 'Tags' }).locator('.value')).toHaveCount(3)
+  const h = (await page.locator('[data-card=joseki] .fold-head', { hasText: 'About' }).boundingBox())!
+  expect(h.y + h.height).toBeLessThanOrEqual(card.y + card.height + 1)
 })
 
 test('a move from another database has a line in its color under the tree node; Settings change that color', async ({ page }) => {

@@ -1,13 +1,13 @@
 /** View model: turns the canonical graph into what the screen shows, after transforms and database filters. */
 import type { Graph, Contribution, Edge, PosNode } from './core/graph'
 import { edgeCategory, labelsAt, visibleEdges } from './core/graph'
-import { CATEGORY_ORDER, TEXT_PROPS, flipValue, isColorProp, isListProp, type Category } from './core/fields'
+import { CATEGORY_ORDER, type Category } from './core/kinds'
 import GoBoard from '@sabaki/go-board'
 import { isStartId } from './core/model'
-import { fieldOfProp } from './core/schema'
+import { asList, asText, defOf, sortKeys, swapValue, swapsValue, type TagValue } from './core/tags'
 import { canonical } from './core/hash'
-import { apply, applySign, compose, inverse, parseSgfPtList, transformMap, type Pt, type Sign, type SignMap, type Transform } from './core/geometry'
-import { parseText, playerWords, propMarks, transformMarks, type Mark, type Segment } from './core/refs'
+import { apply, applySign, compose, inverse, transformMap, type Pt, type Sign, type SignMap, type Transform } from './core/geometry'
+import { boardMarks, parseText, playerWords, transformMarks, type Mark, type Segment } from './core/refs'
 
 /**
  * One step of the current line. `D` maps the node's canonical frame to the entry's stored frame.
@@ -120,7 +120,7 @@ export function candidates(ctx: Ctx, step: Step): Candidate[] {
   const F = frame(ctx, step)
   const list = visibleEdges(ctx.graph, step.key, ctx.active).map((edge) => {
     const cat = edgeCategory(edge, ctx.active, ctx.order)
-    const why = edge.contribs.find((c) => ctx.active.has(c.db) && c.props.XMW)?.props.XMW?.[0] ?? ''
+    const why = edge.contribs.find((c) => ctx.active.has(c.db) && c.rec.comments.length)?.rec.comments[0] ?? ''
     return {
       edge,
       step: childStep(step, edge),
@@ -142,21 +142,26 @@ function shortLabel(text: string) {
   return first.length > 60 ? first.slice(0, 57) + '…' : first
 }
 
-/* ---- Field resolution (SPEC §3.3) ---- */
+/* ---- Reading tags and comments (docs/MODEL.md §9) ---- */
 
 export interface TextValue {
   db: string
   segments: Segment[]
 }
 export interface Resolved {
-  value: string
+  value: TagValue
   db: string
-  overridden: { db: string; value: string }[]
+  overridden: { db: string; value: TagValue }[]
 }
 
 /** Transform from a contribution's file frame to the display frame. */
 const fileToDisplay = (F: Transform, c: Contribution) => compose(F, c.toCanon)
 
+/**
+ * The tags and comments of one position or move as every active database stores them. A single value
+ * comes from the database listed last (personal databases override the general one); lists are joined.
+ * Values that depend on colors are seen as the display shows them (Swap colors).
+ */
 export class Fields {
   constructor(
     protected ctx: Ctx,
@@ -178,92 +183,106 @@ export class Fields {
     return fileToDisplay(this.F, c).swap
   }
 
-  text(prop: string): TextValue[] {
-    return this.visible().flatMap((c, i) =>
-      (c.props[prop] ?? []).map((t, j) => ({ db: c.db, segments: parseText(t, fileToDisplay(this.F, c), `${this.idPrefix}:${prop}:${i}:${j}`, this.player) })),
-    )
+  /** The key stored under `key` as the display sees it: "black-first" reads "white-first" when colors are swapped. */
+  private stored(c: Contribution, key: string) {
+    const other = defOf(key)?.swapKey
+    return other && this.swapped(c) ? other : key
+  }
+  private valueIn(c: Contribution, key: string): TagValue | undefined {
+    const k = this.stored(c, key)
+    const v = c.rec.tags[k]
+    if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)) return undefined
+    return swapsValue(k) && this.swapped(c) ? swapValue(k, v) : v
   }
 
-  /** Single value: the database listed last wins. Color-dependent values are flipped when needed. */
-  one(prop: string): Resolved | null {
+  /** Keys with a value here, in display order. */
+  keys(): string[] {
+    const sw = (c: Contribution, k: string) => this.stored(c, k)
+    return sortKeys(this.visible().flatMap((c) => Object.keys(c.rec.tags).filter((k) => this.valueIn(c, sw(c, k)) !== undefined).map((k) => sw(c, k))))
+  }
+
+  /** Single value: the database listed last wins. */
+  get(key: string): Resolved | null {
     const vals = this.visible().flatMap((c) => {
-      const v = c.props[prop]?.[0]
-      if (v === undefined || v === '') return []
-      return [{ db: c.db, value: isColorProp(prop) && this.swapped(c) ? flipValue(prop, v) : v }]
+      const v = this.valueIn(c, key)
+      return v === undefined ? [] : [{ db: c.db, value: v }]
     })
     if (!vals.length) return null
     const last = vals[vals.length - 1]
-    return { ...last, overridden: vals.slice(0, -1).filter((v) => v.value !== last.value) }
+    return { ...last, overridden: vals.slice(0, -1).filter((v) => JSON.stringify(v.value) !== JSON.stringify(last.value)) }
   }
 
-  list(prop: string): string[] {
-    return [...new Set(this.visible().flatMap((c) => c.props[prop] ?? []))]
+  /** The value as text (the first item of a list), or "". */
+  text(key: string): string {
+    return asText(this.get(key)?.value)
   }
 
-  /** Board markup and overlays stored on the node (always visible). */
+  /** Every value of every database, as one list without repeats. */
+  list(key: string): string[] {
+    return [...new Set(this.visible().flatMap((c) => asList(this.valueIn(c, key))))]
+  }
+
+  /** The comments, with their references to the board. */
+  comments(): TextValue[] {
+    return this.visible().flatMap((c, i) =>
+      c.rec.comments.map((t, j) => ({ db: c.db, segments: parseText(t, fileToDisplay(this.F, c), `${this.idPrefix}:c:${i}:${j}`, this.player) })),
+    )
+  }
+
+  /** The `board` tag: shapes drawn on the board (always visible). */
   marks(): Mark[] {
-    return this.visible().flatMap((c) => transformMarks(fileToDisplay(this.F, c), propMarks(c.props)))
+    return this.visible().flatMap((c) => transformMarks(fileToDisplay(this.F, c), boardMarks(asList(c.rec.tags.board))))
   }
 
-  /** SGF point list values (e.g. XVITAL) in the display frame. */
-  points(prop: string): Pt[] {
-    return this.visible().flatMap((c) => (c.props[prop] ?? []).flatMap(parseSgfPtList).map((p) => apply(fileToDisplay(this.F, c), p)))
-  }
-
-  /** The first visible contribution with this property, for swap checks (e.g. XRESB/XRESW). */
-  firstWith(prop: string): Contribution | undefined {
-    return this.visible().find((c) => c.props[prop])
+  /** The first visible contribution with this key. */
+  firstWith(key: string): Contribution | undefined {
+    return this.visible().find((c) => c.rec.tags[key] !== undefined)
   }
 }
 
-export function isText(prop: string) {
-  return TEXT_PROPS.has(prop)
-}
-export function isList(prop: string) {
-  return isListProp(prop)
-}
-
-/**
- * Position fields that a position inherits from the earlier positions of the line until it sets its own
- * value (docs/MODEL.md §1). Inheritance stops at the start of a sequence. Names, the joseki-end status,
- * board marks and every move field are never inherited.
- */
-/** Notes and tags are inherited; values when their schema key says so. */
-export const isInherited = (prop: string) => prop === 'XPW' || prop === 'XTAG' || !!fieldOfProp(prop)?.inherit
+/** Tags that a position takes from the earlier positions of the line until it sets its own (db/tags.json `inherit`). */
+export const isInherited = (key: string) => !!defOf(key)?.inherit
 
 const startsSequence = (ctx: Ctx, step: Step) => node(ctx, step).contribs.some((c) => ctx.active.has(c.db) && isStartId(c.pos.id))
 
-/** Fields of the last position of `path`, with inherited values. */
+/**
+ * Fields of the last position of `path`, with inherited values: a tag marked `inherit` that this position
+ * does not set is read from the closest earlier position of the line, up to the start of its sequence.
+ */
 export class LineFields extends Fields {
   constructor(ctx: Ctx, private path: Step[]) {
     const s = path[path.length - 1]
     super(ctx, node(ctx, s).contribs, frame(ctx, s), `p:${s.key}`, node(ctx, s).toMove)
   }
   /** Index in the line of the position the value comes from (the last one when it is its own), or null. */
-  source(prop: string): number | null {
+  source(key: string): number | null {
     const last = this.path.length - 1
     for (let i = last; i >= 0; i--) {
-      const own = positionFields(this.ctx, this.path[i])
-      if (own.one(prop) || own.list(prop).length) return i
-      if (!isInherited(prop) || startsSequence(this.ctx, this.path[i])) return null
+      if (positionFields(this.ctx, this.path[i]).get(key)) return i
+      if (!isInherited(key) || startsSequence(this.ctx, this.path[i])) return null
     }
     return null
   }
-  private at(prop: string): Fields | null {
-    const i = this.source(prop)
-    return i === null ? null : i === this.path.length - 1 ? null : positionFields(this.ctx, this.path[i])
+  private at(key: string): Fields | null {
+    const i = this.source(key)
+    return i === null || i === this.path.length - 1 ? null : positionFields(this.ctx, this.path[i])
   }
-  one(prop: string) {
-    const f = this.at(prop)
-    return f ? f.one(prop) : super.one(prop)
+  get(key: string) {
+    const f = this.at(key)
+    return f ? f.get(key) : super.get(key)
   }
-  text(prop: string) {
-    const f = this.at(prop)
-    return f ? f.text(prop) : super.text(prop)
+  list(key: string) {
+    const f = this.at(key)
+    return f ? f.list(key) : super.list(key)
   }
-  list(prop: string) {
-    const f = this.at(prop)
-    return f ? f.list(prop) : super.list(prop)
+  keys() {
+    const own = super.keys()
+    const inherited = new Set<string>()
+    for (let i = this.path.length - 2; i >= 0; i--) {
+      if (startsSequence(this.ctx, this.path[i + 1])) break
+      for (const k of positionFields(this.ctx, this.path[i]).keys()) if (isInherited(k)) inherited.add(k)
+    }
+    return sortKeys([...own, ...inherited])
   }
 }
 export const lineFields = (ctx: Ctx, path: Step[]) => new LineFields(ctx, path)

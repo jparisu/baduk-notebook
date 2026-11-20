@@ -1,21 +1,46 @@
 /**
- * SGF compatibility (docs/MODEL.md §7): download a position and what follows it as SGF, and load an
- * SGF file into a database (each node becomes a position, each move a move; comments become notes).
+ * SGF compatibility (docs/MODEL.md §10): download a position and what follows it as SGF, and load an
+ * SGF file into a database (each node becomes a position, each move a move; SGF comments become comments).
+ * Tags travel in an `XT` property, one `key=value` (JSON value) per tag, so a download loads back as it was.
  */
 import * as sgf from '@sabaki/sgf'
 import type { SgfNode } from '@sabaki/sgf'
 import { parseSgfPt, parseSgfPtList, type Pt, type Sign } from '../core/geometry'
-import { isMoveProp } from '../core/fields'
-import { mergeNotes } from '../core/model'
+import type { TagValue } from '../core/tags'
 import { playerWords } from '../core/refs'
-import { candidates, displayBoard, frame, moveFields, playFree, positionFields, startStep, toMove, type Ctx, type Step } from '../view'
+import { candidates, displayBoard, frame, moveFields, node as nodeOf, playFree, positionFields, startStep, toMove, type Ctx, type Step } from '../view'
 import { newNode, sgfPoint, writeSgf } from './sgfio'
-import { locate, setProps } from './ops'
+import { locate, setComments, setTags, type On } from './ops'
 import { buildGraph } from '../core/graph'
 import type { Workspace } from './workspace'
 
-const KEEP_POS = ['XNAME', 'XTAG', 'XPW', 'XPB', 'XDIFF', 'XEV', 'XST', 'XSB', 'XSW']
-const KEEP_MOVE = ['XCAT', 'XMW', 'XSTY', 'XPUR']
+/** Text of a comment for other SGF programs: player words and references become plain words. */
+const plain = (t: string, swap: boolean, player: Sign) =>
+  playerWords(t, swap, player).replace(/\{\{[A-Z]+:[^|}]*\|([^}]*)\}\}/g, '$1').replace(/\{\{[A-Z]+:([^}]*)\}\}/g, '$1')
+
+const tagProp = (keys: string[], get: (k: string) => TagValue | undefined) =>
+  keys.flatMap((k) => {
+    const v = get(k)
+    return v === undefined ? [] : [`${k}=${JSON.stringify(v)}`]
+  })
+
+/** Tags from an `XT` property, and from the older single properties of earlier SGF files. */
+function readTags(d: Record<string, string[]>): Record<string, TagValue> {
+  const out: Record<string, TagValue> = {}
+  for (const v of d.XT ?? []) {
+    const i = v.indexOf('=')
+    if (i < 1) continue
+    try {
+      out[v.slice(0, i)] = JSON.parse(v.slice(i + 1)) as TagValue
+    } catch {
+      out[v.slice(0, i)] = v.slice(i + 1)
+    }
+  }
+  const OLD: Record<string, string> = { XNAME: 'name', XTAG: 'topics', XDIFF: 'difficulty', XST: 'status', XSB: 'black-first', XSW: 'white-first', XCAT: 'kind', XSTY: 'intention', XPUR: 'purpose' }
+  for (const [p, k] of Object.entries(OLD)) if (d[p]?.length && !(k in out)) out[k] = ['name', 'topics', 'intention', 'purpose'].includes(k) ? d[p] : d[p][0]
+  if (d.XEV?.length && !('evaluation' in out) && Number.isFinite(Number(d.XEV[0]))) out.evaluation = Number(d.XEV[0])
+  return out
+}
 
 /** The position on the board (as set-up stones) and every database move after it, as an SGF game. */
 export function toSgf(ctx: Ctx, step: Step, maxNodes = 2000): string {
@@ -27,10 +52,13 @@ export function toSgf(ctx: Ctx, step: Step, maxNodes = 2000): string {
   if (aw.length) root.AW = aw
   root.PL = [toMove(ctx, step) === -1 ? 'W' : 'B']
   const pf = positionFields(ctx, step)
-  for (const k of KEEP_POS) {
-    const v = pf.one(k)?.value
-    if (v) root[k] = [v]
-  }
+  const F = frame(ctx, step)
+  const xt = tagProp(pf.keys().filter((k) => k !== 'board'), (k) => pf.get(k)?.value)
+  if (xt.length) root.XT = xt
+  const name = pf.text('name')
+  if (name) root.GN = [name]
+  const own = nodeOf(ctx, step).contribs.filter((c) => ctx.active.has(c.db)).flatMap((c) => c.rec.comments)
+  if (own.length) root.C = [own.map((t) => plain(t, F.swap, nodeOf(ctx, step).toMove)).join('\n\n')]
   const top = newNode(root, null)
   let count = 0
   const seen = new Set<string>([step.key])
@@ -40,12 +68,11 @@ export function toSgf(ctx: Ctx, step: Step, maxNodes = 2000): string {
       seen.add(c.step.key)
       const d: Record<string, string[]> = { [c.sign === 1 ? 'B' : 'W']: [c.pt ? sgfPoint(c.pt) : ''] }
       const mf = moveFields(ctx, parent, c.edge)
-      for (const k of KEEP_MOVE) {
-        const v = mf.one(k)?.value
-        if (v) d[k] = [v]
-      }
-      const why = mf.one('XMW')?.value
-      if (why) d.C = [playerWords(why, frame(ctx, parent).swap, c.edge.sign).replace(/\{\{[A-Z]+:[^|}]*\|([^}]*)\}\}/g, '$1').replace(/\{\{[A-Z]+:([^}]*)\}\}/g, '$1')]
+      const mx = tagProp(mf.keys().filter((k) => k !== 'board'), (k) => mf.get(k)?.value)
+      if (mx.length) d.XT = mx
+      const swap = frame(ctx, parent).swap
+      const texts = c.edge.contribs.filter((x) => ctx.active.has(x.db)).flatMap((x) => x.rec.comments)
+      if (texts.length) d.C = [texts.map((t) => plain(t, swap, c.edge.sign)).join('\n\n')]
       walk(c.step, newNode(d, node))
     }
   }
@@ -71,18 +98,15 @@ export function importSgf(ws: Workspace, ctxOf: () => Ctx, text: string, target:
     // Positions created by earlier nodes must be found again: rebuild the graph before each write.
     const fresh = (): Ctx => ({ ...ctx, graph: buildGraph(ws.files) })
     const write = (path: Step[], data: Record<string, string[]>) => {
-      const vals: Record<string, string[]> = {}
-      for (const [k, v] of Object.entries(data)) if (KEEP_POS.includes(k) || KEEP_MOVE.includes(k)) vals[k] = v
-      // Comments and older note fields become notes.
-      // A comment on a move node describes the move; on the first node, the position.
-      const pos: Record<string, string[]> = { ...data }, mv: Record<string, string[]> = { ...data }
-      if (path.length > 1) delete pos.C
-      mergeNotes(pos, 'XPW')
-      mergeNotes(mv, 'XMW')
-      if (pos.XPW?.length) vals.XPW = pos.XPW
-      if (path.length > 1 && mv.XMW?.length) vals.XMW = mv.XMW
+      // A node with a move describes the move; the first node describes the position.
+      const on: On = path.length > 1 ? 'move' : 'pos'
+      const tags = readTags(data)
+      const comments = [...(data.C ?? []), ...(data.XMW ?? []), ...(data.XPW ?? [])].filter((t) => t.trim())
+      if (!Object.keys(tags).length && !comments.length) return
       const loc = locate(ws, fresh(), path, target, null, true)
-      if (loc && Object.keys(vals).length) setProps(ws, loc, vals)
+      if (!loc) return
+      if (Object.keys(tags).length) setTags(ws, loc, on, tags)
+      if (comments.length) setComments(ws, loc, on, comments)
     }
     const walk = (node: SgfNode, path: Step[]) => {
       let p = path
@@ -100,7 +124,7 @@ export function importSgf(ws: Workspace, ctxOf: () => Ctx, text: string, target:
             return
           }
         }
-      if (node !== root || Object.keys(d).some((k) => !isMoveProp(k))) write(p, d)
+      if (node !== root || d.C || d.XT || d.GN) write(p, node === root && d.GN && !d.XT ? { ...d, XNAME: d.GN } : d)
       if (!node.children.length && p.length > 1) locate(ws, fresh(), p, target, null, true)
       for (const c of node.children) walk(c, p)
     }

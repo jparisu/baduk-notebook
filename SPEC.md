@@ -5,6 +5,8 @@ Status: draft v1 · Date: 2026-11-16
 > **Data model:** since 2026-11-17 the databases are a JSON graph of positions with ids, described in
 > [docs/MODEL.md](docs/MODEL.md). It replaces the SGF storage, labels (XID/XNAME/XFAM), color-swap matching
 > and the tree views described below (§3, §4, §6.2, §8.6, §8.10). SGF stays available to load and download.
+> Since 0.2 positions and moves carry only comments and a free dictionary of tags; the per-field lists
+> below (§4) are kept for history, and the known tags are described in `db/tags.json`.
 Layout reference: mock-up at https://claude.ai/artifact/C4kQP4gyG9hUvhKoZuxEWa (private)
 
 ---

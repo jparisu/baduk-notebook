@@ -1,5 +1,5 @@
 /**
- * Tree of moves (docs/MODEL.md §6) with three modes and a zoom. The layout is always the one of the
+ * Tree of moves (docs/MODEL.md §7) with three modes and a zoom. The layout is always the one of the
  * whole tree, in a fixed order, so the tree never moves when you move through it (like OGS):
  * - linear:    shows the current line, before and ahead, plus the lines visited in this session (the trail);
  * - proximity: the same, plus the other moves from the current position;
@@ -7,7 +7,7 @@
  * Hidden branches show a "+n" badge; "ahead" limits how far after the current move the tree goes.
  */
 import { useLayoutEffect, useRef } from 'preact/hooks'
-import { CATEGORIES, type Category } from '../core/fields'
+import { CATEGORIES, type Category } from '../core/kinds'
 import { apply, applySign, ptName, type Pt } from '../core/geometry'
 import { candidates, frame, moveOf, type Candidate, type Ctx, type Step } from '../view'
 

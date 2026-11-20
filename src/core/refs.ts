@@ -1,6 +1,5 @@
 /** Visual references inside text: {{TYPE:points|label}} (SPEC §5). */
-import { apply, parsePt, parseSgfPtList, ptName, type Pt, type Sign, type Transform } from './geometry'
-import type { Props } from './fields'
+import { apply, parsePt, ptName, type Pt, type Sign, type Transform } from './geometry'
 
 export type MarkType = 'TR' | 'SQ' | 'CR' | 'MA' | 'LB' | 'AR' | 'LN' | 'WALL' | 'INF' | 'TB' | 'TW' | 'CUT' | 'EYE'
 
@@ -88,27 +87,26 @@ export function parseText(text: string, t: Transform, idPrefix: string, player: 
   return out
 }
 
-/** Standard SGF markup and custom overlay properties of a node, in the file frame (SPEC §4.1, §4.5). */
-export function propMarks(p: Props): Mark[] {
-  const out: Mark[] = []
-  for (const type of ['TR', 'SQ', 'CR', 'MA'] as const)
-    for (const v of p[type] ?? []) for (const pt of parseSgfPtList(v)) out.push({ type, pts: [pt] })
-  for (const v of p.LB ?? []) {
-    const [pt, label] = v.split(':')
-    const pts = parseSgfPtList(pt)
-    if (pts.length) out.push({ type: 'LB', pts, label })
+/** Mark types of the `board` tag and of references in comments. */
+export const MARK_TYPES: MarkType[] = ['TR', 'SQ', 'CR', 'MA', 'LB', 'AR', 'LN', 'WALL', 'INF', 'TB', 'TW', 'CUT', 'EYE']
+
+/**
+ * The `board` tag (docs/MODEL.md §3.2): a list of entries in the reference syntax without braces, in the
+ * record's stored frame — "TR:Q16,R17", "AR:Q16-R14", "LB:Q16=A", "EYE:S18".
+ */
+export function boardMarks(entries: string[]): Mark[] {
+  return entries.flatMap((e) => {
+    const m = e.trim().match(/^([A-Z]{2,4}):(.*)$/)
+    return m && MARK_TYPES.includes(m[1] as MarkType) ? parseRef(m[1], m[2]) : []
+  })
+}
+
+/** Writes marks back as `board` entries, one per type. */
+export function writeBoard(marks: Mark[]): string[] {
+  const by = new Map<MarkType, string[]>()
+  for (const m of marks) {
+    const body = PAIR_TYPES.has(m.type) ? `${ptName(m.pts[0])}-${ptName(m.pts[1])}` : m.type === 'LB' ? `${ptName(m.pts[0])}=${m.label ?? ''}` : m.pts.map(ptName).join(',')
+    by.set(m.type, [...(by.get(m.type) ?? []), body])
   }
-  const pairs: [string, MarkType][] = [['AR', 'AR'], ['LN', 'LN'], ['XWALL', 'WALL'], ['XINF', 'INF']]
-  for (const [prop, type] of pairs)
-    for (const v of p[prop] ?? []) {
-      const [a, b] = v.split(':').map((s) => parseSgfPtList(s)[0])
-      if (a && b) out.push({ type, pts: [a, b] })
-    }
-  for (const [prop, type] of [['XTB', 'TB'], ['XTW', 'TW']] as const) {
-    const pts = (p[prop] ?? []).flatMap(parseSgfPtList)
-    if (pts.length) out.push({ type, pts })
-  }
-  for (const v of p.XCUT ?? []) for (const pt of parseSgfPtList(v)) out.push({ type: 'CUT', pts: [pt] })
-  for (const v of p.XEYEM ?? []) for (const pt of parseSgfPtList(v)) out.push({ type: 'EYE', pts: [pt] })
-  return out
+  return MARK_TYPES.filter((t) => by.has(t)).map((t) => `${t}:${by.get(t)!.join(',')}`)
 }

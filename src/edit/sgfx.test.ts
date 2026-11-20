@@ -31,4 +31,17 @@ describe('SGF', () => {
     expect(candidates(ctx, after[0].step).length).toBe(2)
     expect(ws.files.length).toBe(1)
   })
+
+  it('tags and comments survive a download and a load', () => {
+    const ws = createWorkspace(DBS, listDb().filter((p) => p.startsWith('general/')).map(readDb))
+    const ctx: Ctx = { graph: buildGraph(ws.files), active: new Set(['general']), order: ['general'], U: IDENTITY }
+    const text = toSgf(ctx, startStep(ctx, { kind: 'label', id: 'joseki/4-4 point/3-3 invasion' }))
+    expect(text).toContain('XT[kind="main"]')
+    const back = createWorkspace(DBS, [])
+    const ctxOf = (): Ctx => ({ graph: buildGraph(back.files), active: new Set(['mine']), order: ['mine'], U: IDENTITY })
+    importSgf(back, ctxOf, text, 'mine')
+    const moves = back.files.flatMap((f) => f.positions.flatMap((p) => p.moves))
+    expect(moves.some((m) => m.tags.kind === 'main' && m.comments.length > 0)).toBe(true)
+    expect(ctxOf().graph.problems).toEqual([])
+  })
 })

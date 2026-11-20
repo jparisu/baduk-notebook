@@ -4,39 +4,39 @@
       "id": "joseki/3-4 point",
       "stones": "B:qd",
       "toPlay": "W",
-      "name": "3-4 point",
-      "notes": [
+      "comments": [
+        "A lone 3-4 stone. {{White}} usually approaches low or high from the open side; each approach opens its own joseki.",
         "{{TR:R16|The 3-4 stone}} holds the corner firmly and points along one side."
       ],
-      "values": {
-        "evaluation": 0,
-        "status": "start",
-        "tags": [
-          "corner start"
-        ],
-        "difficulty": "25k",
-        "summary": "A lone 3-4 stone. {{White}} usually approaches low or high from the open side; each approach opens its own joseki.",
-        "aliases": [
+      "tags": {
+        "name": [
+          "3-4 point",
           "Komoku",
           "小目"
-        ]
-      },
-      "moves": [
-        {
-          "move": "od",
-          "to": "joseki/3-4 point/High approach",
-          "values": {
-            "category": "main"
-          }
-        },
-        {
-          "move": "oc",
-          "to": "joseki/3-4 point/Low approach",
-          "values": {
-            "category": "main"
-          }
-        }
-      ]
+        ],
+        "evaluation": 0,
+        "status": "start",
+        "topics": [
+          "corner start"
+        ],
+        "difficulty": "25k"
+      }
+    }
+  ],
+  "moves": [
+    {
+      "from": "joseki/3-4 point",
+      "to": "joseki/3-4 point/High approach",
+      "tags": {
+        "kind": "main"
+      }
+    },
+    {
+      "from": "joseki/3-4 point",
+      "to": "joseki/3-4 point/Low approach",
+      "tags": {
+        "kind": "main"
+      }
     }
   ]
 }
