@@ -1,7 +1,9 @@
 /** Find position (SPEC §7): set up stones or load an SGF, then see matching joseki and shapes. */
-import { useMemo, useState } from 'preact/hooks'
+import { useEffect, useMemo, useState } from 'preact/hooks'
+import { storageKey } from '../storage'
 import GoBoard from '@sabaki/go-board'
 import * as sgf from '@sabaki/sgf'
+import { Workbench } from './Workbench'
 import { Board } from './Board'
 import { search, userViewFor, type Match } from '../core/search'
 import { parseSgfPt, parseSgfPtList, ptName, type DisplayOptions, type Pt, type Sign, type SignMap } from '../core/geometry'
@@ -11,6 +13,23 @@ import { CATEGORIES } from '../core/fields'
 import { IDENTITY } from '../core/geometry'
 
 type Tool = 'B' | 'W' | 'alt' | 'erase'
+const FIND_KEY = storageKey('baduk-notebook.find.v1')
+function loadFind(): { boards: SignMap[]; at: number } {
+  try {
+    const h = JSON.parse(localStorage.getItem(FIND_KEY) ?? 'null')
+    if (h && Array.isArray(h.boards) && h.boards.length) return { boards: h.boards, at: Math.min(h.at ?? 0, h.boards.length - 1) }
+  } catch {
+    /* ignore */
+  }
+  return { boards: [empty()], at: 0 }
+}
+function saveFind(h: { boards: SignMap[]; at: number }) {
+  try {
+    localStorage.setItem(FIND_KEY, JSON.stringify(h))
+  } catch {
+    /* ignore */
+  }
+}
 const empty = (): SignMap => Array.from({ length: 19 }, () => Array<Sign>(19).fill(0))
 
 interface Game {
@@ -56,7 +75,31 @@ function lineSteps(ctx: Ctx, entryId: string, keys: string[]): Step[] {
 
 export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; entryName: (id: string) => string; onOpen: (id: string, keys: string[], display: DisplayOptions) => void }) {
   const { ctx } = props
-  const [board, setBoard] = useState<SignMap>(empty)
+  // The board and its history stay when you open a match and come back (and after a reload).
+  const [hist, setHist] = useState<{ boards: SignMap[]; at: number }>(loadFind)
+  const board = hist.boards[hist.at]
+  const setBoard = (next: SignMap) => {
+    const h = { boards: [...hist.boards.slice(0, hist.at + 1), next].slice(-200), at: 0 }
+    h.at = h.boards.length - 1
+    setHist(h)
+    saveFind(h)
+  }
+  const go = (at: number) => {
+    const h = { ...hist, at: Math.max(0, Math.min(hist.boards.length - 1, at)) }
+    setHist(h)
+    saveFind(h)
+  }
+  const undo = () => go(hist.at - 1)
+  const redo = () => go(hist.at + 1)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || (e.target as HTMLElement).closest('input, textarea')) return
+      if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
+      if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); redo() }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
   const [tool, setTool] = useState<Tool>('alt')
   const [nextAlt, setNextAlt] = useState<Sign>(1)
   const [game, setGame] = useState<Game | null>(null)
@@ -107,7 +150,6 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
         ))}
       </div>
       <div class="grp">
-        <button onClick={() => { setBoard(empty()); setGame(null); setNextAlt(1) }}>Clear board</button>
         <label class="file-btn">
           Load SGF file…
           <input type="file" accept=".sgf,application/x-go-sgf,text/plain" onChange={async (e) => {
@@ -135,7 +177,7 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
         </div>
       )}
       <h2>How it searches</h2>
-      <p class="hint">Each 10×10 corner is compared with every joseki position, in all 8 orientations and with colors swapped. Shapes are also found when moved along a side. Exact matches come first, then positions contained in yours, then positions that differ by up to 2 stones.</p>
+      <p class="hint">Each 10×10 corner is compared with every position fixed in the corner, in all 8 orientations (colors are never swapped). Positions that may slide, such as side and centre shapes, are also found where you placed them. Exact matches come first, then positions contained in yours, then positions that differ by up to 2 stones.</p>
     </div>
   )
 
@@ -169,17 +211,29 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
     </div>
   )
 
+  const center = (
+    <main class="pane center">
+      <div class="status"><b>Find position</b> · click to place stones</div>
+      <div class="board-wrap">
+        <Board window={[0, 18, 0, 18]} board={board} last={null} numbers={null} markers={[]} marks={[]} coordinates={props.settings.coordinates} onPoint={onPoint} />
+      </div>
+      <div class="nav find-nav">
+        <button onClick={undo} disabled={hist.at === 0} title="Undo (Ctrl+Z)">↶ Undo</button>
+        <button onClick={redo} disabled={hist.at === hist.boards.length - 1} title="Redo (Ctrl+Y)">↷ Redo</button>
+        <button onClick={() => { setBoard(empty()); setGame(null); setNextAlt(1) }} disabled={!board.some((r) => r.some(Boolean))}>Clear board</button>
+      </div>
+      {props.phone && tools}
+    </main>
+  )
+  if (props.phone) return <>{center}<aside class="pane right">{list}</aside></>
   return (
-    <>
-      {!props.phone && <aside class="pane left">{tools}</aside>}
-      <main class="pane center">
-        <div class="status"><b>Find position</b> · click to place stones</div>
-        <div class="board-wrap">
-          <Board window={[0, 18, 0, 18]} board={board} last={null} numbers={null} markers={[]} marks={[]} coordinates={props.settings.coordinates} onPoint={onPoint} />
-        </div>
-        {props.phone && tools}
-      </main>
-      <aside class="pane right">{list}</aside>
-    </>
+    <Workbench
+      id="find"
+      cols={[
+        { id: 'left', name: 'left', label: 'Tools', width: 280, min: 220, max: 480, node: <aside class="pane left">{tools}</aside> },
+        { id: 'center', node: center },
+        { id: 'right', name: 'right', label: 'Matches', width: 380, min: 260, max: 640, node: <aside class="pane right">{list}</aside> },
+      ]}
+    />
   )
 }

@@ -2,10 +2,13 @@
 import { useMemo, useState } from 'preact/hooks'
 import type { ComponentChildren } from 'preact'
 import { validateAll } from '../core/validate'
+import type { FieldDef, FieldOption, FieldType, Schema } from '../core/schema'
 import { changes, download, makePatch, makeZip, type Workspace } from '../edit/workspace'
 import { parsePt, type Pt, type Sign } from '../core/geometry'
+import type { Free } from '../core/model'
 import type { NewEntry } from '../edit/ops'
 import type { DatabaseInfo } from '../data/load'
+import { BRANCH, REPO } from '../config'
 
 function Shell({ title, close, children }: { title: string; close: () => void; children: ComponentChildren }) {
   return (
@@ -75,7 +78,34 @@ export function ExportDialog({ ws, close, onDiscard }: { ws: Workspace; close: (
             <button onClick={() => navigator.clipboard?.writeText(patch).then(() => setCopied(true), () => setCopied(false))}>{copied ? 'Copied' : 'Copy patch'}</button>
           </div>
           {errors.length > 0 && <p class="hint">Fix the errors above before exporting.</p>}
-          <h3>How to submit</h3>
+          <h3>Propose on GitHub (no git needed)</h3>
+          <p class="hint">Opens GitHub with each file ready. Press "Commit changes…", choose "Create a new branch and start a pull request", and GitHub opens the pull request.</p>
+          <ul class="propose">
+            {list.map((c) => {
+              const isNew = c.before === null
+              const url = isNew
+                ? `https://github.com/${REPO}/new/${BRANCH}?filename=${encodeURIComponent(c.path)}&value=${encodeURIComponent(c.after)}`
+                : `https://github.com/${REPO}/edit/${BRANCH}/${c.path}`
+              const tooLong = isNew && url.length > 7500
+              return (
+                <li key={c.path}>
+                  <code>{c.path}</code>
+                  {isNew && !tooLong ? (
+                    <a class="btn-link" href={url} target="_blank" rel="noopener">Create on GitHub</a>
+                  ) : (
+                    <>
+                      <button onClick={() => navigator.clipboard?.writeText(c.after)}>Copy content</button>
+                      <a class="btn-link" href={isNew ? `https://github.com/${REPO}/new/${BRANCH}?filename=${encodeURIComponent(c.path)}` : url} target="_blank" rel="noopener">
+                        {isNew ? 'Create on GitHub' : 'Edit on GitHub'}
+                      </a>
+                      <span class="hint">{isNew ? 'Too long for a link: copy, then paste on GitHub.' : 'Copy, then replace the text on GitHub.'}</span>
+                    </>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+          <h3>Or with git</h3>
           <ol class="steps">
             <li>In a clone of the repository, run <code>git apply baduk-notebook-{stamp}.patch</code>.</li>
             <li>Or unzip the files into the repository folder, or upload them on GitHub ("Add file → Upload files").</li>
@@ -97,7 +127,6 @@ export function ExportDialog({ ws, close, onDiscard }: { ws: Workspace; close: (
   )
 }
 
-const slug = (s: string) => s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
 const PRESETS: Record<string, { label: string; B: string[] }> = {
   empty: { label: 'Empty corner', B: [] },
@@ -108,28 +137,43 @@ const PRESETS: Record<string, { label: string; B: string[] }> = {
   '53': { label: 'Lone 5-3 stone', B: ['P17'] },
 }
 
-export function NewEntryDialog({ type, target, close, create }: { type: 'joseki' | 'shape'; target: string; close: () => void; create: (e: NewEntry) => string | null }) {
+export function NewEntryDialog({ type: initial, target, close, create }: { type: 'joseki' | 'shape'; target: string; close: () => void; create: (e: NewEntry) => string | null }) {
+  const [type, setType] = useState(initial)
   const [name, setName] = useState('')
   const [id, setId] = useState('')
+  const [free, setFree] = useState<Free>(type === 'joseki' ? 'corner' : 'horizontal')
   const [diff, setDiff] = useState(type === 'shape' ? '25k' : '15k')
   const [preset, setPreset] = useState(type === 'joseki' ? '44' : 'empty')
-  const [toMove, setToMove] = useState<Sign>(type === 'joseki' ? -1 : 0)
+  const [toMove, setToMove] = useState<Sign>(type === 'joseki' ? -1 : 1)
   const [error, setError] = useState<string | null>(null)
-  const finalId = id || slug(name)
+  const finalId = id || (type === 'joseki' ? `joseki/${name.trim()}` : `life & death/${name.trim()}`)
   const submit = (e: Event) => {
     e.preventDefault()
     if (!name.trim()) return setError('Give the entry a name.')
-    if (!/^[a-z0-9-]+$/.test(finalId)) return setError('The id may only use lowercase letters, digits and hyphens.')
+    if (finalId.includes(':')) return setError('The id is a sequence such as joseki/4-4 point/my line, without ":".')
     const stones = { B: PRESETS[preset].B.map(parsePt).filter((p): p is Pt => !!p), W: [] as Pt[] }
-    const err = create({ type, id: finalId, name: name.trim(), difficulty: diff, stones, toMove })
+    const err = create({ id: finalId, name: name.trim(), difficulty: diff, stones, toMove: toMove || 1, free })
     if (err) setError(err)
     else close()
   }
   return (
     <Shell title={type === 'joseki' ? 'New joseki' : 'New shape'} close={close}>
       <form onSubmit={submit} class="form">
+        <div class="seg" role="group" aria-label="Kind">
+          <button type="button" class={type === 'joseki' ? 'on' : ''} onClick={() => { setType('joseki'); setFree('corner'); setPreset('44'); setToMove(-1) }}>Joseki</button>
+          <button type="button" class={type === 'shape' ? 'on' : ''} onClick={() => { setType('shape'); setFree('horizontal'); setPreset('empty'); setToMove(1) }}>Life &amp; death</button>
+        </div>
         <label class="f"><span class="fl">Name</span><input id="new-name" type="text" value={name} onInput={(e) => setName((e.target as HTMLInputElement).value)} placeholder={type === 'joseki' ? '3-4 point · small knight approach' : 'Bent four · corner'} /></label>
-        <label class="f"><span class="fl">Id</span><input id="new-id" type="text" value={finalId} onInput={(e) => setId((e.target as HTMLInputElement).value)} /></label>
+        <label class="f"><span class="fl">Sequence id</span><input id="new-id" type="text" value={finalId} onInput={(e) => setId((e.target as HTMLInputElement).value)} /></label>
+        <label class="f">
+          <span class="fl">Placement</span>
+          <select id="new-free" value={free} onChange={(e) => setFree((e.target as HTMLSelectElement).value as Free)}>
+            <option value="corner">Fixed in the corner</option>
+            <option value="horizontal">Slides along the top edge</option>
+            <option value="vertical">Slides along the right edge</option>
+            <option value="anywhere">Anywhere</option>
+          </select>
+        </label>
         <label class="f"><span class="fl">Difficulty</span><input id="new-diff" type="text" value={diff} onInput={(e) => setDiff((e.target as HTMLInputElement).value)} /></label>
         <label class="f">
           <span class="fl">Start from</span>
@@ -142,10 +186,9 @@ export function NewEntryDialog({ type, target, close, create }: { type: 'joseki'
           <select id="new-tomove" value={String(toMove)} onChange={(e) => setToMove(Number((e.target as HTMLSelectElement).value) as Sign)}>
             <option value="1">Black</option>
             <option value="-1">White</option>
-            <option value="0">Either (shapes)</option>
           </select>
         </label>
-        <p class="hint">Saved in <b>{target}</b> as <code>{target}/{type === 'shape' ? 'shapes' : 'joseki'}/{finalId || 'id'}.sgf</code>. Add or remove set-up stones afterwards with the stone tools under the board.</p>
+        <p class="hint">Saved in <b>{target}</b> as a new file of <code>{target}/</code>. Add or remove set-up stones afterwards with the stone tools under the board.</p>
         {error && <p class="error">{error}</p>}
         <div class="actions"><button type="button" onClick={close}>Cancel</button><button class="on" type="submit">Create</button></div>
       </form>
@@ -153,6 +196,7 @@ export function NewEntryDialog({ type, target, close, create }: { type: 'joseki'
   )
 }
 
+const slug = (s: string) => s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 const COLORS = ['#3c7fbb', '#9d4fc7', '#1e9e4a', '#e8741c', '#d33232', '#138f8c', '#6d4c41', '#3949ab']
 
 export function NewDatabaseDialog({ close, create, count }: { close: () => void; create: (d: DatabaseInfo) => string | null; count: number }) {
@@ -241,6 +285,120 @@ export function SaveLinesDialog(props: {
           </div>
         </>
       )}
+    </Shell>
+  )
+}
+
+const TYPES: [FieldType, string][] = [
+  ['choice', 'Choice (dropdown or buttons)'], ['multi', 'Several choices'], ['slider', 'Slider (a bar between two ends)'],
+  ['flag', 'Flag (on or off)'], ['color', 'Color (Black / White)'], ['text', 'Text'], ['list', 'List of words (like Tags)'],
+]
+
+/** Edits the value schema (db/schema.json): keys, their type, options, icons, colors and swap behavior. */
+export function SchemaDialog({ schema, save, close }: { schema: Schema; save: (s: Schema) => void; close: () => void }) {
+  const [fields, setFields] = useState<FieldDef[]>(() => JSON.parse(JSON.stringify(schema.fields)))
+  const [sel, setSel] = useState(0)
+  const [error, setError] = useState<string | null>(null)
+  const f = fields[sel]
+  const upd = (patch: Partial<FieldDef>) => setFields(fields.map((x, i) => (i === sel ? { ...x, ...patch } : x)))
+  const opts = f?.options ?? []
+  const updOpt = (k: number, patch: Partial<FieldOption>) => upd({ options: opts.map((o, i) => (i === k ? { ...o, ...patch } : o)) })
+  const move = <T,>(list: T[], i: number, d: number) => {
+    const j = i + d
+    if (j < 0 || j >= list.length) return list
+    const out = [...list]
+    ;[out[i], out[j]] = [out[j], out[i]]
+    return out
+  }
+  const submit = () => {
+    const keys = fields.map((x) => x.key)
+    const bad = fields.find((x) => !/^[a-z0-9][a-z0-9-]*$/.test(x.key))
+    if (bad) return setError(`"${bad.key || '(empty)'}": keys use lowercase letters, digits and hyphens.`)
+    if (new Set(keys).size !== keys.length) return setError('Two keys have the same name.')
+    if (!keys.includes('category')) return setError('The "category" key (This move is) is needed by the app.')
+    save({ fields })
+    close()
+  }
+  return (
+    <Shell title="Keys of positions and moves" close={close}>
+      <p class="hint">Every position and move has a list of notes and values for these keys. Changes are saved in this browser; <b>Export / pull request</b> proposes them as <code>db/schema.json</code>.</p>
+      <div class="schema-edit">
+        <div class="schema-list" role="listbox" aria-label="Keys">
+          {fields.map((x, i) => (
+            <button key={i} role="option" aria-selected={i === sel} class={i === sel ? 'on' : ''} onClick={() => setSel(i)}>
+              <span>{x.icon ?? ''} {x.label || x.key}</span>
+              <small>{{ move: 'move', position: 'position', sequence: 'joseki' }[x.for]} · {x.type}</small>
+            </button>
+          ))}
+          <button class="add" onClick={() => { setFields([...fields, { key: `key-${fields.length + 1}`, label: 'New key', for: 'position', type: 'choice', options: [] }]); setSel(fields.length) }}>+ New key</button>
+        </div>
+        {f && (
+          <div class="schema-field">
+            <div class="grp">
+              <button onClick={() => { setFields(move(fields, sel, -1)); setSel(Math.max(0, sel - 1)) }} disabled={sel === 0}>↑</button>
+              <button onClick={() => { setFields(move(fields, sel, 1)); setSel(Math.min(fields.length - 1, sel + 1)) }} disabled={sel === fields.length - 1}>↓</button>
+              <span class="spacer" />
+              <button class="danger-text" disabled={f.key === 'category'} onClick={() => { setFields(fields.filter((_, i) => i !== sel)); setSel(Math.max(0, sel - 1)) }}>Remove key</button>
+            </div>
+            <label class="f"><span class="fl">Label</span><input id="schema-label" value={f.label} onInput={(e) => upd({ label: (e.target as HTMLInputElement).value })} /></label>
+            <label class="f"><span class="fl">Key</span><input id="schema-key" value={f.key} onInput={(e) => upd({ key: (e.target as HTMLInputElement).value.trim() })} disabled={f.key === 'category'} /></label>
+            <label class="f"><span class="fl">Applies to</span>
+              <select value={f.for} onChange={(e) => upd({ for: (e.target as HTMLSelectElement).value as FieldDef['for'] })}>
+                <option value="move">Moves</option><option value="position">Positions</option><option value="sequence">Joseki (start of a sequence)</option>
+              </select>
+            </label>
+            <label class="f"><span class="fl">Type</span>
+              <select id="schema-type" value={f.type} onChange={(e) => upd({ type: (e.target as HTMLSelectElement).value as FieldType })}>
+                {TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </label>
+            <label class="f"><span class="fl">Icon</span><input value={f.icon ?? ''} placeholder="a symbol or emoji" onInput={(e) => upd({ icon: (e.target as HTMLInputElement).value || undefined })} /></label>
+            <label class="f"><span class="fl">Hint</span><input value={f.hint ?? ''} onInput={(e) => upd({ hint: (e.target as HTMLInputElement).value || undefined })} /></label>
+            {f.for === 'position' && <label class="f"><span class="fl">Inherited</span><span><input type="checkbox" checked={!!f.inherit} onChange={(e) => upd({ inherit: (e.target as HTMLInputElement).checked || undefined })} /> later positions show it until they set their own</span></label>}
+            {f.type === 'choice' && (
+              <label class="f"><span class="fl">Shown as</span>
+                <select value={f.control ?? 'dropdown'} onChange={(e) => upd({ control: (e.target as HTMLSelectElement).value as 'buttons' | 'dropdown' })}><option value="dropdown">Dropdown</option><option value="buttons">Buttons</option></select>
+              </label>
+            )}
+            {f.type === 'slider' && (
+              <>
+                <label class="f"><span class="fl">Left end</span><input value={f.ends?.[0] ?? ''} onInput={(e) => upd({ ends: [(e.target as HTMLInputElement).value, f.ends?.[1] ?? ''] })} /></label>
+                <label class="f"><span class="fl">Right end</span><input value={f.ends?.[1] ?? ''} onInput={(e) => upd({ ends: [f.ends?.[0] ?? '', (e.target as HTMLInputElement).value] })} /></label>
+                <label class="f"><span class="fl">Swap colors</span><span><input type="checkbox" checked={!!f.negate} onChange={(e) => upd({ negate: (e.target as HTMLInputElement).checked || undefined })} /> turns the bar around</span></label>
+              </>
+            )}
+            <label class="f"><span class="fl">Swaps with key</span>
+              <select value={f.swapKey ?? ''} onChange={(e) => upd({ swapKey: (e.target as HTMLSelectElement).value || undefined })}>
+                <option value="">— (none)</option>
+                {fields.filter((x) => x.key !== f.key).map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
+              </select>
+            </label>
+            {(f.type === 'choice' || f.type === 'multi') && (
+              <div class="schema-opts">
+                <div class="fam">Options</div>
+                {opts.map((o, k) => (
+                  <div class="opt-row" key={k}>
+                    <input class="o-icon" value={o.icon ?? ''} placeholder="icon" aria-label="Icon" onInput={(e) => updOpt(k, { icon: (e.target as HTMLInputElement).value || undefined })} />
+                    <input class="o-label" value={o.label} placeholder="label" aria-label="Label" onInput={(e) => updOpt(k, { label: (e.target as HTMLInputElement).value })} />
+                    <input class="o-value" value={o.value} placeholder="value" aria-label="Stored value" onInput={(e) => updOpt(k, { value: (e.target as HTMLInputElement).value.trim() })} />
+                    <input class="o-color" type="color" value={o.color ?? '#888888'} aria-label="Color" onInput={(e) => updOpt(k, { color: (e.target as HTMLInputElement).value })} />
+                    <select aria-label="With Swap colors it becomes" value={o.swap ?? ''} onChange={(e) => updOpt(k, { swap: (e.target as HTMLSelectElement).value || undefined })}>
+                      <option value="">no swap</option>
+                      {opts.filter((x) => x.value !== o.value).map((x) => <option key={x.value} value={x.value}>⇄ {x.label}</option>)}
+                    </select>
+                    {f.key === 'category' && <label title="Counts as a good move"><input type="checkbox" checked={!!o.good} onChange={(e) => updOpt(k, { good: (e.target as HTMLInputElement).checked || undefined })} />good</label>}
+                    <button class="icon ghost" aria-label="Move up" onClick={() => upd({ options: move(opts, k, -1) })}>↑</button>
+                    <button class="icon ghost" aria-label="Remove option" onClick={() => upd({ options: opts.filter((_, i) => i !== k) })}>×</button>
+                  </div>
+                ))}
+                <button onClick={() => upd({ options: [...opts, { value: `option-${opts.length + 1}`, label: 'New option' }] })}>+ Add option</button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      {error && <p class="error">{error}</p>}
+      <div class="actions"><button onClick={close}>Cancel</button><button class="on" onClick={submit}>Save keys</button></div>
     </Shell>
   )
 }

@@ -2,6 +2,73 @@
 
 ## Unreleased
 
+### Data model (docs/MODEL.md)
+- **Values and keys**: a position or move is its notes plus a dictionary of values. The keys live in `db/schema.json` and are edited in the app (**Keys…**): label, icon, type (choice, several choices, slider, flag, color, text, list), options with icons and colors, what Swap colors does, and inheritance. "This move is", Evaluation, Status, Black/White plays first, Sente, Ko, Tags, Difficulty… are all keys.
+- Points are gone. Evaluation is a slider between White and Black, shown as a bar without numbers.
+- Tags are a key; the shape descriptors became keys of their own (eye space, surrounded, outside liberties, inside stones, arrangement, ko type).
+- Settings choose which keys the panels show.
+- **Notes**: positions and moves have one list of notes (add as many as you like). Explanation, Outcome, Tenuki here, Watch out, Note, Eyes, Liberties and the rules note became notes with their lead word; a move's Why and note became its notes. Notes from a personal database show as cards in its color.
+- Life & death results name the color: "Black plays first: Black lives / Black dies / White lives / White dies / Ko / Seki / Unsettled"; Swap colors flips them.
+- One set of move categories for everything: Main move, Alternative, Situational, Slack, Mistake, Overplay, Trick play, Punishment (shape moves: correct → main, wrong → mistake, ko → situational). The editor shows the same fields for every position.
+- Each shape is one family, and its variations are named sequences inside it: `life & death/Bent four/Corner`, `…/Corner/Black vital point`, `…/Corner/White first`, `…/Corner/White first/White vital point`.
+- No shape-only fields remain: "Black first / White first" are the general *If Black / White plays next* results, the vital point is the named main move, and size, surroundings, liberties, inside stones, arrangement and ko type became nested tags (`eye space/4 points`, `ko/direct`…). Joseki and life & death differ only by the first part of their id.
+- Position fields (points, evaluation, explanation, notes, tags, difficulty…) are inherited from the earlier positions of the line until a position sets its own; the editor shows where they come from. Move fields are never inherited.
+- Texts can say `{{Player}}`, `{{Opponent}}`, `{{Black}}`, `{{White}}`; they follow who moved and the Swap colors option. Every stored text now uses `{{Black}}` / `{{White}}` (scripts/player-words.ts).
+- The databases are JSON files of **positions** with a unique **id** (`joseki/4-4 point/3-3 invasion:5`); each move points to the id it leads to. A script converted the SGF files.
+- "Joseki" and "shape" are no longer separate kinds: the id (`joseki/…`, `life & death/…`) and nested **tags** organise everything.
+- Colors are never swapped when matching positions; Black to play and White to play are different positions, joined by a tenuki (shapes now start with Black to play, and a tenuki leads to White playing first).
+- Positions have a **placement**: fixed in the corner, sliding along one edge, or anywhere. Find slides them accordingly.
+- Naming a position starts a new sequence; the following positions move into it.
+- Library: one tree of ids, tags matched with their deeper tags, **favourite tags** (common tags from `index.json` and your own stars).
+- **SGF**: load an SGF file into a database, download any position with what follows.
+
+### Layout
+- **This joseki** keeps its sub-panels (Description, Details) in view; each scrolls inside its share.
+- Databases are shown by color: titles are underlined in their database's color, and tree nodes from a database other than the first have a line in its color under them. Colors can be changed in Settings (only in this browser; several databases may share one).
+- Fixed-size panels in every tab, like an editor's side bars: sizes depend only on the window, the zoom and what you set, never on the content, which scrolls inside each panel.
+- Columns are separated by vertical bars: drag a bar to resize, use its button to collapse or reopen the column (remembered). The empty row with the hide button is gone.
+- The side panels are a stack: each panel keeps its share of the height, its header collapses it, and the thin bar between two panels resizes them.
+
+### Find
+- One result per set of stones: the same stones after a tenuki (other player to move) are no longer listed again.
+- The board is kept when you open a match and come back (and after a reload). **Undo**, **Redo** (Ctrl+Z / Ctrl+Y) and **Clear board** under the board.
+
+### Board marks
+- New **Eye** mark (◉ Eye in the Draw tools, `{{EYE:S19|the eye}}` in texts), stored as `XEYEM` on the position.
+
+### Library
+- Tags sit in one row of chips (selected ones and favourites): click to select or deselect; *All tags…* opens the full list. The results scroll in their own box, so the tags never disappear.
+
+### Tree
+- The tree never moves when you move through it: it is always laid out like the complete tree, in a fixed order, and Linear / Proximity only hide parts of it. It sits at the top of the right panel with a fixed size.
+- Dashed nodes mean only one thing: not stored in a database yet.
+- **Trail**: the app remembers the lines you visit; going back to a move shows (and → / End follow) the last line you saw there.
+- **Linear** shows only this line; **Proximity** this line plus the moves from the current position; **Complete** everything.
+- A move played mirrored (e.g. R16 where the database has Q17) keeps its orientation when you move through the tree.
+- In Explore and Design, with **Ahead** (all, next 3 / 6 / 10) and zoom.
+- Right-click: **Hide this branch** (view only, with a "+n" badge and *Show hidden*), **Forget this branch**, remove moves that are not in a database.
+- Design: **Only new** shows the position you started from and only the moves added since you opened Design.
+
+### Design tab
+- New **Design** mode with three panels: board, a large tree of moves, and the info of the selected move (Move / Position / Name tabs).
+- Right-click a move in the tree: category, joseki end, result, why, name a joseki, make it the main line, copy link, hide, delete.
+- Moves stay in the browser cache until **Save to database**; **Export / pull request** adds **Propose on GitHub**, which opens GitHub with the new files filled in.
+- Library: **Good only / All / Mistakes**; joseki that start with a mistake show in red.
+
+
+### Shareable links
+- Links open a joseki, shape or exact position: `?open=<id>`, `&line=<moves>`, `&view=<corner>[-m][-s]`. The address bar follows the board; "Copy link" buttons next to the title and in This joseki.
+
+
+### Layout and data fixes
+- Tree of moves: three modes, Linear (only this line), Proximity (the line plus the other options after the current move) and Complete (the whole tree), and a zoom with − / +; both remembered. Own scroll, lines with more contrast, white stones white again.
+- "Save lines (n)" moved to the top bar; "back to the database" and "erase" sit next to the "Free play" label. The session box is gone.
+- Position evaluation moved to the left panel, under This joseki.
+- Desktop fits on one screen (tested at 1366×768, 1440×900, 1920×1080): each column scrolls on its own and the board follows the window height.
+- Library: families fold and unfold (4-4 point › 3-3 invasion › Hane…), search by name, and a list of tags to filter by.
+- Data: joseki start from a single stone; the approach (or invasion) is a move that carries the joseki name. New connectors "4-4 point", "3-4 point" and "3-3 point" open every joseki that starts from that stone; the empty corner leads to them.
+
+
 ### Pull request previews
 - Every pull request is published at its own address (`/pr-preview/pr-<number>/`) with the link posted in the pull request, so changes can be checked before merging. The main site is now published from the `gh-pages` branch.
 - Previews use their own browser storage and show a "Preview · pr-N" label.

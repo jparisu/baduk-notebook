@@ -14,6 +14,10 @@ export interface Settings {
   moveNumbers: boolean
   showNext: boolean
   hiddenCategories: Category[]
+  /** Value keys (db/schema.json) you do not want to see in the panels. */
+  hiddenKeys: string[]
+  /** Your own colors for the databases (only in this browser; several may share one). */
+  dbColors: Record<string, string>
   overlays: boolean
   history: 'current' | 'last3' | 'line'
   aids: 'hover' | 'click' | 'always'
@@ -24,6 +28,9 @@ export interface Settings {
   quizNewPerDay: number
   display: DisplayOptions
   hideLeft: boolean
+  treeMode: 'linear' | 'proximity' | 'complete'
+  treeZoom: number
+  designZoom: number
   hideRight: boolean
   activeDatabases: string[] | null // null = use activeByDefault from db/index.json
 }
@@ -36,6 +43,8 @@ export const DEFAULT_SETTINGS: Settings = {
   moveNumbers: false,
   showNext: true,
   hiddenCategories: [],
+  hiddenKeys: [],
+  dbColors: {},
   overlays: true,
   history: 'current',
   aids: 'hover',
@@ -46,6 +55,9 @@ export const DEFAULT_SETTINGS: Settings = {
   quizNewPerDay: 10,
   display: { corner: 'tr', mirror: false, swap: false },
   hideLeft: false,
+  treeMode: 'proximity',
+  treeZoom: 1,
+  designZoom: 1.2,
   hideRight: false,
   activeDatabases: null,
 }

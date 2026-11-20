@@ -1,11 +1,13 @@
 /** View model: turns the canonical graph into what the screen shows, after transforms and database filters. */
 import type { Graph, Contribution, Edge, PosNode } from './core/graph'
 import { edgeCategory, labelsAt, visibleEdges } from './core/graph'
-import { CATEGORY_ORDER, COLOR_PROPS, LIST_PROPS, TEXT_PROPS, flipValue, type Category } from './core/fields'
+import { CATEGORY_ORDER, TEXT_PROPS, flipValue, isColorProp, isListProp, type Category } from './core/fields'
 import GoBoard from '@sabaki/go-board'
+import { isStartId } from './core/model'
+import { fieldOfProp } from './core/schema'
 import { canonical } from './core/hash'
 import { apply, applySign, compose, inverse, parseSgfPtList, transformMap, type Pt, type Sign, type SignMap, type Transform } from './core/geometry'
-import { parseText, propMarks, transformMarks, type Mark, type Segment } from './core/refs'
+import { parseText, playerWords, propMarks, transformMarks, type Mark, type Segment } from './core/refs'
 
 /**
  * One step of the current line. `D` maps the node's canonical frame to the entry's stored frame.
@@ -22,7 +24,7 @@ export interface Step {
 }
 
 /** The move that led to a step, in the parent's canonical frame. */
-export const moveOf = (s: Step): { sign: Sign; pt: Pt | null } | null => s.edge ?? s.free ?? null
+export const moveOf = (s: Step): { sign: Sign; pt: Pt | null } | null => s.free ?? s.edge ?? null
 
 /** True when the position is in an active database. */
 export const inBook = (ctx: Ctx, s: Step) => ctx.graph.nodes.has(s.key)
@@ -36,7 +38,7 @@ export interface Ctx {
 
 export const frame = (ctx: Ctx, step: Step) => compose(ctx.U, step.D)
 export const node = (ctx: Ctx, step: Step): PosNode =>
-  ctx.graph.nodes.get(step.key) ?? { key: step.key, board: step.board!, toMove: step.toMove ?? 0, contribs: [], edges: [] }
+  ctx.graph.nodes.get(step.key) ?? { key: step.key, board: step.board!, toMove: step.toMove ?? 0, contribs: [], edges: [], parents: [] }
 
 /**
  * Plays a move freely after `parent` (canonical frame of the parent). If the result is a known position
@@ -53,6 +55,9 @@ export function freeStep(ctx: Ctx, parent: Step, sign: Sign, pt: Pt | null): Ste
   const { key, toCanon } = canonical(after, (-sign) as Sign)
   const D = compose(parent.D, inverse(toCanon))
   const free = { sign, pt }
+  // The same database move played in a symmetric orientation (e.g. R14 instead of O17 on a lone 4-4 stone).
+  const twin = visibleEdges(ctx.graph, parent.key, ctx.active).find((e) => e.child === key)
+  if (twin) return { key, D, edge: twin, free }
   if (ctx.graph.nodes.has(key)) return { key, D, free }
   return { key, D, free, board: transformMap(toCanon, after), toMove: applySign(toCanon, (-sign) as Sign) }
 }
@@ -122,7 +127,7 @@ export function candidates(ctx: Ctx, step: Step): Candidate[] {
       cat,
       pt: edge.pt ? apply(F, edge.pt) : null,
       sign: applySign(F, edge.sign),
-      label: shortLabel(why),
+      label: shortLabel(playerWords(why, F.swap, edge.sign)),
       dbs: [...new Set(edge.contribs.filter((c) => ctx.active.has(c.db)).map((c) => c.db))],
     }
   })
@@ -154,10 +159,12 @@ const fileToDisplay = (F: Transform, c: Contribution) => compose(F, c.toCanon)
 
 export class Fields {
   constructor(
-    private ctx: Ctx,
+    protected ctx: Ctx,
     private contribs: Contribution[],
     private F: Transform,
     private idPrefix: string,
+    /** Who "{{Player}}" is in these texts, in canonical colors (the mover, or the player to move). */
+    private player: Sign | null = null,
   ) {}
 
   private visible() {
@@ -173,7 +180,7 @@ export class Fields {
 
   text(prop: string): TextValue[] {
     return this.visible().flatMap((c, i) =>
-      (c.props[prop] ?? []).map((t, j) => ({ db: c.db, segments: parseText(t, fileToDisplay(this.F, c), `${this.idPrefix}:${prop}:${i}:${j}`) })),
+      (c.props[prop] ?? []).map((t, j) => ({ db: c.db, segments: parseText(t, fileToDisplay(this.F, c), `${this.idPrefix}:${prop}:${i}:${j}`, this.player) })),
     )
   }
 
@@ -182,7 +189,7 @@ export class Fields {
     const vals = this.visible().flatMap((c) => {
       const v = c.props[prop]?.[0]
       if (v === undefined || v === '') return []
-      return [{ db: c.db, value: COLOR_PROPS.has(prop) && this.swapped(c) ? flipValue(prop, v) : v }]
+      return [{ db: c.db, value: isColorProp(prop) && this.swapped(c) ? flipValue(prop, v) : v }]
     })
     if (!vals.length) return null
     const last = vals[vals.length - 1]
@@ -213,15 +220,60 @@ export function isText(prop: string) {
   return TEXT_PROPS.has(prop)
 }
 export function isList(prop: string) {
-  return LIST_PROPS.has(prop)
+  return isListProp(prop)
 }
 
-export const positionFields = (ctx: Ctx, step: Step) => new Fields(ctx, node(ctx, step).contribs, frame(ctx, step), `p:${step.key}`)
+/**
+ * Position fields that a position inherits from the earlier positions of the line until it sets its own
+ * value (docs/MODEL.md §1). Inheritance stops at the start of a sequence. Names, the joseki-end status,
+ * board marks and every move field are never inherited.
+ */
+/** Notes and tags are inherited; values when their schema key says so. */
+export const isInherited = (prop: string) => prop === 'XPW' || prop === 'XTAG' || !!fieldOfProp(prop)?.inherit
+
+const startsSequence = (ctx: Ctx, step: Step) => node(ctx, step).contribs.some((c) => ctx.active.has(c.db) && isStartId(c.pos.id))
+
+/** Fields of the last position of `path`, with inherited values. */
+export class LineFields extends Fields {
+  constructor(ctx: Ctx, private path: Step[]) {
+    const s = path[path.length - 1]
+    super(ctx, node(ctx, s).contribs, frame(ctx, s), `p:${s.key}`, node(ctx, s).toMove)
+  }
+  /** Index in the line of the position the value comes from (the last one when it is its own), or null. */
+  source(prop: string): number | null {
+    const last = this.path.length - 1
+    for (let i = last; i >= 0; i--) {
+      const own = positionFields(this.ctx, this.path[i])
+      if (own.one(prop) || own.list(prop).length) return i
+      if (!isInherited(prop) || startsSequence(this.ctx, this.path[i])) return null
+    }
+    return null
+  }
+  private at(prop: string): Fields | null {
+    const i = this.source(prop)
+    return i === null ? null : i === this.path.length - 1 ? null : positionFields(this.ctx, this.path[i])
+  }
+  one(prop: string) {
+    const f = this.at(prop)
+    return f ? f.one(prop) : super.one(prop)
+  }
+  text(prop: string) {
+    const f = this.at(prop)
+    return f ? f.text(prop) : super.text(prop)
+  }
+  list(prop: string) {
+    const f = this.at(prop)
+    return f ? f.list(prop) : super.list(prop)
+  }
+}
+export const lineFields = (ctx: Ctx, path: Step[]) => new LineFields(ctx, path)
+
+export const positionFields = (ctx: Ctx, step: Step) => new Fields(ctx, node(ctx, step).contribs, frame(ctx, step), `p:${step.key}`, node(ctx, step).toMove)
 export function moveFields(ctx: Ctx, parent: Step, edge: Edge) {
-  return new Fields(ctx, edge.contribs, frame(ctx, parent), `m:${edge.child}`)
+  return new Fields(ctx, edge.contribs, frame(ctx, parent), `m:${edge.child}`, edge.sign)
 }
 export const entryFields = (ctx: Ctx, entryId: string, rootStep: Step) =>
-  new Fields(ctx, ctx.graph.entries.get(entryId)!.contribs, frame(ctx, rootStep), `e:${entryId}`)
+  new Fields(ctx, ctx.graph.entries.get(entryId)!.contribs, frame(ctx, rootStep), `e:${entryId}`, node(ctx, rootStep).toMove)
 
 /* ---- Position-first navigation (SPEC §8.0) ---- */
 
@@ -273,9 +325,11 @@ export function replay(ctx: Ctx, start: Start, moves: Move[]): Step[] {
  * The label to show for the current position: among the labels in force here, the one whose
  * first node appears latest in the line (so "Empty corner" gives way to "3-3 invasion").
  */
-export function primaryLabel(ctx: Ctx, path: Step[]): string | null {
+export function primaryLabel(ctx: Ctx, path: Step[], prefer?: string | null): string | null {
   const here = labelsAt(ctx.graph, path[path.length - 1].key, ctx.active)
   if (!here.length) return null
+  // Where you come from decides between names of the same position: the sequence you opened wins a tie.
+  if (prefer && here.includes(prefer)) here.sort((a, b) => Number(b === prefer) - Number(a === prefer))
   let best = here[0], bestIdx = -2
   for (const l of here) {
     const root = ctx.graph.entries.get(l)!.root

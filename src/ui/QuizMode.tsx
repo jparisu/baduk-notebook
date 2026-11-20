@@ -1,5 +1,6 @@
 /** Quiz (SPEC §9): find the right move in a random orientation; spaced repetition decides what comes back. */
 import { useMemo, useState } from 'preact/hooks'
+import { Workbench } from './Workbench'
 import { Board } from './Board'
 import { Message } from './Message'
 import { Rich, type RefHandlers } from './Rich'
@@ -91,7 +92,7 @@ export function QuizMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
     <div class="quiz-deck">
       <h2>Quiz deck</h2>
       <div class="seg">
-        {(['both', 'joseki', 'shape'] as const).map((t) => <button key={t} class={type === t ? 'on' : ''} onClick={() => setType(t)}>{{ both: 'Both', joseki: 'Joseki', shape: 'Shapes' }[t]}</button>)}
+        {(['both', 'joseki', 'shape'] as const).map((t) => <button key={t} class={type === t ? 'on' : ''} onClick={() => setType(t)}>{{ both: 'All', joseki: 'Joseki', shape: 'Life & death' }[t]}</button>)}
       </div>
       <select value={maxRank} onChange={(e) => setMaxRank((e.target as HTMLSelectElement).value)} aria-label="Difficulty">
         <option value="any">Any difficulty</option>
@@ -141,15 +142,22 @@ export function QuizMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
   )
 
   if (!card) {
+    const done = (
+      <main class="pane center quiz-done">
+        <h2>All done for now</h2>
+        <p>No cards are due. Come back later, add more entries, or widen the deck.</p>
+        {props.phone && deck}
+      </main>
+    )
+    if (props.phone) return done
     return (
-      <>
-        {!props.phone && <aside class="pane left">{deck}</aside>}
-        <main class="pane center quiz-done">
-          <h2>All done for now</h2>
-          <p>No cards are due. Come back later, add more entries, or widen the deck.</p>
-          {props.phone && deck}
-        </main>
-      </>
+      <Workbench
+        id="quiz"
+        cols={[
+          { id: 'left', name: 'left', label: 'Deck', width: 290, min: 220, max: 480, node: <aside class="pane left">{deck}</aside> },
+          { id: 'center', node: done },
+        ]}
+      />
     )
   }
 
@@ -222,9 +230,7 @@ export function QuizMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
     </div>
   )
 
-  return (
-    <>
-      {!props.phone && <aside class="pane left">{deck}</aside>}
+  const center = (
       <main class="pane center">
         <div class="status"><b>Quiz</b> · {sign === 1 ? 'Black' : 'White'} to play</div>
         <div class="board-wrap">
@@ -242,8 +248,16 @@ export function QuizMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
         </div>
         {props.phone && panel}
       </main>
-      {!props.phone && <aside class="pane right">{panel}</aside>}
-      {props.phone && <aside class="pane right">{deck}</aside>}
-    </>
+  )
+  if (props.phone) return <>{center}<aside class="pane right">{deck}</aside></>
+  return (
+    <Workbench
+      id="quiz"
+      cols={[
+        { id: 'left', name: 'left', label: 'Deck', width: 290, min: 220, max: 480, node: <aside class="pane left">{deck}</aside> },
+        { id: 'center', node: center },
+        { id: 'right', name: 'right', label: 'Answer', width: 360, min: 260, max: 600, node: <aside class="pane right">{panel}</aside> },
+      ]}
+    />
   )
 }

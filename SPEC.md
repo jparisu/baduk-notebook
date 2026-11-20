@@ -1,6 +1,10 @@
 # Go Joseki Notebook — Specification
 
 Status: draft v1 · Date: 2026-11-16
+
+> **Data model:** since 2026-11-17 the databases are a JSON graph of positions with ids, described in
+> [docs/MODEL.md](docs/MODEL.md). It replaces the SGF storage, labels (XID/XNAME/XFAM), color-swap matching
+> and the tree views described below (§3, §4, §6.2, §8.6, §8.10). SGF stays available to load and download.
 Layout reference: mock-up at https://claude.ai/artifact/C4kQP4gyG9hUvhKoZuxEWa (private)
 
 ---
@@ -326,6 +330,7 @@ Clicking a result opens Explore at that position, **in the user's orientation** 
 The main object is **the position on the board**, not a joseki entry.
 - The board is always live. It reopens on the last position. Buttons go to the **Empty corner** or to the **first move of the current label**; the library opens any label at its first move.
 - After every move, the position is looked up in all active databases (any order, corner, orientation or colors). The screen shows what the position is (its labels), how to continue (good moves, then mistakes and traps) and why.
+- **Corner connectors** (`general`): "4-4 point", "3-4 point" and "3-3 point" name the lone stone. Joseki files start from that single stone and put their name on the approach or invasion move, so every joseki that starts from a stone appears as a next move of its connector, and the Empty corner leads to the connectors.
 - **Labels**: a joseki or shape is a label on positions (§4.2). The label shown is the one whose first node is closest in the current line, so "Empty corner" gives way to "4-4 point · 3-3 invasion". A next move that enters another label shows "→ name".
 - **Session lines**: every line played outside the databases is kept in the browser (like OGS), shown dashed in the tree. "Save lines…" lists them, with the stored part in grey, to save some or all into a database; "Erase variation" removes the current one. Annotating a free move in Edit mode saves the line up to it.
 
@@ -347,6 +352,14 @@ The main object is **the position on the board**, not a joseki entry.
 └──────────────────┴──────────────────────────────┴──────────────────────┘
 ```
 
+- Position evaluation sits in the left panel under This joseki. "Save lines (n)" is in the top bar; "back to the database" and "erase" sit next to the "Free play" label.
+- The tree of moves has three modes and a zoom (− / +), both remembered:
+  - **Linear**: only the current line, the moves before and the moves ahead (moves you stepped back over, otherwise the main line; ahead is dashed).
+  - **Proximity** (default): the line plus the other options after the current move, below the next column, without their own continuations. Alternatives at the current move's depth are not shown: at E in A-B-E-F the tree shows A-B-E-F; at B it shows A-B-C/E-D.
+  - **Complete**: the whole tree from the start of the line.
+  It is at most 240 px tall with its own scroll, and the current move is kept in view.
+- On desktop the whole screen fits the window: each column scrolls on its own and the board follows the window height.
+- The library is a tree of families that folds open and closed, with search by name and a list of tags to filter by.
 - Every card (▾) folds; "Description" and "More details" fold inside "This joseki". Open/closed state is remembered.
 - ⟨ and ⟩ hide the left and right panels; a thin rail brings them back and the board grows.
 - In Edit mode the right panel shows the edit card (category buttons, why, result, name) instead of "Position evaluation" and "Last move".
@@ -489,6 +502,42 @@ Every text block carries its database badge. In edit mode:
 Settings are saved in the browser (localStorage) and can be exported/imported as JSON.
 
 ---
+
+### 8.9 Shareable links
+
+Any joseki, shape or position can be opened from a link:
+
+| Parameter | Meaning | Example |
+|---|---|---|
+| `open` | Label id: opens that joseki or shape at its first move. Without it, the line starts at the empty corner. | `?open=3-4-low-approach` |
+| `line` | Moves after the start, as SGF points in the start's stored orientation, separated by dots. `-` is a pass; a move whose color does not alternate gets a `B` or `W` prefix. | `&line=pe.kc` |
+| `view` | Orientation: corner (`tl`, `tr`, `bl`, `br`), `m` = mirrored, `s` = colors swapped. | `&view=br-m` |
+
+- The address bar always holds the link to the current position (explore mode), so copying it from the browser works.
+- "Copy link" next to the title copies the link to the exact position; "Copy link" in This joseki copies the link to its first move.
+- A link wins over the last position. If its joseki is in a database that is switched off, that database is switched on. An unknown id, or a move that cannot be played, is reported and the rest is ignored.
+- Positions set up by hand have no link yet.
+
+### 8.10 Design tab
+
+A workspace to build and annotate trees of moves (good joseki and "mistake joseki" alike), next to Explore, Find and Quiz.
+
+- **Three panels:** board (with navigation and drawing tools) | **tree** (the widest) | **info** of the selected node. Under 1200 px the info panel moves under the tree; on a phone the panels stack. The info panel folds into a rail.
+- **Tree:** stones labelled with coordinates, zoom − / + and Fit. Moves only in the browser cache are dashed red; a flag marks where a name starts.
+  - **This joseki** (default): the tree starts at the first move of the current joseki ("Tree starts at move n"), drawn as a stone with a `⋯` badge for the moves before it. It shows every move after that start, back and forth, so moving along the line never changes the tree. The start stays while you move inside the same family (e.g. into "4-4 point/Low approach"). It follows a new joseki only when you move before the start or open another joseki.
+  - Other joseki (a name whose family is not inside the tree's family) appear as a single dashed stub "→ name" and are not expanded.
+  - **Start here** (button, or right-click → *Start the tree here*) sets the start at any move; **Joseki start** returns to the automatic start.
+  - **Ahead:** all moves, or only the next 3 / 6 / 10 moves after the selected one.
+  - **Everything:** the whole tree from the start of the line, other joseki included.
+- **Info tabs:** **Move** (category buttons, why, style, purpose, conditions, note), **Position** (result in points, evaluation, status, explanation, sente, outcome, tenuki, watch out, note), **Name** (name this position; name, family, difficulty, summary, aliases, tags, sources).
+- **Right-click** (or long-press) a move: category, mark as joseki end / end after a mistake, set the result, edit why, name a joseki from here, make this the main line (moves stored in the target database), copy link, fold / unfold the branch, delete the move and what follows (session moves at once; stored moves after confirmation).
+- **Folding** is only a view of the Design tab, kept in the browser; it is not stored.
+- **Saving:** every move is kept in the browser cache at once. **Save to database** stores all of them in the chosen database; classifying or describing a move stores its line. **Export / pull request** offers the patch, a zip, and **Propose on GitHub** (opens GitHub with each new file filled in, ready for "Create a new branch and start a pull request").
+- Moves use their category color only; everything is called a joseki.
+
+### 8.11 Good and mistake joseki in the library
+
+A joseki whose first move is a mistake, overplay or trick is a **mistake joseki**: shown in red. The library has **Good only** (default) / **All** / **Mistakes**; the joseki currently open is always listed.
 
 ## 9. Quiz mode
 

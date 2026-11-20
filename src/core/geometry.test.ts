@@ -31,14 +31,33 @@ describe('geometry', () => {
 })
 
 describe('canonical hash', () => {
-  it('gives the same key for all orientations and for swapped colors', () => {
+  it('gives the same key for all orientations, but not for swapped colors', () => {
     const a = empty(), b = empty(), c = empty()
     a[3][15] = 1; a[2][16] = -1 // Q16 black, R17 white (top-right)
     b[15][3] = 1; b[16][2] = -1 // same shape in the bottom-left
     c[3][15] = -1; c[2][16] = 1 // colors swapped
     const ka = canonical(a, 1).key
     expect(canonical(b, 1).key).toBe(ka)
-    expect(canonical(c, -1).key).toBe(ka)
+    expect(canonical(c, -1).key).not.toBe(ka) // colors are never swapped
     expect(canonical(a, -1).key).not.toBe(ka) // the player to move matters
+  })
+})
+
+import { playerWords } from './refs'
+describe('player words in texts', () => {
+  it('follows the color swap and who made the move', () => {
+    expect(playerWords('{{Player}} cuts; {{opponent}} must connect.', false, -1)).toBe('White cuts; black must connect.')
+    expect(playerWords('{{Black}} lives.', true, null)).toBe('White lives.')
+    expect(playerWords('{{Player}} wins', true, 1)).toBe('White wins')
+  })
+})
+
+import { parseText, propMarks } from './refs'
+import { IDENTITY as ID } from './geometry'
+describe('eye marks', () => {
+  it('are read from the position and from text references', () => {
+    expect(propMarks({ XEYEM: ['ra'] })).toEqual([{ type: 'EYE', pts: [[17, 0]] }])
+    const seg = parseText('Two {{EYE:S19,T18|eyes}}.', ID, 'x')
+    expect(seg.some((s) => 'ref' in s && s.ref.every((m) => m.type === 'EYE'))).toBe(true)
   })
 })

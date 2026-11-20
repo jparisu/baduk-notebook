@@ -1,0 +1,105 @@
+{
+  "positions": [
+    {
+      "id": "life & death/Rabbity six/Side, enclosed",
+      "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,rg,sc,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,rh,sb,sh",
+      "toPlay": "B",
+      "free": "horizontal",
+      "name": "Rabbity six · side · enclosed",
+      "notes": [
+        "{{SQ:T15,T16,S15,S16,S14,R15|The rabbity six}}. {{CR:S15|The vital point}} touches four of the other points.",
+        "One eye space of 6 points",
+        "0 outside liberties"
+      ],
+      "values": {
+        "black-first": "B-alive",
+        "white-first": "B-dead",
+        "tags": [
+          "eye shape",
+          "killable eye shape"
+        ],
+        "eye-space": "6",
+        "surrounded": "full",
+        "outside-liberties": "0",
+        "inside-stones": "0",
+        "arrangement": "connected",
+        "difficulty": "15k",
+        "summary": "The largest of the killable eye shapes. The point touching four others is the vital point.",
+        "aliases": [
+          "Flower six",
+          "Nutcracker",
+          "Hanaroku",
+          "花六"
+        ],
+        "sources": [
+          "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search."
+        ]
+      },
+      "moves": [
+        {
+          "move": "re",
+          "to": "life & death/Rabbity six/Side, enclosed/Black vital point",
+          "notes": [
+            "Takes the vital point and splits the space into several eyes."
+          ],
+          "values": {
+            "category": "main"
+          }
+        },
+        {
+          "move": "tenuki",
+          "to": "life & death/Rabbity six/Side, enclosed/White first"
+        }
+      ]
+    },
+    {
+      "id": "life & death/Rabbity six/Side, enclosed/Black vital point",
+      "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,re,rg,sc,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,rh,sb,sh",
+      "toPlay": "W",
+      "free": "horizontal",
+      "name": "Black vital point",
+      "notes": [
+        "Two or more eyes"
+      ],
+      "values": {
+        "black-first": "B-alive",
+        "white-first": "B-alive"
+      },
+      "moves": []
+    },
+    {
+      "id": "life & death/Rabbity six/Side, enclosed/White first/White vital point",
+      "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,rg,sc,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,re,rh,sb,sh",
+      "toPlay": "B",
+      "free": "horizontal",
+      "name": "White vital point",
+      "notes": [
+        "One eye"
+      ],
+      "values": {
+        "black-first": "B-dead",
+        "white-first": "B-dead"
+      },
+      "moves": []
+    },
+    {
+      "id": "life & death/Rabbity six/Side, enclosed/White first",
+      "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,rg,sc,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,rh,sb,sh",
+      "toPlay": "W",
+      "free": "horizontal",
+      "name": "White first",
+      "moves": [
+        {
+          "move": "re",
+          "to": "life & death/Rabbity six/Side, enclosed/White first/White vital point",
+          "notes": [
+            "Takes the vital point. {{Black}} can make only one eye."
+          ],
+          "values": {
+            "category": "main"
+          }
+        }
+      ]
+    }
+  ]
+}

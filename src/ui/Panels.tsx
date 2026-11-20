@@ -4,12 +4,13 @@
  * right — position evaluation, last move (the "why"), next moves.
  */
 import type { ComponentChildren } from 'preact'
-import { CATEGORIES, EVAL_LABELS, type Category } from '../core/fields'
-import { ptName } from '../core/geometry'
+import { CATEGORIES, type Category } from '../core/fields'
+import { fieldsFor, propOf, valueLabel, type FieldDef } from '../core/schema'
+import { apply, ptName } from '../core/geometry'
 import { labelsAt } from '../core/graph'
 import type { Msg } from '../messages'
 import type { Settings } from '../settings'
-import { candidates, entryFields, inBook, labelStart, moveFields, positionFields, primaryLabel, type Candidate, type Ctx, type Step } from '../view'
+import { candidates, entryFields, frame, lineFields, moveOf, type Fields, inBook, labelStart, moveFields, positionFields, primaryLabel, type Candidate, type Ctx, type Step } from '../view'
 import { CONDITION_ICONS, IconLabel, PURPOSE_ICONS, SHAPE_ICONS, STATUS_ICONS, STYLE_ICONS } from './icons'
 import { Rich, type RefHandlers } from './Rich'
 import { Fold } from './Card'
@@ -97,7 +98,10 @@ export function crumbsOf(ctx: Ctx, path: Step[]): string[] {
 
 /* ---------- Left: This joseki ---------- */
 
-export function JosekiInfo(p: Common & { onOpenLabel: (id: string) => void }) {
+/** Keys shown at the top of This joseki; the others go to Details. */
+const MAIN_KEYS = ['difficulty', 'tags']
+
+export function JosekiInfo(p: Common & { onOpenLabel: (id: string) => void; onCopyLink?: (id: string) => void }) {
   const { ctx, path } = p
   const label = primaryLabel(ctx, path)
   if (!label) {
@@ -106,18 +110,14 @@ export function JosekiInfo(p: Common & { onOpenLabel: (id: string) => void }) {
   const entry = ctx.graph.entries.get(label)!
   const at = labelStart(ctx, path, label)
   const ef = entryFields(ctx, label, path[at])
-  const one = (prop: string) => ef.one(prop)?.value
   const icons = p.settings.icons
   const crumbs = crumbsOf(ctx, path)
   const others = labelsAt(ctx.graph, path[path.length - 1].key, ctx.active).filter((l) => l !== label && ctx.graph.entries.get(l)?.defined)
-  const resSwap = (() => {
-    const c = ef.firstWith('XRESB') ?? ef.firstWith('XRESW')
-    return c ? ef.swapped(c) : false
-  })()
-  const res = (prop: 'XRESB' | 'XRESW') => one(resSwap ? (prop === 'XRESB' ? 'XRESW' : 'XRESB') : prop)
+  const details = fieldsFor('sequence').filter((f) => f.key !== 'summary' && !MAIN_KEYS.includes(f.key))
   return (
-    <div class="joseki-info">
-      <p class="info-title">{p.entryName(label)}</p>
+    <div class="joseki-info subpanels">
+      <div class="sub-main">
+      <p class="info-title"><span class="db-ul" style={{ textDecorationColor: p.dbColor(entry.contribs[0]?.db ?? '') }} title={`From ${entry.contribs[0]?.db}`}>{p.entryName(label)}</span></p>
       {crumbs.length > 1 && (
         <div class="crumbs" aria-label="Names along this line">
           {crumbs.map((c, i) => (
@@ -128,28 +128,25 @@ export function JosekiInfo(p: Common & { onOpenLabel: (id: string) => void }) {
           ))}
         </div>
       )}
-      {at < path.length - 1 && (
-        <button class="link go-first" onClick={() => p.onOpenLabel(label)}>⏮ Go to its first move{at > 0 ? ` (move ${at})` : ''}</button>
-      )}
-      <div class="kvs">
-        {one('XFAM') && <Row label="Family">{one('XFAM')!.replace(/\//g, ' › ')}</Row>}
-        {one('XDIFF') && <Row label="Difficulty"><span class="chip">{one('XDIFF')}</span></Row>}
-        {ef.list('XTAG').length > 0 && <Row label="Tags"><span class="chips">{ef.list('XTAG').map((t) => <span key={t} class="chip">{t}</span>)}</span></Row>}
-        {entry.type === 'shape' && res('XRESB') && <Row label="Black first"><IconLabel map={SHAPE_ICONS} value={res('XRESB')!} show={icons} /></Row>}
-        {entry.type === 'shape' && res('XRESW') && <Row label="White first"><IconLabel map={SHAPE_ICONS} value={res('XRESW')!} show={icons} /></Row>}
-        {entry.type === 'shape' && ef.points('XVITAL').length > 0 && <Row label="Vital point">{ef.points('XVITAL').map(ptName).join(', ')}</Row>}
+      <div class="info-links">
+        {at < path.length - 1 && (
+          <button class="link go-first" onClick={() => p.onOpenLabel(label)}>⏮ Go to its first move{at > 0 ? ` (move ${at})` : ''}</button>
+        )}
+        {p.onCopyLink && <button class="link" onClick={() => p.onCopyLink!(label)} title="Copy a link that opens this joseki at its first move">🔗 Copy link</button>}
       </div>
-      {ef.text('XSUM').length > 0 && (
+      <div class="kvs">
+        <Row label="Sequence">{entry.id.replace(/\//g, ' › ')}</Row>
+        <ValueRows fields={fieldsFor('sequence').filter((f) => MAIN_KEYS.includes(f.key))} f={ef} icons={icons} hidden={p.settings.hiddenKeys} />
+      </div>
+      </div>
+      {ef.text('XSUM').length > 0 && !p.settings.hiddenKeys.includes('summary') && (
         <Fold id="joseki-description" title="Description">
           {ef.text('XSUM').map((t, i) => <p key={i} class="desc"><Rich segments={t.segments} h={p.refs} /></p>)}
         </Fold>
       )}
-      {(ef.list('XALIAS').length > 0 || ef.list('XERA').length > 0 || ef.list('XSRC').length > 0 || ef.text('XRULE').length > 0) && (
-        <Fold id="joseki-details" title="More details · also called, era, sources" defaultOpen={false}>
-          {ef.list('XALIAS').length > 0 && <Row label="Also called">{ef.list('XALIAS').join(', ')}</Row>}
-          {ef.list('XERA').length > 0 && <Row label="Era">{ef.list('XERA').join(', ')}</Row>}
-          {ef.text('XRULE').length > 0 && <Row label="Rules">{ef.text('XRULE').map((t, i) => <div key={i}><Rich segments={t.segments} h={p.refs} /></div>)}</Row>}
-          {ef.list('XSRC').length > 0 && <Row label="Sources">{ef.list('XSRC').join('; ')}</Row>}
+      {details.some((fd) => ef.one(propOf(fd.key)) || ef.list(propOf(fd.key)).length) && (
+        <Fold id="joseki-details" title="Details">
+          <div class="kvs"><ValueRows fields={details} f={ef} icons={icons} hidden={p.settings.hiddenKeys} /></div>
         </Fold>
       )}
       {others.length > 0 && (
@@ -161,57 +158,78 @@ export function JosekiInfo(p: Common & { onOpenLabel: (id: string) => void }) {
 
 /* ---------- Right: Position evaluation ---------- */
 
-function BalanceBar({ value }: { value: number }) {
-  const pos = 50 + Math.max(-50, Math.min(50, value * 5)) // ±10 points fills the bar
-  return (
-    <div class="balance-bar" role="img" aria-label={`Point balance ${value > 0 ? 'Black +' + value : value < 0 ? 'White +' + -value : 'even'}`}>
-      <i style={{ left: `${pos}%` }} />
-    </div>
-  )
+/** The keys of the schema that have a value here, each shown the way its type asks for. */
+export function ValueRows({ fields: all, f, icons, only, hidden = [] }: { fields: FieldDef[]; f: Fields; icons: boolean; only?: 'bars' | 'rows'; hidden?: string[] }) {
+  const fields = all.filter((fd) => !hidden.includes(fd.key))
+  // A key that trades places with another one under Swap colors ("Black plays first" ↔ "White plays first").
+  const shown = (fd: FieldDef) => {
+    const prop = propOf(fd.key)
+    if (!fd.swapKey) return prop
+    const c = f.firstWith(prop) ?? f.firstWith(propOf(fd.swapKey))
+    return c && f.swapped(c) ? propOf(fd.swapKey) : prop
+  }
+  const out = fields.flatMap((fd) => {
+    const prop = shown(fd)
+    if (fd.type === 'slider') {
+      if (only === 'rows') return []
+      const v = Number(f.one(prop)?.value)
+      if (!Number.isFinite(v)) return []
+      return [
+        <div key={fd.key} class="eval-bar-row" title={fd.label}>
+          <span class="bar-end">{fd.ends?.[0] ?? ''}</span>
+          <div class="balance-bar" role="img" aria-label={`${fd.label}: ${v > 0.15 ? fd.ends?.[1] : v < -0.15 ? fd.ends?.[0] : 'even'}`}><i style={{ left: `${50 + Math.max(-1, Math.min(1, v)) * 50}%` }} /></div>
+          <span class="bar-end">{fd.ends?.[1] ?? ''}</span>
+        </div>,
+      ]
+    }
+    if (only === 'bars') return []
+    const vals = fd.type === 'list' || fd.type === 'multi' ? f.list(prop) : [f.one(prop)?.value].filter((x): x is string => !!x)
+    if (!vals.length || (fd.type === 'flag' && vals[0] !== '1')) return []
+    const opt = (v: string) => fd.options?.find((o) => o.value === v)
+    const show = (v: string) => {
+      const o = opt(v)
+      return (
+        <span key={v} class="value">
+          {o?.color && <span class="dot" style={{ background: o.color, borderColor: o.color }} />}
+          {icons && o?.icon && !o.color && <span class="ico" aria-hidden>{o.icon}</span>}
+          {valueLabel(fd, v)}
+        </span>
+      )
+    }
+    if (fd.type === 'flag') return [<Row key={fd.key} label={fd.label}>{icons && fd.icon ? <span class="ico" aria-hidden>{fd.icon}</span> : null}Yes</Row>]
+    return [<Row key={fd.key} label={fd.label}><span class="values">{vals.map(show)}</span></Row>]
+  })
+  return <>{out}</>
 }
 
 export function PositionEval(p: Common) {
   const { ctx, path } = p
   const step = path[path.length - 1]
   if (!inBook(ctx, step)) return <p class="hint">Not in your databases. Keep playing, or save your line.</p>
-  const pf = positionFields(ctx, step)
+  const pf = lineFields(ctx, path) // values inherited from earlier positions of the line count too
   const icons = p.settings.icons
-  const ev = pf.one('XEV')?.value
-  const pb = pf.one('XPB')?.value
-  const n = pb !== undefined ? Number(pb) : NaN
-  const score = Number.isFinite(n) ? (n > 0 ? `Black +${n}` : n < 0 ? `White +${-n}` : 'Even') : ev ? EVAL_LABELS[ev] ?? ev : null
-  const posSwap = (() => {
-    const c = pf.firstWith('XSB') ?? pf.firstWith('XSW')
-    return c ? pf.swapped(c) : false
-  })()
-  const shape = (prop: 'XSB' | 'XSW') => pf.one(posSwap ? (prop === 'XSB' ? 'XSW' : 'XSB') : prop)?.value
-  const sente = pf.one('XSEN')?.value
+  const fields = fieldsFor('position')
   const here = p.messages.filter((m) => m.place === 'position')
+  const hasValue = fields.some((fd) => pf.one(propOf(fd.key)) || pf.list(propOf(fd.key)).length)
   return (
     <div class="pos-eval">
-      {score && (
-        <div class="eval-big">
-          <span class="score">{score}</span>
-          {Number.isFinite(n) ? <BalanceBar value={n} /> : ev ? <BalanceBar value={ev.startsWith('B') ? ev.length * 2 : ev.startsWith('W') ? -ev.length * 2 : 0} /> : null}
-        </div>
+      <ValueRows fields={fields} f={pf} icons={icons} only="bars" hidden={p.settings.hiddenKeys} />
+      <div class="kvs pos-values"><ValueRows fields={fields} f={pf} icons={icons} only="rows" hidden={p.settings.hiddenKeys} /></div>
+      {/* Notes: the first database's as plain text, other databases' (your own notes) as cards with their color. */}
+      {here.filter((m) => m.kind === 'pos').map((m, i) =>
+        m.db === ctx.order[0] ? (
+          <p key={'p' + i} class="pos-text"><Rich segments={m.segments} h={p.refs} /></p>
+        ) : (
+          <NoteCard key={'p' + i} who={m.db} color={p.dbColor(m.db)}><Rich segments={m.segments} h={p.refs} /></NoteCard>
+        ),
       )}
-      <div class="chips">
-        {pf.one('XST') && <span class="chip"><IconLabel map={STATUS_ICONS} value={pf.one('XST')!.value} show={icons} /></span>}
-        {sente && sente !== 'none' && <span class="chip">Sente: {colorWord(sente === 'B' ? 1 : -1)}</span>}
-        {shape('XSB') && <span class="chip">Black next: {shape('XSB')}</span>}
-        {shape('XSW') && <span class="chip">White next: {shape('XSW')}</span>}
-        {pf.one('XEYE') && <span class="chip">{pf.one('XEYE')!.value}</span>}
-      </div>
-      {pf.text('XRES').map((t, i) => <p key={'r' + i} class="pos-text"><b>Outcome:</b> <Rich segments={t.segments} h={p.refs} /></p>)}
-      {here.filter((m) => m.kind === 'pos').map((m, i) => <p key={'p' + i} class="pos-text"><Rich segments={m.segments} h={p.refs} /></p>)}
-      {pf.text('XTEN').map((t, i) => <p key={'t' + i} class="pos-text"><b>Tenuki:</b> <Rich segments={t.segments} h={p.refs} /></p>)}
       {here.filter((m) => m.kind === 'warn').map((m, i) => (
         <WarnCard key={'w' + i} db={m.db} color={p.dbColor(m.db)}><Rich segments={m.segments} h={p.refs} /></WarnCard>
       ))}
       {here.filter((m) => m.kind === 'note').map((m, i) => (
         <NoteCard key={'n' + i} who={`${m.db} · ${m.title.toLowerCase()}`} color={p.dbColor(m.db)}><Rich segments={m.segments} h={p.refs} /></NoteCard>
       ))}
-      {!score && !here.length && !pf.one('XST') && <p class="hint">Nothing stored about this position yet.</p>}
+      {!hasValue && !here.length && <p class="hint">Nothing stored about this position yet.</p>}
     </div>
   )
 }
@@ -225,6 +243,9 @@ export function LastMove(p: Common & { onGoTo: (n: number) => void }) {
   const mf = parent && step.edge ? moveFields(ctx, parent, step.edge) : null
   const cand: Candidate | undefined = parent && step.edge ? candidates(ctx, parent).find((c) => c.edge === step.edge) : undefined
   const k = cand?.cat ? CATEGORIES[cand.cat] : null
+  // The point actually played (a database move can be played in a mirrored orientation).
+  const m = moveOf(step)
+  const played = parent && m?.pt ? apply(frame(ctx, parent), m.pt) : cand?.pt ?? null
   const history = p.messages.filter((m) => m.place === 'history')
   const why = p.messages.filter((m) => m.place === 'move' && m.kind === 'move')
   const notes = p.messages.filter((m) => m.place === 'move' && m.kind === 'note')
@@ -244,16 +265,20 @@ export function LastMove(p: Common & { onGoTo: (n: number) => void }) {
       {cand && (
         <>
           <div class="why-head">
-            <span class="move-badge"><StoneIcon sign={cand.sign} size={22} />{colorWord(cand.sign)} {cand.pt ? ptName(cand.pt) : 'tenuki'}</span>
+            <span class="move-badge"><StoneIcon sign={cand.sign} size={22} /><span class="db-ul" style={{ textDecorationColor: p.dbColor(cand.dbs[0]) }} title={`From ${cand.dbs.join(', ')}`}>{colorWord(cand.sign)} {played ? ptName(played) : 'tenuki'}</span></span>
             {k && <span class="cat-pill">{k.label}</span>}
           </div>
           {why.map((m, i) => <p key={i} class="why-text"><Rich segments={m.segments} h={p.refs} /></p>)}
           {!why.length && <p class="hint">No explanation stored for this move.</p>}
           <div class="tags">
-            {mf?.one('XSTY') && <span class="tag"><IconLabel map={STYLE_ICONS} value={mf.one('XSTY')!.value} show={s.icons} /></span>}
-            {mf?.list('XPUR').map((v) => <span key={v} class="tag"><IconLabel map={PURPOSE_ICONS} value={v} show={s.icons} /></span>)}
-            {mf?.list('XCOND').map((v) => <span key={v} class="tag"><IconLabel map={CONDITION_ICONS} value={v} show={s.icons} /></span>)}
-            {[...new Set(why.map((m) => m.db))].map((db) => <DbTag key={db} db={db} color={p.dbColor(db)} />)}
+            {mf && fieldsFor('move').filter((fd) => fd.key !== 'category' && !(s.hiddenKeys ?? []).includes(fd.key)).flatMap((fd) => {
+              const prop = propOf(fd.key)
+              const vals = fd.type === 'list' || fd.type === 'multi' ? mf.list(prop) : [mf.one(prop)?.value].filter((x): x is string => !!x)
+              return vals.map((v) => {
+                const o = fd.options?.find((x) => x.value === v)
+                return <span key={fd.key + v} class="tag" title={fd.label}>{s.icons && o?.icon ? <span class="ico" aria-hidden>{o.icon}</span> : null}{fd.type === 'flag' ? fd.label : valueLabel(fd, v)}</span>
+              })
+            })}
           </div>
           {notes.map((m, i) => (
             <NoteCard key={i} who={`${m.db} · note`} color={p.dbColor(m.db)}><Rich segments={m.segments} h={p.refs} /></NoteCard>
@@ -326,7 +351,7 @@ export function NextMoves(p: Common & {
         </div>
       )}
       {list.length === 0 && <p class="hint">{inBook(ctx, step) ? 'No stored continuation.' : 'Not in your databases.'}</p>}
-      {joseki.length > 0 && (<><div class="group">Joseki</div>{joseki.map(row)}</>)}
+      {joseki.length > 0 && (<><div class="group">Good moves</div>{joseki.map(row)}</>)}
       {variations.length > 0 && (<><div class="group">Variations</div>{variations.map(row)}</>)}
       {bad.length > 0 && (<><div class="group">Mistakes and traps</div>{bad.map(row)}</>)}
     </div>
