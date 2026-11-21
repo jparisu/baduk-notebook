@@ -1,0 +1,141 @@
+{
+  "positions": [
+    {
+      "id": "life & death/Straight four/Side, enclosed",
+      "stones": "B:rc,rd,re,rf,rg,rh,sc,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,si",
+      "toPlay": "B",
+      "free": "horizontal",
+      "comments": [
+        "Four points in a row. Alive even if {{White}} plays first: {{Black}} always answers on the other middle point.",
+        "{{SQ:T13,T14,T15,T16|The 4-point eye space}} has {{CR:T14,T15|two middle points}}. {{White}} can take only one of them.",
+        "One eye space of 4 points",
+        "0 outside liberties"
+      ],
+      "tags": {
+        "name": [
+          "Straight four · side · enclosed"
+        ],
+        "black-first": "B-alive",
+        "white-first": "B-alive",
+        "topics": [
+          "eye shape"
+        ],
+        "eye-space": "4",
+        "surrounded": "full",
+        "outside-liberties": "0",
+        "inside-stones": "0",
+        "arrangement": "connected",
+        "difficulty": "25k"
+      }
+    },
+    {
+      "id": "life & death/Straight four/Side, enclosed/White first/White T14",
+      "stones": "B:rc,rd,re,rf,rg,rh,sc,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,sf,si",
+      "toPlay": "B",
+      "free": "horizontal",
+      "tags": {
+        "name": [
+          "White T14"
+        ],
+        "black-first": "B-alive",
+        "white-first": "B-alive"
+      }
+    },
+    {
+      "id": "life & death/Straight four/Side, enclosed/White first",
+      "stones": "B:rc,rd,re,rf,rg,rh,sc,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,si",
+      "toPlay": "W",
+      "free": "horizontal",
+      "tags": {
+        "name": [
+          "White first"
+        ]
+      }
+    },
+    {
+      "id": "life & death/Straight four/Side, enclosed/White first:3b",
+      "stones": "B:rc,rd,re,rf,rg,rh,sc,se,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,sf,si",
+      "toPlay": "W",
+      "free": "horizontal",
+      "comments": [
+        "Two eyes"
+      ],
+      "tags": {
+        "black-first": "B-alive",
+        "white-first": "B-alive"
+      }
+    },
+    {
+      "id": "life & death/Straight four/Side, enclosed/White first/White T15",
+      "stones": "B:rc,rd,re,rf,rg,rh,sc,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,se,si",
+      "toPlay": "B",
+      "free": "horizontal",
+      "tags": {
+        "name": [
+          "White T15"
+        ],
+        "black-first": "B-alive",
+        "white-first": "B-alive"
+      }
+    },
+    {
+      "id": "life & death/Straight four/Side, enclosed/White first:3",
+      "stones": "B:rc,rd,re,rf,rg,rh,sc,sf,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,se,si",
+      "toPlay": "W",
+      "free": "horizontal",
+      "comments": [
+        "Two eyes"
+      ],
+      "tags": {
+        "black-first": "B-alive",
+        "white-first": "B-alive"
+      }
+    }
+  ],
+  "moves": [
+    {
+      "from": "life & death/Straight four/Side, enclosed",
+      "to": "life & death/Straight four/Side, enclosed/White first"
+    },
+    {
+      "from": "life & death/Straight four/Side, enclosed/White first/White T14",
+      "to": "life & death/Straight four/Side, enclosed/White first:3b",
+      "comments": [
+        "Takes the other middle point. Two eyes."
+      ],
+      "tags": {
+        "kind": "main"
+      }
+    },
+    {
+      "from": "life & death/Straight four/Side, enclosed/White first",
+      "to": "life & death/Straight four/Side, enclosed/White first/White T14",
+      "comments": [
+        "Takes one middle point."
+      ],
+      "tags": {
+        "kind": "mistake"
+      }
+    },
+    {
+      "from": "life & death/Straight four/Side, enclosed/White first",
+      "to": "life & death/Straight four/Side, enclosed/White first/White T15",
+      "comments": [
+        "Takes the other middle point."
+      ],
+      "tags": {
+        "kind": "mistake"
+      }
+    },
+    {
+      "from": "life & death/Straight four/Side, enclosed/White first/White T15",
+      "to": "life & death/Straight four/Side, enclosed/White first:3",
+      "comments": [
+        "Takes the remaining middle point. Two eyes."
+      ],
+      "tags": {
+        "kind": "main"
+      }
+    }
+  ]
+}

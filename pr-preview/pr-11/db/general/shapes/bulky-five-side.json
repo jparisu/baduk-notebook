@@ -1,0 +1,129 @@
+{
+  "positions": [
+    {
+      "id": "life & death/Bulky five/Side, enclosed",
+      "stones": "B:qc,qd,qe,qf,qg,rc,rg,sc,sf,sg W:pb,pc,pd,pe,pf,pg,ph,qb,qh,rb,rh,sb,sh",
+      "toPlay": "B",
+      "free": "horizontal",
+      "comments": [
+        "A 2×2 square with one point attached. The vital point is the point of the square next to the extra point (it touches three others).",
+        "{{SQ:T15,T16,S15,S16,S14|The bulky five}}. {{CR:S15|The vital point}} touches three of the other points.",
+        "One eye space of 5 points",
+        "0 outside liberties"
+      ],
+      "tags": {
+        "name": [
+          "Bulky five · side · enclosed",
+          "刀把五"
+        ],
+        "black-first": "B-alive",
+        "white-first": "B-dead",
+        "topics": [
+          "eye shape",
+          "killable eye shape"
+        ],
+        "eye-space": "5",
+        "surrounded": "full",
+        "outside-liberties": "0",
+        "inside-stones": "0",
+        "arrangement": "connected",
+        "difficulty": "20k",
+        "sources": [
+          "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search."
+        ]
+      }
+    },
+    {
+      "id": "life & death/Bulky five/Side, enclosed/Black vital point",
+      "stones": "B:qc,qd,qe,qf,qg,rc,re,rg,sc,sf,sg W:pb,pc,pd,pe,pf,pg,ph,qb,qh,rb,rh,sb,sh",
+      "toPlay": "W",
+      "free": "horizontal",
+      "comments": [
+        "Two eyes"
+      ],
+      "tags": {
+        "name": [
+          "Black vital point"
+        ],
+        "black-first": "B-alive",
+        "white-first": "B-alive"
+      }
+    },
+    {
+      "id": "life & death/Bulky five/Side, enclosed/White first/White vital point",
+      "stones": "B:qc,qd,qe,qf,qg,rc,rg,sc,sf,sg W:pb,pc,pd,pe,pf,pg,ph,qb,qh,rb,re,rh,sb,sh",
+      "toPlay": "B",
+      "free": "horizontal",
+      "comments": [
+        "One eye"
+      ],
+      "tags": {
+        "name": [
+          "White vital point"
+        ],
+        "black-first": "B-dead",
+        "white-first": "B-dead"
+      }
+    },
+    {
+      "id": "life & death/Bulky five/Side, enclosed/White first",
+      "stones": "B:qc,qd,qe,qf,qg,rc,rg,sc,sf,sg W:pb,pc,pd,pe,pf,pg,ph,qb,qh,rb,rh,sb,sh",
+      "toPlay": "W",
+      "free": "horizontal",
+      "tags": {
+        "name": [
+          "White first"
+        ]
+      }
+    },
+    {
+      "id": "life & death/Bulky five/Side, enclosed/Black S14",
+      "stones": "B:qc,qd,qe,qf,qg,rc,rf,rg,sc,sf,sg W:pb,pc,pd,pe,pf,pg,ph,qb,qh,rb,rh,sb,sh",
+      "toPlay": "W",
+      "free": "horizontal",
+      "tags": {
+        "name": [
+          "Black S14"
+        ],
+        "black-first": "B-dead",
+        "white-first": "B-dead"
+      }
+    }
+  ],
+  "moves": [
+    {
+      "from": "life & death/Bulky five/Side, enclosed",
+      "to": "life & death/Bulky five/Side, enclosed/Black vital point",
+      "comments": [
+        "Takes the vital point and splits the space into two eyes."
+      ],
+      "tags": {
+        "kind": "main"
+      }
+    },
+    {
+      "from": "life & death/Bulky five/Side, enclosed",
+      "to": "life & death/Bulky five/Side, enclosed/White first"
+    },
+    {
+      "from": "life & death/Bulky five/Side, enclosed",
+      "to": "life & death/Bulky five/Side, enclosed/Black S14",
+      "comments": [
+        "Fills the extra point and leaves {{SQ:T15,T16,S15,S16|a square four}}, which is dead."
+      ],
+      "tags": {
+        "kind": "mistake"
+      }
+    },
+    {
+      "from": "life & death/Bulky five/Side, enclosed/White first",
+      "to": "life & death/Bulky five/Side, enclosed/White first/White vital point",
+      "comments": [
+        "Takes the vital point. {{Black}} can make only one eye."
+      ],
+      "tags": {
+        "kind": "main"
+      }
+    }
+  ]
+}

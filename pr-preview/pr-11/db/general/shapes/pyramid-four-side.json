@@ -1,0 +1,142 @@
+{
+  "positions": [
+    {
+      "id": "life & death/Pyramid four/Side, enclosed",
+      "stones": "B:qd,qe,qf,rc,rd,rf,rg,sc,sg W:pc,pd,pe,pf,pg,qb,qc,qg,qh,rb,rh,sb,sh",
+      "toPlay": "B",
+      "free": "horizontal",
+      "comments": [
+        "Four points in a T shape. The point touching the other three is the vital point: whoever plays it decides the result.",
+        "{{SQ:T14,T15,T16,S15|The pyramid}}. {{CR:T15|The center point}} touches the other three.",
+        "One eye space of 4 points",
+        "0 outside liberties"
+      ],
+      "tags": {
+        "name": [
+          "Pyramid four · side · enclosed",
+          "T-four",
+          "Farmer's hat",
+          "Yon-moku nakade",
+          "丁四"
+        ],
+        "black-first": "B-alive",
+        "white-first": "B-dead",
+        "topics": [
+          "eye shape",
+          "killable eye shape"
+        ],
+        "eye-space": "4",
+        "surrounded": "full",
+        "outside-liberties": "0",
+        "inside-stones": "0",
+        "arrangement": "connected",
+        "difficulty": "20k",
+        "sources": [
+          "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search."
+        ]
+      }
+    },
+    {
+      "id": "life & death/Pyramid four/Side, enclosed/Black vital point",
+      "stones": "B:qd,qe,qf,rc,rd,rf,rg,sc,se,sg W:pc,pd,pe,pf,pg,qb,qc,qg,qh,rb,rh,sb,sh",
+      "toPlay": "W",
+      "free": "horizontal",
+      "comments": [
+        "Two or more eyes"
+      ],
+      "tags": {
+        "name": [
+          "Black vital point"
+        ],
+        "black-first": "B-alive",
+        "white-first": "B-alive"
+      }
+    },
+    {
+      "id": "life & death/Pyramid four/Side, enclosed/White first/White vital point",
+      "stones": "B:qd,qe,qf,rc,rd,rf,rg,sc,sg W:pc,pd,pe,pf,pg,qb,qc,qg,qh,rb,rh,sb,se,sh",
+      "toPlay": "B",
+      "free": "horizontal",
+      "comments": [
+        "One eye"
+      ],
+      "tags": {
+        "name": [
+          "White vital point"
+        ],
+        "black-first": "B-dead",
+        "white-first": "B-dead"
+      }
+    },
+    {
+      "id": "life & death/Pyramid four/Side, enclosed/White first",
+      "stones": "B:qd,qe,qf,rc,rd,rf,rg,sc,sg W:pc,pd,pe,pf,pg,qb,qc,qg,qh,rb,rh,sb,sh",
+      "toPlay": "W",
+      "free": "horizontal",
+      "tags": {
+        "name": [
+          "White first"
+        ]
+      }
+    },
+    {
+      "id": "life & death/Pyramid four/Side, enclosed/White first/White S15",
+      "stones": "B:qd,qe,qf,rc,rd,rf,rg,sc,sg W:pc,pd,pe,pf,pg,qb,qc,qg,qh,rb,re,rh,sb,sh",
+      "toPlay": "B",
+      "free": "horizontal",
+      "tags": {
+        "name": [
+          "White S15"
+        ],
+        "black-first": "B-alive",
+        "white-first": "B-dead"
+      }
+    }
+  ],
+  "moves": [
+    {
+      "from": "life & death/Pyramid four/Side, enclosed",
+      "to": "life & death/Pyramid four/Side, enclosed/Black vital point",
+      "comments": [
+        "Takes the vital point: three separate single-point eyes."
+      ],
+      "tags": {
+        "kind": "main"
+      }
+    },
+    {
+      "from": "life & death/Pyramid four/Side, enclosed",
+      "to": "life & death/Pyramid four/Side, enclosed/White first"
+    },
+    {
+      "from": "life & death/Pyramid four/Side, enclosed/White first",
+      "to": "life & death/Pyramid four/Side, enclosed/White first/White vital point",
+      "comments": [
+        "Takes the vital point. {{Black}} can make only one eye."
+      ],
+      "tags": {
+        "kind": "main"
+      }
+    },
+    {
+      "from": "life & death/Pyramid four/Side, enclosed/White first",
+      "to": "life & death/Pyramid four/Side, enclosed/White first/White S15",
+      "comments": [
+        "Misses the vital point."
+      ],
+      "tags": {
+        "kind": "mistake"
+      }
+    },
+    {
+      "from": "life & death/Pyramid four/Side, enclosed/White first/White S15",
+      "to": "life & death/Pyramid four/Side, enclosed/Black vital point",
+      "comments": [
+        "{{Black}} takes it and lives."
+      ],
+      "tags": {
+        "kind": "main"
+      }
+    }
+  ]
+}

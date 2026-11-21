@@ -1,0 +1,42 @@
+{
+  "positions": [
+    {
+      "id": "joseki/3-3 point",
+      "stones": "B:qc",
+      "toPlay": "W",
+      "comments": [
+        "A lone 3-3 stone. The corner is secure, so {{White}} plays on the outside: a shoulder hit or a high approach.",
+        "{{TR:R17|The 3-3 stone}} is already alive in the corner but low toward the center."
+      ],
+      "tags": {
+        "name": [
+          "3-3 point",
+          "San-san",
+          "三々"
+        ],
+        "evaluation": 0,
+        "status": "start",
+        "topics": [
+          "corner start"
+        ],
+        "difficulty": "25k"
+      }
+    }
+  ],
+  "moves": [
+    {
+      "from": "joseki/3-3 point",
+      "to": "joseki/3-3 point/High approach",
+      "tags": {
+        "kind": "main"
+      }
+    },
+    {
+      "from": "joseki/3-3 point",
+      "to": "joseki/3-3 point/Shoulder hit",
+      "tags": {
+        "kind": "main"
+      }
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "positions": [
+    {
+      "id": "life & death/Square four/Side, enclosed",
+      "stones": "B:qc,qd,qe,qf,rc,rf,sc,sf W:pb,pc,pd,pe,pf,pg,qb,qg,rb,rg,sb,sg",
+      "toPlay": "B",
+      "free": "horizontal",
+      "comments": [
+        "Four points in a 2×2 block. Dead even if {{Black}} plays first: any move inside leaves a bent three, and {{White}} kills it at the bend.",
+        "{{SQ:T15,T16,S15,S16|The square}} is a single eye. {{Black}} has no move that splits it.",
+        "One eye space of 4 points",
+        "0 outside liberties"
+      ],
+      "tags": {
+        "name": [
+          "Square four · side · enclosed",
+          "Bulky four",
+          "Shuushi",
+          "集四",
+          "方四"
+        ],
+        "black-first": "B-dead",
+        "white-first": "B-dead",
+        "topics": [
+          "eye shape",
+          "dead shape"
+        ],
+        "eye-space": "4",
+        "surrounded": "full",
+        "outside-liberties": "0",
+        "inside-stones": "0",
+        "arrangement": "connected",
+        "difficulty": "25k",
+        "sources": [
+          "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search."
+        ]
+      }
+    },
+    {
+      "id": "life & death/Square four/Side, enclosed/Black S16",
+      "stones": "B:qc,qd,qe,qf,rc,rd,rf,sc,sf W:pb,pc,pd,pe,pf,pg,qb,qg,rb,rg,sb,sg",
+      "toPlay": "W",
+      "free": "horizontal",
+      "tags": {
+        "name": [
+          "Black S16"
+        ],
+        "black-first": "B-alive",
+        "white-first": "B-dead"
+      }
+    },
+    {
+      "id": "life & death/Square four/Side, enclosed/Black S16:2",
+      "stones": "B:qc,qd,qe,qf,rc,rd,rf,sc,sf W:pb,pc,pd,pe,pf,pg,qb,qg,rb,rg,sb,se,sg",
+      "toPlay": "B",
+      "free": "horizontal",
+      "comments": [
+        "One eye"
+      ],
+      "tags": {
+        "black-first": "B-dead",
+        "white-first": "B-dead"
+      }
+    }
+  ],
+  "moves": [
+    {
+      "from": "life & death/Square four/Side, enclosed",
+      "to": "life & death/Square four/Side, enclosed/Black S16",
+      "comments": [
+        "Any {{Black}} move inside leaves a bent three."
+      ],
+      "tags": {
+        "kind": "mistake"
+      }
+    },
+    {
+      "from": "life & death/Square four/Side, enclosed/Black S16",
+      "to": "life & death/Square four/Side, enclosed/Black S16:2",
+      "comments": [
+        "Takes the vital point of the bent three."
+      ],
+      "tags": {
+        "kind": "main"
+      }
+    }
+  ]
+}
