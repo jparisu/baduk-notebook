@@ -22,6 +22,15 @@
 - **Board size** is set in text units (40em) and never grows when the window gets smaller: side columns shrink to their minimum first, and below 1100px the panels stack under the board.
 - The Sensei's Library page names that were written into four joseki descriptions ("Sources: 33PointInvasion, …") are now links in their `sources` tag.
 
+### Explore
+- **Lines start at the root.** A position opened from a link, the library or Find gets the moves that lead to it (back to the empty corner, by main moves), so the tree, move numbers and the names along the line all start there. Move numbers now match the ids (the 3-3 invasion's first move is move 3).
+- **Names along the line** drop the part they share with the name before: "Empty corner › 4-4 point › 3-3 invasion › extend".
+- **Comments of a position** are each their own block, edged with their database's color, and fold from their header. Comment text is a little smaller in Last move and the same size for positions.
+- The Position panel no longer shows the main move (it is in the editor and marked in Next moves).
+- **Tree:** Linear and Proximity pack their rows (no empty rows for hidden moves; the other moves from here sit next to the current one), and the line ahead always goes on to the end along the main moves. Dashed outlines of moves that are not stored are thinner.
+- **↓** plays the next variation, where → follows the line.
+- A comment's `{{R16}}` (a point without a shape) showed as raw text; it is now a reference, and the validator reports any `{{…}}` that is not one.
+
 ### Fixes
 - Right after a deploy, the site could fail with "Could not load the databases: JSON.parse…" because the browser reused the previous version's file list. Database files are now always revalidated, and only `.json` files are loaded.
 

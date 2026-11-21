@@ -351,7 +351,7 @@
       "from": "joseki/4-4 point/3-3 invasion",
       "to": "joseki/4-4 point/3-3 invasion:3",
       "comments": [
-        "Block from the top, so that {{WALL:Q17-Q16|the wall}} faces {{INF:Q16-Q10|down}}. Choose the side where the wall works with your other stones. Blocking from the side ({{R16}}) is the same joseki mirrored."
+        "Block from the top, so that {{WALL:Q17-Q16|the wall}} faces {{INF:Q16-Q10|down}}. Choose the side where the wall works with your other stones. Blocking from the side ({{CR:R16|R16}}) is the same joseki mirrored."
       ],
       "tags": {
         "kind": "main",

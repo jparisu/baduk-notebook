@@ -88,7 +88,7 @@ test('Only new shows the start position and only the moves added in Design', asy
 test('position fields show the value inherited from earlier moves until you write your own', async ({ page }) => {
   await openDesign(page, './?open=joseki/4-4+point')
   await clickPoint(page, 'S12') // a new move: the position has no explanation of its own
-  await expect(page.locator('.design-info .hint.inherited').first()).toContainText('Inherited from the start')
+  await expect(page.locator('.design-info .hint.inherited').first()).toContainText('Inherited from move 1') // the 4-4 stone; the line starts at the empty corner
 })
 
 test('the main move of a position is chosen in the editor, and the tree and → follow it', async ({ page }) => {
@@ -102,5 +102,5 @@ test('the main move of a position is chosen in the editor, and the tree and → 
   await expect(main.locator('option:checked')).toHaveText(other)
   await main.blur() // arrow keys go to the board, not to the list
   await page.keyboard.press('ArrowRight')
-  await expect(page.locator('.design-board .status')).toContainText(`Move 3: Black ${other.split(' ')[0]}`)
+  await expect(page.locator('.design-board .status')).toContainText(`Move 5: Black ${other.split(' ')[0]}`)
 })

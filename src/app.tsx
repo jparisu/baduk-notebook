@@ -11,7 +11,7 @@ import { apply, applySign, compose, cornerWindow, inverse, ptName, userTransform
 import type { Mark } from './core/refs'
 import { applyTheme, loadSettings, saveSettings, type Settings } from './settings'
 import {
-  candidates, displayBoard, mainLine, mainMove, entryFields, frame, inBook, labelStart, moveOf, movesOf, playFree, positionFields, primaryLabel,
+  candidates, displayBoard, mainLine, mainMove, openPath, entryFields, frame, inBook, labelStart, moveOf, movesOf, playFree, positionFields, primaryLabel,
   replay, rootStep, startStep, toMove, type Candidate, type Ctx, type Start, type Step,
 } from './view'
 import { collectMessages } from './messages'
@@ -183,7 +183,8 @@ export function App() {
         const useShared = shared && !(shared.start.kind === 'label' && !g.entries.has(shared.start.id))
         const st: Start = useShared ? shared!.start : last?.start ?? { kind: 'empty' }
         const p = useShared ? decodeLine(c, st, shared!.line) : replay(c, st, last?.moves ?? [])
-        if (useShared && shared!.line && p.length - 1 < shared!.line.split('.').length) note = `This link's moves stop at move ${p.length - 1}: the next one cannot be played.`
+        const before = useShared ? openPath(c, st).length - 1 : 0 // moves that lead to the opened sequence
+        if (useShared && shared!.line && p.length - 1 - before < shared!.line.split('.').length) note = `This link's moves stop at move ${p.length - 1 - before}: the next one cannot be played.`
         setStart(st)
         setLine({ path: p, future: [] })
         if (note) setToast(note)
@@ -267,7 +268,7 @@ export function App() {
   function openStart(st: Start) {
     if (!ctx) return
     setStart(st)
-    setLine({ path: [startStep(ctx, st)], future: [] })
+    setLine({ path: openPath(ctx, st), future: [] })
     setDrawer(false)
     resetMarks()
   }
@@ -289,6 +290,17 @@ export function App() {
       if (l.future.length) return { path: [...l.path, l.future[0]], future: l.future.slice(1) }
       const ahead = shownAhead(l)
       return ahead.length ? { path: [...l.path, ahead[0]], future: [] } : l
+    })
+  }
+  /** Down: one move forward, along the next variation instead of the line → follows. */
+  const down = () => {
+    if (!ctx) return
+    resetMarks()
+    setLine((l) => {
+      const ahead = shownAhead(l)[0]
+      const list = candidates(ctx, l.path[l.path.length - 1]).filter((c) => !c.cat || !settings.hiddenCategories.includes(c.cat))
+      const c = list.find((x) => x.step.key !== ahead?.key)
+      return c ? { path: [...l.path, c.step], future: [] } : l
     })
   }
   const toStart = () => {
@@ -322,7 +334,7 @@ export function App() {
         return
       }
       if (!ctx || (mode !== 'explore' && mode !== 'design') || dialog) return
-      const nav: Record<string, () => void> = { ArrowLeft: back, ArrowRight: forward, Home: toStart, End: toEnd }
+      const nav: Record<string, () => void> = { ArrowLeft: back, ArrowRight: forward, ArrowDown: down, Home: toStart, End: toEnd }
       if (nav[e.key]) {
         e.preventDefault()
         nav[e.key]()
@@ -711,7 +723,9 @@ export function App() {
     }
     return null
   })()
-  const forwardLine = line.future.length ? line.future : fromTrail ?? mainLine(ctx, path)
+  // Whatever line is ahead, it goes on to the end along the main move of each position.
+  const aheadBase = line.future.length ? line.future : fromTrail ?? []
+  const forwardLine = [...aheadBase, ...mainLine(ctx, [...path, ...aheadBase])]
   aheadRef.current = { path, ahead: forwardLine }
   const ZOOMS = [0.6, 0.75, 0.9, 1, 1.15, 1.35, 1.6]
   const zoomIdx = Math.max(0, ZOOMS.findIndex((z) => z >= settings.treeZoom - 0.001))
@@ -841,7 +855,7 @@ export function App() {
   const nextMoves = <NextMoves {...common} side={side} setSide={setSide} highlighted={highlighted} onHighlight={setHighlighted} onPlay={playCandidate} />
 
   /* Left: search, this joseki, evaluation. Right: tree, last move (or edit), next moves. Fixed-size panels. */
-  const positionInfo = <PositionInfo {...common} onOpenLabel={onOpenLabel} onCopyLink={(id) => copyLink(linkFor(ctx, { kind: 'label', id }, [startStep(ctx, { kind: 'label', id })], { corner: 'tr', mirror: false, swap: false }), entryName(id))} />
+  const positionInfo = <PositionInfo {...common} onOpenLabel={onOpenLabel} onCopyLink={(id) => copyLink(linkFor(ctx, { kind: 'label', id }, openPath(ctx, { kind: 'label', id }), { corner: 'tr', mirror: false, swap: false }), entryName(id))} />
   const leftPanel = (
     <aside class="side-panel left" aria-label="Search and joseki information">
       <Stack
@@ -1262,7 +1276,7 @@ export function App() {
             setSettings({ ...settings, display })
             const st: Start = { kind: 'label', id }
             const c = { ...ctx, U: userTransform(display) }
-            const p = [startStep(c, st)]
+            const p = openPath(c, st)
             for (const k of keys.slice(1)) {
               const n = candidates(c, p[p.length - 1]).find((x) => x.step.key === k)
               if (!n) break
@@ -1304,7 +1318,7 @@ export function App() {
           saveDrafts(w)
           const st: Start = { kind: 'label', id: e.id }
           setStart(st)
-          setLine({ path: [startStep({ ...ctx, graph: g }, st)], future: [] })
+          setLine({ path: openPath({ ...ctx, graph: g }, st), future: [] })
           flash(`Created ${e.name} in ${target}`)
           return null
         }} />

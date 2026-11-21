@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildGraph } from '../core/graph'
 import { IDENTITY, parsePt } from '../core/geometry'
-import { candidates, startStep, type Ctx } from '../view'
+import { candidates, rootStep, startStep, type Ctx } from '../view'
 import { createWorkspace } from './workspace'
 import { importSgf, toSgf } from './sgfx'
 import { listDb, readDb } from '../testdb'
@@ -12,7 +12,7 @@ describe('SGF', () => {
   it('downloads a position with the moves after it', () => {
     const ws = createWorkspace(DBS, listDb().filter((p) => p.startsWith('general/')).map(readDb))
     const ctx: Ctx = { graph: buildGraph(ws.files), active: new Set(['general']), order: ['general'], U: IDENTITY }
-    const text = toSgf(ctx, startStep(ctx, { kind: 'label', id: 'joseki/4-4 point' }))
+    const text = toSgf(ctx, rootStep(ctx, 'joseki/4-4 point'))
     expect(text).toContain('AB[pd]')
     expect(text).toContain('PL[W]')
     expect(text).toContain('W[qc]')
@@ -35,7 +35,7 @@ describe('SGF', () => {
   it('tags and comments survive a download and a load', () => {
     const ws = createWorkspace(DBS, listDb().filter((p) => p.startsWith('general/')).map(readDb))
     const ctx: Ctx = { graph: buildGraph(ws.files), active: new Set(['general']), order: ['general'], U: IDENTITY }
-    const text = toSgf(ctx, startStep(ctx, { kind: 'label', id: 'joseki/4-4 point/3-3 invasion' }))
+    const text = toSgf(ctx, rootStep(ctx, 'joseki/4-4 point/3-3 invasion'))
     expect(text).toContain('XT[kind="main"]')
     const back = createWorkspace(DBS, [])
     const ctxOf = (): Ctx => ({ graph: buildGraph(back.files), active: new Set(['mine']), order: ['mine'], U: IDENTITY })

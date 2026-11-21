@@ -52,7 +52,7 @@ test('Settings hide the keys you do not want to see', async ({ page }) => {
   await expect(page.locator('.pos-values')).toContainText('White plays first')
 })
 
-test('the Position panel shows the position with the tags of its sequence and its main move', async ({ page }) => {
+test('the Position panel shows the position with the tags of its sequence', async ({ page }) => {
   await openEntry(page, 'Bent four', 'Corner')
   const panel = page.locator('[data-card=position]')
   // Topics are one group of chips, on one row.
@@ -60,7 +60,7 @@ test('the Position panel shows the position with the tags of its sequence and it
   await openEntry(page, '3-3 invasion')
   await page.keyboard.press('ArrowRight')
   await expect(panel).toContainText('Sequence')
-  await expect(panel.locator('.f', { hasText: 'Main move' })).toContainText('R16')
+  await expect(panel.locator('.f', { hasText: 'Main move' })).toHaveCount(0) // not shown in the panel by default
   await expect(panel.locator('.f', { hasText: 'Sources' }).locator('a').first()).toHaveAttribute('href', 'https://senseis.xmp.net/?33PointInvasion')
   await expect(page.locator('[data-card=joseki]')).toHaveCount(0)
 })

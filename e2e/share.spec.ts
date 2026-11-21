@@ -4,7 +4,8 @@ import { clickPoint, fresh } from './helpers'
 test('a link opens a joseki at its first move', async ({ page }) => {
   await page.goto('./?open=joseki/3-4+point/Low+approach')
   await expect(page.locator('.status')).toContainText('3-4 point · low approach')
-  await expect(page.locator('.status')).toContainText('Start')
+  await expect(page.locator('.status')).toContainText('Move 2: White') // the line starts at the empty corner
+  await expect(page.locator('.crumbs')).toContainText('Empty corner')
 })
 
 test('the address bar follows the position, and that link opens the same position elsewhere', async ({ page, browser }) => {

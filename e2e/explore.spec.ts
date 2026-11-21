@@ -19,9 +19,12 @@ test('starts at the empty corner and recognizes the joseki as you play', async (
 test('opens a joseki from the library and navigates with the keyboard', async ({ page }) => {
   await openEntry(page, '3-3 invasion')
   for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowRight')
-  await expect(page.locator('.status')).toContainText('Move 3: Black R15')
+  // Opened from the library, the line still starts at the empty corner: the 3-3 invasion is move 2.
+  await expect(page.locator('.status')).toContainText('Move 5: Black R15')
   await page.keyboard.press('End')
-  await expect(page.locator('.status')).toContainText('Move 11')
+  await expect(page.locator('.status')).toContainText('Move 13')
+  await page.keyboard.press('Home')
+  await expect(page.locator('.status')).toContainText('Start')
 })
 
 test('reopens the last position after a reload', async ({ page }) => {
@@ -43,9 +46,10 @@ test('hovering a reference draws its marks on the board', async ({ page }) => {
 test('switching a database off hides its notes', async ({ page }) => {
   await openEntry(page, '3-3 invasion')
   for (const p of ['R17', 'Q17', 'R16', 'R15', 'Q18', 'P18']) await clickPoint(page, p) // the line of the jparisu notes
-  await expect(page.locator('.position-info .note-card')).toContainText('Remember')
+  const mine = page.locator('.position-info .comment-card', { hasText: 'jparisu' })
+  await expect(mine).toContainText('Remember')
   await page.locator('.top .layer', { hasText: 'jparisu' }).locator('input').uncheck()
-  await expect(page.locator('.position-info .note-card')).toHaveCount(0)
+  await expect(mine).toHaveCount(0)
 })
 
 test('orientation controls move the corner', async ({ page }) => {
@@ -165,7 +169,7 @@ test('Linear and Proximity show only this line; going back to a move follows the
   await title(/^Black Q16/).click()
   await expect(page).toHaveURL(/line=pd$/)
   await page.keyboard.press('End')
-  await expect(page).toHaveURL(/line=pd\.qc$/) // where that line ended, not the end of the main line
+  await expect(page).toHaveURL(/line=pd\.qc\./) // along the line you saw, and on to its end by the main moves
   void seen
 })
 
@@ -224,3 +228,20 @@ test('a move played mirrored keeps its orientation when you move through the tre
   await node(/^Black (R16|Q17)/).click()
   await expect(page.locator('.status')).toContainText('Black R16')
 })
+
+test('Down plays the next variation instead of the line Right follows', async ({ page }) => {
+  await openEntry(page, '3-3 invasion')
+  for (let i = 0; i < 2; i++) await page.keyboard.press('ArrowRight') // Black Q17, White R16: Black has three answers
+  await page.keyboard.press('ArrowDown')
+  await expect(page.locator('.status')).not.toContainText('Black R15') // R15 is the main move, Right would play it
+  await expect(page.locator('.status')).toContainText('Move 5: Black')
+})
+
+test('Proximity packs the other moves next to the current one, not below hidden lines', async ({ page }) => {
+  await openEntry(page, '3-3 invasion')
+  await page.locator('.tree-toolbar').getByRole('button', { name: 'Proximity' }).click()
+  for (let i = 0; i < 2; i++) await page.keyboard.press('ArrowRight')
+  const ys = await page.locator('.tree-box .tree-node circle').evaluateAll((els) => [...new Set(els.map((e) => e.getAttribute('cy')))].length)
+  expect(ys).toBe(3) // the line and the two other answers, each on the next row
+})
+

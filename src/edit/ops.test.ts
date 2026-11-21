@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { buildGraph } from '../core/graph'
 import { IDENTITY, parsePt } from '../core/geometry'
 import { writeDbFile } from '../core/model'
-import { candidates, startStep, type Ctx, type Step } from '../view'
+import { candidates, rootStep, type Ctx, type Step } from '../view'
 import { createWorkspace, changes, makePatch } from './workspace'
 import { addMove, checkMove, createDatabase, deleteMove, locate, nameSequence, setComments, setTags } from './ops'
 import { listDb, readDb } from '../testdb'
@@ -19,7 +19,7 @@ function setup() {
   let ctx = ctxOf()
   /** The 3-3 invasion line: 4-4 stone, then the first move each time. */
   const line = (n: number): Step[] => {
-    const p = [startStep(ctx, { kind: 'label', id: 'joseki/4-4 point' })]
+    const p = [rootStep(ctx, 'joseki/4-4 point')]
     p.push(candidates(ctx, p[0]).find((c) => c.pt && c.pt[0] === 16 && c.pt[1] === 2)!.step) // R17
     for (let i = 1; i < n; i++) p.push(candidates(ctx, p[p.length - 1])[0].step)
     return p

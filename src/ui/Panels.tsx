@@ -4,6 +4,7 @@
  * right — position evaluation, last move (the "why"), next moves.
  */
 import type { ComponentChildren } from 'preact'
+import { useState } from 'preact/hooks'
 import { CATEGORIES, type Category } from '../core/kinds'
 import { defOf, labelOf, typeOf, valueLabel, asList } from '../core/tags'
 import { apply, ptName } from '../core/geometry'
@@ -68,6 +69,37 @@ export function NoteCard({ who, color, children }: { who: string; color: string;
       <div>{children}</div>
     </div>
   )
+}
+
+/** A comment as its own block, edged with its database's color; its header folds it. */
+export function CommentCard({ db, color, children, preview }: { db: string; color: string; children: ComponentChildren; preview: string }) {
+  const [open, setOpen] = useState(true)
+  return (
+    <div class={`comment-card ${open ? '' : 'closed'}`} style={{ '--db': color } as never}>
+      <button class="comment-head" onClick={() => setOpen(!open)} aria-expanded={open} title={open ? 'Fold this comment' : 'Open this comment'}>
+        <span class="who">{db}</span>
+        {!open && <span class="peek">{preview}</span>}
+        <span class="chev" aria-hidden>{open ? '▾' : '▸'}</span>
+      </button>
+      {open && <div class="comment-body">{children}</div>}
+    </div>
+  )
+}
+
+/** Plain text of a comment, for a folded preview. */
+const plainText = (segments: { text?: string; label?: string }[]) => {
+  const t = segments.map((x) => x.text ?? x.label ?? '').join('')
+  return t.length > 70 ? t.slice(0, 69) + '…' : t
+}
+
+/**
+ * A name without the part it shares with the name before it: "4-4 point · 3-3 invasion · extend" after
+ * "4-4 point · 3-3 invasion" reads "extend". When the earlier name is not its beginning, it stays whole.
+ */
+export function shortAfter(prev: string | null, name: string): string {
+  if (!prev) return name
+  const a = name.split(' · '), b = prev.split(' · ')
+  return b.length < a.length && b.every((x, i) => x === a[i]) ? a.slice(b.length).join(' · ') : name
 }
 
 /** Names of the labels met along the line, in order (Empty corner › 3-3 invasion › hane). */
@@ -159,7 +191,6 @@ export function PositionInfo(p: Common & { onOpenLabel: (id: string) => void; on
   const keys = pf.keys().filter((k) => !isSequenceKey(k) && k !== 'main')
   const seqKeys = ef ? ef.keys().filter((k) => isSequenceKey(k) && k !== 'name') : []
   const alias = ef ? ef.list('name').slice(1) : []
-  const main = mainMove(ctx, step)
   const here = p.messages.filter((m) => m.place === 'position')
   const hasValue = keys.some((k) => k !== 'board' && !hidden.includes(k))
   return (
@@ -169,12 +200,15 @@ export function PositionInfo(p: Common & { onOpenLabel: (id: string) => void; on
           <p class="info-title"><span class="db-ul" style={{ textDecorationColor: p.dbColor(entry.contribs[0]?.db ?? '') }} title={`From ${entry.contribs[0]?.db}`}>{p.entryName(label!)}</span>{at < path.length - 1 && <span class="info-move"> · move {path.length - 1 - at}</span>}</p>
           {crumbs.length > 1 && (
             <div class="crumbs" aria-label="Names along this line">
-              {crumbs.map((c, i) => (
-                <span key={c}>
-                  {i > 0 && <span class="sep">›</span>}
-                  {c === label ? <b>{p.entryName(c)}</b> : <button class="link" onClick={() => p.onOpenLabel(c)}>{p.entryName(c)}</button>}
-                </span>
-              ))}
+              {crumbs.map((c, i) => {
+                const name = shortAfter(i > 0 ? p.entryName(crumbs[i - 1]) : null, p.entryName(c))
+                return (
+                  <span key={c}>
+                    {i > 0 && <span class="sep">›</span>}
+                    {c === label ? <b title={p.entryName(c)}>{name}</b> : <button class="link" title={p.entryName(c)} onClick={() => p.onOpenLabel(c)}>{name}</button>}
+                  </span>
+                )
+              })}
             </div>
           )}
           <div class="info-links">
@@ -190,17 +224,14 @@ export function PositionInfo(p: Common & { onOpenLabel: (id: string) => void; on
         {entry && <Row label="Sequence">{entry.id.replace(/\//g, ' › ')}</Row>}
         {alias.length > 0 && !hidden.includes('name') && <Row label="Also called">{alias.join(' · ')}</Row>}
         {ef && <TagRows keys={seqKeys} f={ef} icons={icons} hidden={hidden} />}
-        {main && <Row label="Main move"><span class="value"><MoveMark cat={main.cat} />{main.pt ? ptName(main.pt) : 'Tenuki'}</span></Row>}
         <TagRows keys={keys} f={pf} icons={icons} only="rows" hidden={hidden} />
       </div>
-      {/* Comments: the first database's as plain text, other databases' (your own notes) as cards with their color. */}
-      {here.filter((m) => m.kind === 'pos').map((m, i) =>
-        m.db === ctx.order[0] ? (
-          <p key={'p' + i} class="pos-text"><Rich segments={m.segments} h={p.refs} /></p>
-        ) : (
-          <NoteCard key={'p' + i} who={m.db} color={p.dbColor(m.db)}><Rich segments={m.segments} h={p.refs} /></NoteCard>
-        ),
-      )}
+      {/* Comments: each its own block, edged with its database's color. */}
+      {here.filter((m) => m.kind === 'pos').map((m, i) => (
+        <CommentCard key={m.db + i + plainText(m.segments as never)} db={m.db} color={p.dbColor(m.db)} preview={plainText(m.segments as never)}>
+          <Rich segments={m.segments} h={p.refs} />
+        </CommentCard>
+      ))}
       {!hasValue && !here.length && !entry && <p class="hint">Nothing stored about this position yet.</p>}
       {others.length > 0 && (
         <p class="also">Also part of: {others.map((l) => <button key={l} class="chip" onClick={() => p.onOpenLabel(l)}>{p.entryName(l)}</button>)}</p>

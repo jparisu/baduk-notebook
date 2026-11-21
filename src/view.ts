@@ -339,8 +339,37 @@ export type Start =
 
 export type Move = { sign: Sign; pt: Pt | null }
 
+/**
+ * The steps from a root position (no move into it, e.g. the empty corner) to `step`, going back along
+ * the moves into each position: the one that is its parent's main move, else any of them. Used when a
+ * position is opened directly (a link, the library, Find): its line still starts at the root.
+ */
+export function leadTo(ctx: Ctx, step: Step): Step[] {
+  const out = [step]
+  const seen = new Set([step.key])
+  for (;;) {
+    const cur = out[0]
+    const n = ctx.graph.nodes.get(cur.key)
+    if (!n) return out
+    const options = n.parents.flatMap((pk) => {
+      const e = ctx.graph.nodes.get(pk)!.edges.find((x) => x.child === cur.key && x.contribs.some((c) => ctx.active.has(c.db)))
+      return e && !seen.has(pk) ? [{ key: pk, edge: e, D: compose(cur.D, e.rel) }] : []
+    })
+    if (!options.length) return out
+    const pick = options.find((o) => mainMove(ctx, { key: o.key, D: o.D })?.edge === o.edge) ?? options[0]
+    seen.add(pick.key)
+    out[0] = { ...cur, edge: pick.edge }
+    out.unshift({ key: pick.key, D: pick.D })
+  }
+}
+
+/** The line shown when a start is opened: for a sequence, from its root to the sequence's first position. */
+export const openPath = (ctx: Ctx, start: Start): Step[] =>
+  start.kind === 'label' && ctx.graph.entries.has(start.id) ? leadTo(ctx, rootStep(ctx, start.id)) : [startStep(ctx, start)]
+
+/** The first position of a line: for a sequence, the root its line starts from (see openPath). */
 export function startStep(ctx: Ctx, start: Start): Step {
-  if (start.kind === 'label' && ctx.graph.entries.has(start.id)) return rootStep(ctx, start.id)
+  if (start.kind === 'label' && ctx.graph.entries.has(start.id)) return leadTo(ctx, rootStep(ctx, start.id))[0]
   const board: SignMap = Array.from({ length: 19 }, () => Array<Sign>(19).fill(0))
   let toMove: Sign = 1
   if (start.kind === 'setup') {
@@ -364,13 +393,23 @@ export const movesOf = (path: Step[]): Move[] =>
 
 /** Replays moves from a start; stops at the first illegal move. */
 export function replay(ctx: Ctx, start: Start, moves: Move[]): Step[] {
-  const out = [startStep(ctx, start)]
-  for (const m of moves) {
-    try {
-      out.push(freeStep(ctx, out[out.length - 1], m.sign, m.pt))
-    } catch {
-      break
+  const from = (first: Step) => {
+    const out = [first]
+    for (const m of moves) {
+      try {
+        out.push(freeStep(ctx, out[out.length - 1], m.sign, m.pt))
+      } catch {
+        break
+      }
     }
+    return out
+  }
+  const out = from(startStep(ctx, start))
+  // Lines saved before sequences opened with the moves that lead to them were counted from the sequence's first position.
+  if (out.length - 1 < moves.length && start.kind === 'label') {
+    const lead = openPath(ctx, start)
+    const old = from(lead[lead.length - 1])
+    if (old.length > out.length) return [...lead.slice(0, -1), ...old]
   }
   return out
 }

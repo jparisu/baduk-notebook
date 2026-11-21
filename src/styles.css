@@ -643,7 +643,7 @@ button.link { background: none; border: none !important; padding: 0; color: var(
 .eval-big .score { font-size: 24px; font-weight: 800; letter-spacing: -.02em; white-space: nowrap; }
 .balance-bar { position: relative; flex: 1; height: 10px; border-radius: 999px; border: 1px solid var(--line); background: linear-gradient(90deg, #f5f5f2 0 50%, #151515 50% 100%); }
 .balance-bar i { position: absolute; top: -4px; bottom: -4px; width: 4px; margin-left: -2px; border-radius: 2px; background: var(--accent); box-shadow: 0 0 0 2px var(--panel-solid); }
-.pos-text { font-size: 14px; line-height: 1.55; margin: 8px 0 0; }
+.pos-text { font-size: 15px; line-height: 1.55; margin: 8px 0 0; }
 .warn-card { display: flex; gap: 10px; align-items: flex-start; background: var(--warn-bg); border: 1px solid color-mix(in srgb, var(--warn-line) 45%, transparent); border-radius: 14px; padding: 10px 12px; margin-top: 10px; font-size: 13px; line-height: 1.5; }
 .warn-card b { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
 .warn-badge { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--warn-line); color: #1a1300; font-weight: 900; font-size: 13px; }
@@ -659,8 +659,8 @@ button.link { background: none; border: none !important; padding: 0; color: var(
 .why-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .move-badge { display: inline-flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 800; }
 .cat-pill { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; color: #fff; background: var(--cat, var(--muted)); }
-.why-text { font-size: 17px; line-height: 1.55; margin: 10px 0; font-weight: 500; }
-.why-text::before { content: "“"; font-family: Georgia, serif; font-size: 42px; line-height: 0; vertical-align: -.38em; margin-right: 4px; color: var(--cat, var(--muted)); opacity: .45; }
+.why-text { font-size: 15px; line-height: 1.55; margin: 10px 0; font-weight: 500; }
+.why-text::before { content: "“"; font-family: Georgia, serif; font-size: 32px; line-height: 0; vertical-align: -.36em; margin-right: 4px; color: var(--cat, var(--muted)); opacity: .45; }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .tag { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
 .history { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
@@ -747,7 +747,7 @@ button.link.small { font-size: 12px; display: inline-flex; align-items: center; 
   .center { gap: 8px; padding: 10px 14px; }
   .card-head { padding: 9px 12px; }
   .card-body { padding: 0 12px 12px; }
-  .why-text { font-size: 16px; margin: 6px 0 8px; }
+  .why-text { font-size: 15px; margin: 6px 0 8px; }
   .title-row h2 { font-size: 20px; }
 }
 /* Cards keep their height; the column scrolls instead of squeezing them. */
@@ -961,3 +961,11 @@ body.dragging-y, body.dragging-y * { cursor: row-resize !important; user-select:
 .position-info { display: flex; flex-direction: column; gap: 6px; }
 .position-info .info-move { font-weight: 400; color: var(--muted); font-size: .85em; }
 .edit-panel .move-in { border-top: 1px solid var(--line); padding-top: 10px; }
+/* Comments of a position: each its own block, edged with its database's color, foldable. */
+.comment-card { border-left: 4px solid var(--db, var(--line)); background: var(--panel-solid, var(--panel)); border-radius: var(--radius-sm); box-shadow: 0 4px 14px -8px rgba(0, 0, 0, .35); margin-top: 8px; }
+.comment-head { display: flex; align-items: center; gap: 8px; width: 100%; background: transparent; border: none !important; padding: 6px 10px 0; text-align: left; color: var(--muted); min-height: 0; box-shadow: none; }
+.comment-card.closed .comment-head { padding-bottom: 6px; }
+.comment-head .who { font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--db, var(--muted)); text-transform: uppercase; }
+.comment-head .peek { flex: 1; min-width: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.comment-head .chev { margin-left: auto; font-size: 11px; }
+.comment-body { padding: 2px 12px 10px; font-size: 15px; line-height: 1.55; }

@@ -28,6 +28,8 @@ function checkRefs(text: string, push: (m: string) => void) {
   }
   const opens = (text.match(/\{\{/g) ?? []).length, closes = (text.match(/\}\}/g) ?? []).length
   if (opens !== closes) push('Unbalanced {{ }} in text')
+  // Anything else in braces would be shown as raw text: {{R16}} needs a type, e.g. {{CR:R16|R16}}.
+  for (const m of text.replace(/\{\{([A-Z]+):[^|}]*(?:\|[^}]*)?\}\}/g, '').matchAll(/\{\{[^}]*\}\}/g)) push(`"${m[0]}" is not a board reference: write it as {{TYPE:points|words}}, e.g. {{CR:Q16|Q16}}`)
 }
 
 /** A tag's value against its description in db/tags.json. Keys that are not described accept any plain value. */
@@ -71,7 +73,7 @@ export function checkTag(key: string, v: TagValue, err: (m: string) => void) {
 }
 
 function checkRec(r: Rec, err: (m: string, sev?: Issue['severity']) => void) {
-  for (const c of r.comments) checkRefs(c, (m) => err(m, 'warning'))
+  for (const c of r.comments) checkRefs(c, (m) => err(m))
   for (const [k, v] of Object.entries(r.tags)) checkTag(k, v, err)
 }
 

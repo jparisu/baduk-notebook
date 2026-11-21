@@ -7,7 +7,7 @@
  */
 import { apply, applySign, inverse, type Corner, type DisplayOptions, type Pt, type Sign } from './core/geometry'
 import { sgfPoint } from './edit/sgfio'
-import { freeStep, moveOf, node, startStep, toMove, type Ctx, type Start, type Step } from './view'
+import { freeStep, moveOf, node, openPath, toMove, type Ctx, type Start, type Step } from './view'
 
 export interface Shared {
   start: Start
@@ -39,10 +39,15 @@ export function encodeLine(ctx: Ctx, path: Step[]): string {
     .join('.')
 }
 
-/** Replays a shared line; stops at the first move that cannot be played. */
+/**
+ * Replays a shared line; stops at the first move that cannot be played. For a sequence, the line is
+ * read from its first position, and the moves before it (back to the root) come first.
+ */
 export function decodeLine(ctx: Ctx, start: Start, line: string): Step[] {
-  const out = [startStep(ctx, start)]
-  if (!line) return out
+  const lead = openPath(ctx, start)
+  const out = [lead[lead.length - 1]]
+  const done = () => [...lead.slice(0, -1), ...out]
+  if (!line) return done()
   let expected: Sign = applySign(out[0].D, toMoveCanon(ctx, out[0])) || 1
   for (const tok of line.split('.')) {
     const m = tok.match(/^([BW])?(-|[a-s]{2})$/)
@@ -61,7 +66,7 @@ export function decodeLine(ctx: Ctx, start: Start, line: string): Step[] {
     }
     expected = (-sign) as Sign
   }
-  return out
+  return done()
 }
 
 const toMoveCanon = (ctx: Ctx, s: Step): Sign => ctx.graph.nodes.get(s.key)?.toMove ?? s.toMove ?? 0
@@ -89,8 +94,15 @@ export function readUrl(search = location.search): Shared | null {
 export function linkFor(ctx: Ctx, start: Start, path: Step[], view: DisplayOptions): string | null {
   if (start.kind === 'setup') return null
   const q = new URLSearchParams()
-  if (start.kind === 'label') q.set('open', start.id)
-  const line = encodeLine(ctx, path)
+  let line: string
+  if (start.kind === 'label') {
+    // The line is written from the sequence's first position; the moves before it are found again on opening.
+    const at = openPath(ctx, start).length - 1
+    if (path.length > at && path[at].key === openPath(ctx, start)[at].key) {
+      q.set('open', start.id)
+      line = encodeLine(ctx, path.slice(at))
+    } else line = encodeLine(ctx, path) // a position before the sequence: from the empty corner
+  } else line = encodeLine(ctx, path)
   if (line) q.set('line', line)
   const v = encodeView(view)
   if (v) q.set('view', v)

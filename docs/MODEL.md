@@ -189,17 +189,32 @@ Find matches a position by sliding its stones along the free directions, for all
 
 The tree draws the graph around the line you are on.
 
+### Where a line starts
+- A line always starts at a root: a position no move leads to, such as the empty corner. When you
+  play your way to a position, the line is the moves you played. When you open a position directly
+  (a link, the library, Find), the moves before it are filled in back to the root: at each step the
+  move into the position that is its parent's main move, else any move into it.
+- So the tree, the move numbers and the names along the line ("Empty corner › 4-4 point ›
+  3-3 invasion › extend") always go back to the root. Each name drops the part it shares with the
+  name before it.
+- A link still names the sequence and the moves after its first position; the moves before it are
+  found again when it opens.
+
 ### Layout
-- The tree is always laid out like the complete tree, in a fixed order (database moves best first,
-  then your own moves). Moving through it never moves it: selecting the third child moves the
-  selection to the third row. The modes only hide parts of it; hidden rows keep their place.
+- Moves are always in the same fixed order (database moves best first, then your own moves), each
+  node one column right of its parent, the first child on its parent's row.
+- Each mode packs its rows as tightly as that allows: Linear and Proximity lay out only the lines they
+  draw, so no rows are left empty for hidden moves. The rows of the lines only depend on which lines
+  are drawn (the current one and your trail), so moving along them never moves the tree. In
+  Proximity, the other moves from the current position take the first free rows next to it.
 - The tree has a fixed size and scrolls only when the current move would leave it.
 
 ### Your trail
 - The app remembers the lines you visit in this session (the **trail**).
 - **Ahead** of the current move the tree shows, in this order: the moves you stepped back over; the
   last line you saw through this position (from the trail); the main line (the main move of each
-  position, §1). → and End follow it, and it is worked out again at each step.
+  position, §1). Whichever it is, it goes on to the end along the main moves. → and End follow it,
+  and it is worked out again at each step. ↓ plays the next variation instead (the first other move).
 - A move that is not in any database (free play) opens a new branch at that point.
 - The trail is kept in the browser with the session.
 
