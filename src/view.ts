@@ -1,7 +1,7 @@
 /** View model: turns the canonical graph into what the screen shows, after transforms and database filters. */
 import type { Graph, Contribution, Edge, PosNode } from './core/graph'
 import { edgeCategory, labelsAt, visibleEdges } from './core/graph'
-import { CATEGORY_ORDER, type Category } from './core/kinds'
+import { CATEGORIES, CATEGORY_ORDER, type Category } from './core/kinds'
 import GoBoard from '@sabaki/go-board'
 import { isStartId } from './core/model'
 import { asList, asText, defOf, sortKeys, swapValue, swapsValue, type TagValue } from './core/tags'
@@ -133,6 +133,41 @@ export function candidates(ctx: Ctx, step: Step): Candidate[] {
   })
   const rank = (c: Candidate) => (c.cat ? CATEGORY_ORDER.indexOf(c.cat) : 99)
   return list.sort((a, b) => rank(a) - rank(b))
+}
+
+/**
+ * The main move of a position (docs/MODEL.md §1): the one the tree and → follow by default.
+ * The position's `main` tag names the id the main move leads to (the database listed last wins);
+ * without it, the first move stored from the position, unless it is a bad move.
+ */
+export function mainMove(ctx: Ctx, step: Step, list = candidates(ctx, step)): Candidate | null {
+  const contribs = node(ctx, step).contribs
+    .filter((c) => ctx.active.has(c.db))
+    .sort((a, b) => ctx.order.indexOf(a.db) - ctx.order.indexOf(b.db))
+  const leadsTo = (db: string, id: string) => list.find((c) => c.edge.contribs.some((x) => x.db === db && x.move?.to === id))
+  for (const c of [...contribs].reverse()) {
+    const id = c.pos.tags.main
+    const hit = typeof id === 'string' ? leadsTo(c.db, id) : undefined
+    if (hit) return hit
+  }
+  for (const c of contribs) {
+    const first = c.pos.moves[0]
+    const hit = first ? leadsTo(c.db, first.to) : undefined
+    if (hit) return hit.cat && !CATEGORIES[hit.cat].good ? null : hit
+  }
+  return list.find((c) => !c.cat || CATEGORIES[c.cat].good) ?? null
+}
+
+/** The line that follows the main moves from the end of `path` (stops before a loop). */
+export function mainLine(ctx: Ctx, path: Step[]): Step[] {
+  const out = [...path]
+  const seen = new Set(out.map((s) => s.key))
+  for (;;) {
+    const c = mainMove(ctx, out[out.length - 1])
+    if (!c || seen.has(c.step.key)) return out.slice(path.length)
+    seen.add(c.step.key)
+    out.push(c.step)
+  }
 }
 
 /** First sentence of a "why" text, without references markup. */

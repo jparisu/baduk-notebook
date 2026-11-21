@@ -10,7 +10,7 @@ import { apply, ptName } from '../core/geometry'
 import { labelsAt } from '../core/graph'
 import type { Msg } from '../messages'
 import type { Settings } from '../settings'
-import { candidates, entryFields, frame, lineFields, moveOf, type Fields, inBook, labelStart, moveFields, primaryLabel, type Candidate, type Ctx, type Step } from '../view'
+import { candidates, entryFields, frame, lineFields, mainMove, moveOf, type Fields, inBook, labelStart, moveFields, primaryLabel, type Candidate, type Ctx, type Step } from '../view'
 import { Rich, type RefHandlers } from './Rich'
 import { Fold } from './Card'
 
@@ -122,7 +122,7 @@ export function TagRows({ keys, f, icons, only, hidden = [] }: { keys: string[];
         <span key={v} class="value">
           {o?.color && <span class="dot" style={{ background: o.color, borderColor: o.color }} />}
           {icons && o?.icon && !o.color && <span class="ico" aria-hidden>{o.icon}</span>}
-          {valueLabel(key, v)}
+          {/^https?:\/\/\S+$/.test(v) ? <a href={v} target="_blank" rel="noopener noreferrer" title={v}>{linkText(v)}</a> : valueLabel(key, v)}
         </span>
       )
     }
@@ -131,77 +131,68 @@ export function TagRows({ keys, f, icons, only, hidden = [] }: { keys: string[];
   return <>{out}</>
 }
 
-/* ---------- Left: This joseki ---------- */
-
-export function JosekiInfo(p: Common & { onOpenLabel: (id: string) => void; onCopyLink?: (id: string) => void }) {
-  const { ctx, path } = p
-  const label = primaryLabel(ctx, path)
-  if (!label) {
-    return <p class="hint">{inBook(ctx, path[path.length - 1]) ? 'This position has no name yet.' : 'Not in your databases.'}</p>
-  }
-  const entry = ctx.graph.entries.get(label)!
-  const at = labelStart(ctx, path, label)
-  const ef = entryFields(ctx, label, path[at])
-  const icons = p.settings.icons
-  const crumbs = crumbsOf(ctx, path)
-  const others = labelsAt(ctx.graph, path[path.length - 1].key, ctx.active).filter((l) => l !== label && ctx.graph.entries.get(l)?.defined)
-  const keys = ef.keys().filter((k) => isSequenceKey(k) && k !== 'name')
-  const alias = ef.list('name').slice(1)
-  // The start's comments describe the whole sequence; at the start itself they are in the position panel.
-  const about = at < path.length - 1 ? ef.comments() : []
-  return (
-    <div class="joseki-info subpanels">
-      <div class="sub-main">
-      <p class="info-title"><span class="db-ul" style={{ textDecorationColor: p.dbColor(entry.contribs[0]?.db ?? '') }} title={`From ${entry.contribs[0]?.db}`}>{p.entryName(label)}</span></p>
-      {crumbs.length > 1 && (
-        <div class="crumbs" aria-label="Names along this line">
-          {crumbs.map((c, i) => (
-            <span key={c}>
-              {i > 0 && <span class="sep">›</span>}
-              {c === label ? <b>{p.entryName(c)}</b> : <button class="link" onClick={() => p.onOpenLabel(c)}>{p.entryName(c)}</button>}
-            </span>
-          ))}
-        </div>
-      )}
-      <div class="info-links">
-        {at < path.length - 1 && (
-          <button class="link go-first" onClick={() => p.onOpenLabel(label)}>⏮ Go to its first move{at > 0 ? ` (move ${at})` : ''}</button>
-        )}
-        {p.onCopyLink && <button class="link" onClick={() => p.onCopyLink!(label)} title="Copy a link that opens this joseki at its first move">🔗 Copy link</button>}
-      </div>
-      <div class="kvs">
-        <Row label="Sequence">{entry.id.replace(/\//g, ' › ')}</Row>
-        {alias.length > 0 && !p.settings.hiddenKeys.includes('name') && <Row label="Also called">{alias.join(' · ')}</Row>}
-        <TagRows keys={keys} f={ef} icons={icons} hidden={p.settings.hiddenKeys} />
-      </div>
-      </div>
-      {about.length > 0 && (
-        <Fold id="joseki-description" title="About">
-          {about.map((t, i) => <p key={i} class="desc"><Rich segments={t.segments} h={p.refs} /></p>)}
-        </Fold>
-      )}
-      {others.length > 0 && (
-        <p class="also">Also part of: {others.map((l) => <button key={l} class="chip" onClick={() => p.onOpenLabel(l)}>{p.entryName(l)}</button>)}</p>
-      )}
-    </div>
-  )
+/** A short text for a link: the page of a Sensei's Library address, else the address without "https://". */
+const linkText = (url: string) => {
+  const m = url.match(/^https?:\/\/senseis\.xmp\.net\/\?(.+)$/)
+  return m ? `Sensei's Library: ${decodeURIComponent(m[1])}` : url.replace(/^https?:\/\//, '')
 }
 
-/* ---------- Right: Position evaluation ---------- */
+/* ---------- Left: the current position ---------- */
 
-export function PositionEval(p: Common) {
+/**
+ * Everything about the current position in one panel: its name and the sequence it belongs to (with the
+ * sequence's own tags, read from its start), its main move, its tags and its comments.
+ */
+export function PositionInfo(p: Common & { onOpenLabel: (id: string) => void; onCopyLink?: (id: string) => void }) {
   const { ctx, path } = p
   const step = path[path.length - 1]
   if (!inBook(ctx, step)) return <p class="hint">Not in your databases. Keep playing, or save your line.</p>
-  const pf = lineFields(ctx, path) // values inherited from earlier positions of the line count too
   const icons = p.settings.icons
-  const keys = pf.keys().filter((k) => !isSequenceKey(k))
+  const hidden = p.settings.hiddenKeys
+  const label = primaryLabel(ctx, path)
+  const entry = label ? ctx.graph.entries.get(label)! : null
+  const at = label ? labelStart(ctx, path, label) : 0
+  const ef = label ? entryFields(ctx, label, path[at]) : null
+  const crumbs = crumbsOf(ctx, path)
+  const others = labelsAt(ctx.graph, step.key, ctx.active).filter((l) => l !== label && ctx.graph.entries.get(l)?.defined)
+  const pf = lineFields(ctx, path) // values inherited from earlier positions of the line count too
+  const keys = pf.keys().filter((k) => !isSequenceKey(k) && k !== 'main')
+  const seqKeys = ef ? ef.keys().filter((k) => isSequenceKey(k) && k !== 'name') : []
+  const alias = ef ? ef.list('name').slice(1) : []
+  const main = mainMove(ctx, step)
   const here = p.messages.filter((m) => m.place === 'position')
-  const hasValue = keys.some((k) => k !== 'board' && !p.settings.hiddenKeys.includes(k))
+  const hasValue = keys.some((k) => k !== 'board' && !hidden.includes(k))
   return (
-    <div class="pos-eval">
-      <TagRows keys={keys} f={pf} icons={icons} only="bars" hidden={p.settings.hiddenKeys} />
-      <div class="kvs pos-values"><TagRows keys={keys} f={pf} icons={icons} only="rows" hidden={p.settings.hiddenKeys} /></div>
+    <div class="position-info">
+      {entry ? (
+        <>
+          <p class="info-title"><span class="db-ul" style={{ textDecorationColor: p.dbColor(entry.contribs[0]?.db ?? '') }} title={`From ${entry.contribs[0]?.db}`}>{p.entryName(label!)}</span>{at < path.length - 1 && <span class="info-move"> · move {path.length - 1 - at}</span>}</p>
+          {crumbs.length > 1 && (
+            <div class="crumbs" aria-label="Names along this line">
+              {crumbs.map((c, i) => (
+                <span key={c}>
+                  {i > 0 && <span class="sep">›</span>}
+                  {c === label ? <b>{p.entryName(c)}</b> : <button class="link" onClick={() => p.onOpenLabel(c)}>{p.entryName(c)}</button>}
+                </span>
+              ))}
+            </div>
+          )}
+          <div class="info-links">
+            {at < path.length - 1 && <button class="link go-first" onClick={() => p.onOpenLabel(label!)}>⏮ Go to its first move{at > 0 ? ` (move ${at})` : ''}</button>}
+            {p.onCopyLink && <button class="link" onClick={() => p.onCopyLink!(label!)} title="Copy a link that opens this sequence at its first move">🔗 Copy link</button>}
+          </div>
+        </>
+      ) : (
+        <p class="hint">This position has no name yet.</p>
+      )}
+      <TagRows keys={keys} f={pf} icons={icons} only="bars" hidden={hidden} />
+      <div class="kvs pos-values">
+        {entry && <Row label="Sequence">{entry.id.replace(/\//g, ' › ')}</Row>}
+        {alias.length > 0 && !hidden.includes('name') && <Row label="Also called">{alias.join(' · ')}</Row>}
+        {ef && <TagRows keys={seqKeys} f={ef} icons={icons} hidden={hidden} />}
+        {main && <Row label="Main move"><span class="value"><MoveMark cat={main.cat} />{main.pt ? ptName(main.pt) : 'Tenuki'}</span></Row>}
+        <TagRows keys={keys} f={pf} icons={icons} only="rows" hidden={hidden} />
+      </div>
       {/* Comments: the first database's as plain text, other databases' (your own notes) as cards with their color. */}
       {here.filter((m) => m.kind === 'pos').map((m, i) =>
         m.db === ctx.order[0] ? (
@@ -210,7 +201,10 @@ export function PositionEval(p: Common) {
           <NoteCard key={'p' + i} who={m.db} color={p.dbColor(m.db)}><Rich segments={m.segments} h={p.refs} /></NoteCard>
         ),
       )}
-      {!hasValue && !here.length && <p class="hint">Nothing stored about this position yet.</p>}
+      {!hasValue && !here.length && !entry && <p class="hint">Nothing stored about this position yet.</p>}
+      {others.length > 0 && (
+        <p class="also">Also part of: {others.map((l) => <button key={l} class="chip" onClick={() => p.onOpenLabel(l)}>{p.entryName(l)}</button>)}</p>
+      )}
     </div>
   )
 }
@@ -296,6 +290,7 @@ export function NextMoves(p: Common & {
   const both = all.some((c) => c.sign === 1) && all.some((c) => c.sign === -1)
   const list = both ? all.filter((c) => c.sign === p.side) : all
   const here = primaryLabel(ctx, path)
+  const main = mainMove(ctx, step)
   const variation = (c: Candidate) => isVariation(ctx, path, c, here)
   const joseki = list.filter((c) => (!c.cat || CATEGORIES[c.cat].good) && !variation(c))
   const variations = list.filter(variation)
@@ -320,6 +315,7 @@ export function NextMoves(p: Common & {
         <MoveMark cat={c.cat} variation={variation(c)} />
         <b>{c.pt ? ptName(c.pt) : 'Tenuki'}</b>
         <span class="what">
+          {main?.edge === c.edge && <span class="main-badge" title="Main move: the line the tree and → follow">main</span>}
           {c.cat ? CATEGORIES[c.cat].label : 'Unclassified'}
           {next && next !== here && <span class="to" title={p.entryName(next)}> → {short(next)}</span>}
           {c.label ? ` · ${c.label}` : ''}

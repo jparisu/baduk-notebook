@@ -149,6 +149,13 @@ export function buildGraph(files: DbFile[]): Graph {
       edge.contribs.push({ db: at.file.db, rec: m, toCanon: at.toCanon, file: at.file.path, pos: p, move: m, label: seqOf(p.id) })
     }
 
+  // The main move (docs/MODEL.md §1) must be one of the position's own moves.
+  for (const [p, at] of placed) {
+    const main = p.tags.main
+    if (main !== undefined && !(typeof main === 'string' && p.moves.some((m) => m.to === main)))
+      g.problems.push({ file: at.file.path, id: p.id, message: `main: "${String(main)}" is not the id of a move from this position` })
+  }
+
   // 3. N: shortest distance from the starting positions (no move into them).
   const queue = [...g.nodes.values()].filter((n) => !n.parents.length).map((n) => n.key)
   for (const k of queue) g.depth.set(k, 0)

@@ -5,7 +5,7 @@
       "stones": "B:qd W:oc",
       "toPlay": "B",
       "comments": [
-        "{{White}} approaches the 3-4 stone low, on the 5-3 point. {{Black}}'s main answers are the diagonal (Shusaku's kosumi), the small knight, the kick and the pincers. Sources: 34PointLowApproach, 34PointLowApproachDiagonal, 34PointLowApproachKeima, 34PointLowApproachKick, 34PointLowApproachOneSpaceLowPincer.",
+        "{{White}} approaches the 3-4 stone low, on the 5-3 point. {{Black}}'s main answers are the diagonal (Shusaku's kosumi), the small knight, the kick and the pincers.",
         "{{TR:P17|{{White}}'s low approach}} to {{TR:R16|the 3-4 stone}}, from the open side. Low approach (small knight approach) on the 5-3 point. It stops {{Black}} from enclosing the corner and aims to settle along the top."
       ],
       "tags": {
@@ -23,7 +23,11 @@
         ],
         "difficulty": "20k",
         "sources": [
-          "Sensei's Library (senseis.xmp.net), joseki pages listed in XSUM. Sequences copied from its diagrams and mirrored to the top-right corner."
+          "https://senseis.xmp.net/?34PointLowApproach",
+          "https://senseis.xmp.net/?34PointLowApproachDiagonal",
+          "https://senseis.xmp.net/?34PointLowApproachKeima",
+          "https://senseis.xmp.net/?34PointLowApproachKick",
+          "https://senseis.xmp.net/?34PointLowApproachOneSpaceLowPincer"
         ],
         "era": [
           "classic",

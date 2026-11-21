@@ -11,14 +11,14 @@ import { apply, applySign, compose, cornerWindow, inverse, ptName, userTransform
 import type { Mark } from './core/refs'
 import { applyTheme, loadSettings, saveSettings, type Settings } from './settings'
 import {
-  candidates, displayBoard, entryFields, frame, inBook, labelStart, moveOf, movesOf, playFree, positionFields, primaryLabel,
+  candidates, displayBoard, mainLine, mainMove, entryFields, frame, inBook, labelStart, moveOf, movesOf, playFree, positionFields, primaryLabel,
   replay, rootStep, startStep, toMove, type Candidate, type Ctx, type Start, type Step,
 } from './view'
 import { collectMessages } from './messages'
 import { Board } from './ui/Board'
 import { Tree } from './ui/Tree'
 import { Stack, Workbench } from './ui/Workbench'
-import { CategoryDot, JosekiInfo, LastMove, MoveMark, NextMoves, PositionEval, isVariation } from './ui/Panels'
+import { CategoryDot, LastMove, MoveMark, NextMoves, PositionInfo, isVariation } from './ui/Panels'
 import { Card } from './ui/Card'
 import { type RefHandlers } from './ui/Rich'
 import { SettingsDialog } from './ui/SettingsDialog'
@@ -92,7 +92,7 @@ export function App() {
   const [tool, setTool] = useState<Tool>('move')
   const [pending, setPending] = useState<Pt[]>([])
   const [refType, setRefType] = useState<string | null>(null)
-  const [phoneTab, setPhoneTab] = useState<'next' | 'pos' | 'tree' | 'about' | 'edit'>('next')
+  const [phoneTab, setPhoneTab] = useState<'next' | 'pos' | 'tree' | 'edit'>('next')
   const [toast, setToast] = useState<string | null>(null)
   // Design tab (SPEC §8.10)
   const [onlyNew, setOnlyNew] = useState(false)
@@ -104,7 +104,6 @@ export function App() {
   }
   /** Moves that existed when Design was opened ("parent>child"): the others are new (Only new). */
   const known = useRef<Set<string> | null>(null)
-  const [designTab, setDesignTab] = useState<'move' | 'pos' | 'name'>('move')
   const [showFolded, setShowFolded] = useState(false)
   const [ctxMenu, setCtxMenu] = useState<{ line: Step[]; x: number; y: number } | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Step[] | null>(null)
@@ -128,7 +127,8 @@ export function App() {
   const settling = useRef(false)
   const onPointRef = useRef<(pt: Pt) => void>(() => {})
   const latest = useRef<{ start: Start; path: Step[] }>({ start: { kind: 'empty' }, path: [] })
-  const phone = useMedia('(max-width: 700px)')
+  // Three columns only fit with the board at its full size above 1100px; below, the panels stack under the board.
+  const phone = useMedia('(max-width: 1100px)')
 
   const setSettings = (s: Settings) => {
     setSettingsState(s)
@@ -284,8 +284,11 @@ export function App() {
     resetMarks()
     setLine((l) => {
       if (!ctx || !l.path.length) return l
+      // Only moves you stepped back over are kept as the future; otherwise the line ahead (your last line
+      // through here, else the main line) is worked out again at each step, so a new main move counts at once.
+      if (l.future.length) return { path: [...l.path, l.future[0]], future: l.future.slice(1) }
       const ahead = shownAhead(l)
-      return ahead.length ? { path: [...l.path, ahead[0]], future: ahead.slice(1) } : l
+      return ahead.length ? { path: [...l.path, ahead[0]], future: [] } : l
     })
   }
   const toStart = () => {
@@ -390,6 +393,27 @@ export function App() {
     const loc = locate(w, ctx!, at, target, primaryLabel(ctx!, at), true)!
     setTags(w, loc, on, values)
     commit(msg)
+  }
+
+  /** Focuses the first of these fields that exists, once the panel has drawn the new position. */
+  function focusLater(...ids: string[]) {
+    setTimeout(() => {
+      const el = ids.map((id) => document.getElementById(id)).find(Boolean)
+      el?.scrollIntoView({ block: 'nearest' })
+      el?.focus()
+    }, 60)
+  }
+
+  /**
+   * Makes the last move of `at` the main move of the position before it (docs/MODEL.md §1): the `main` tag
+   * of that position, in the target database, names the id the move leads to.
+   */
+  function makeMain(at: Step[]) {
+    if (at.length < 2) return
+    const child = locate(w, ctx!, at, target, primaryLabel(ctx!, at), true)!
+    const parent = locate(w, ctx!, at.slice(0, -1), target, primaryLabel(ctx!, at.slice(0, -1)), true)!
+    setTags(w, parent, 'pos', { main: child.pos.id })
+    commit(`Main move saved in ${target}`)
   }
 
   function onPoint(pt: Pt) {
@@ -687,7 +711,7 @@ export function App() {
     }
     return null
   })()
-  const forwardLine = line.future.length ? line.future : fromTrail ?? mainLineEnd(ctx, path).slice(path.length)
+  const forwardLine = line.future.length ? line.future : fromTrail ?? mainLine(ctx, path)
   aheadRef.current = { path, ahead: forwardLine }
   const ZOOMS = [0.6, 0.75, 0.9, 1, 1.15, 1.35, 1.6]
   const zoomIdx = Math.max(0, ZOOMS.findIndex((z) => z >= settings.treeZoom - 0.001))
@@ -798,6 +822,7 @@ export function App() {
       target={target}
       commit={commit}
       onFocusText={(el) => (lastText.current = el)}
+      onMakeMain={makeMain}
       onDeleteMove={() => {
         if (deleteMove(w, path, target)) {
           setLine({ path: path.slice(0, -1), future: [] })
@@ -816,7 +841,7 @@ export function App() {
   const nextMoves = <NextMoves {...common} side={side} setSide={setSide} highlighted={highlighted} onHighlight={setHighlighted} onPlay={playCandidate} />
 
   /* Left: search, this joseki, evaluation. Right: tree, last move (or edit), next moves. Fixed-size panels. */
-  const josekiInfo = <JosekiInfo {...common} onOpenLabel={onOpenLabel} onCopyLink={(id) => copyLink(linkFor(ctx, { kind: 'label', id }, [startStep(ctx, { kind: 'label', id })], { corner: 'tr', mirror: false, swap: false }), entryName(id))} />
+  const positionInfo = <PositionInfo {...common} onOpenLabel={onOpenLabel} onCopyLink={(id) => copyLink(linkFor(ctx, { kind: 'label', id }, [startStep(ctx, { kind: 'label', id })], { corner: 'tr', mirror: false, swap: false }), entryName(id))} />
   const leftPanel = (
     <aside class="side-panel left" aria-label="Search and joseki information">
       <Stack
@@ -824,8 +849,7 @@ export function App() {
         head={startBar}
         items={[
           { id: 'search', title: 'Search positions', icon: <Search size={15} />, weight: 1.3, body: library },
-          { id: 'joseki', title: 'This joseki', icon: <BookOpen size={15} />, weight: 1, body: josekiInfo },
-          ...(!edit ? [{ id: 'eval', title: 'Position evaluation', icon: <Grid3x3 size={15} />, weight: 0.8, body: <PositionEval {...common} /> }] : []),
+          { id: 'position', title: 'Position', icon: <Grid3x3 size={15} />, weight: 1.6, body: positionInfo },
         ]}
       />
     </aside>
@@ -980,12 +1004,12 @@ export function App() {
         )}
         <button role="menuitem" onClick={() => { writeAt(ctxMenu.line, 'pos', { status: 'end' }, 'Marked as joseki end'); setCtxMenu(null) }}>▣ Mark as joseki end</button>
         <button role="menuitem" onClick={() => { writeAt(ctxMenu.line, 'pos', { status: 'end-mistake' }, 'Marked as end after a mistake'); setCtxMenu(null) }}>▣ Mark as end after a mistake</button>
-        <button role="menuitem" onClick={() => { setDesignTab('pos'); setCtxMenu(null); setTimeout(() => document.getElementById('f-pos-status')?.focus(), 50) }}>Set the result…</button>
-        <button role="menuitem" onClick={() => { setDesignTab('move'); setCtxMenu(null); setTimeout(() => document.getElementById('f-move-comment')?.focus(), 50) }}>Edit why…</button>
+        <button role="menuitem" onClick={() => { go(ctxMenu.line); setCtxMenu(null); focusLater('f-pos-status', 'add-tag-pos') }}>Set the result…</button>
+        <button role="menuitem" onClick={() => { go(ctxMenu.line); setCtxMenu(null); focusLater('f-move-comment') }}>Edit why…</button>
         <hr />
-        <button role="menuitem" onClick={() => { setDesignTab('name'); setCtxMenu(null); setTimeout(() => document.getElementById('f-name-new')?.focus(), 50) }}>⚑ Name a joseki from here…</button>
+        <button role="menuitem" onClick={() => { go(ctxMenu.line); setCtxMenu(null); focusLater('f-name-new', 'f-pos-name') }}>⚑ Name a joseki from here…</button>
         {ctxLast.edge && (
-          <button role="menuitem" onClick={() => { if (promote(w, ctxMenu.line, target)) commit('This is now the main line'); else flash(`Only moves stored in ${target} can be reordered here.`); setCtxMenu(null) }}>Make this the main line</button>
+          <button role="menuitem" onClick={() => { makeMain(ctxMenu.line); setCtxMenu(null) }}>Make this the main move</button>
         )}
         <button role="menuitem" onClick={() => { copyLink(linkFor(ctx, start, ctxMenu.line, settings.display), 'this position'); setCtxMenu(null) }}>Copy link</button>
         <hr />
@@ -1080,23 +1104,14 @@ export function App() {
       </section>
   )
   const designInfo = (
-      <section class="card design-info" aria-label="Selected move and position">
-            <div class="info-head">
-              <div class="seg" role="tablist">
-                {(['move', 'pos', 'name'] as const).map((t) => (
-                  <button key={t} role="tab" aria-selected={designTab === t} class={designTab === t ? 'on' : ''} onClick={() => setDesignTab(t)}>
-                    {{ move: 'Move', pos: 'Position', name: 'Name' }[t]}
-                  </button>
-                ))}
-              </div>
-            </div>
+      <section class="card design-info" aria-label="Selected position">
             <EditPanel
               ws={w}
               ctx={ctx}
               path={path}
               target={target}
                       commit={commit}
-              only={designTab}
+              onMakeMain={makeMain}
               onFocusText={(el) => (lastText.current = el)}
               onDeleteMove={() => deleteAt(path)}
             />
@@ -1136,8 +1151,8 @@ export function App() {
   )
 
   const phoneTabs: [typeof phoneTab, string][] = edit
-    ? [['edit', 'Edit'], ['next', 'Next'], ['tree', 'Tree'], ['about', 'About']]
-    : [['next', 'Next'], ['pos', 'Position'], ['tree', 'Tree'], ['about', 'About']]
+    ? [['edit', 'Edit'], ['pos', 'Position'], ['next', 'Next'], ['tree', 'Tree']]
+    : [['next', 'Next'], ['pos', 'Position'], ['tree', 'Tree']]
   const tab = phoneTabs.some(([t]) => t === phoneTab) ? phoneTab : phoneTabs[0][0]
   const explore = phone ? (
     <>
@@ -1163,9 +1178,8 @@ export function App() {
         <div class="card"><div class="card-body">
           {tab === 'edit' && editPanel}
           {tab === 'next' && nextMoves}
-          {tab === 'pos' && <PositionEval {...common} />}
+          {tab === 'pos' && positionInfo}
           {tab === 'tree' && <>{treeToolbar}<div class="tree-box">{treeView}</div>{treeLegend}</>}
-          {tab === 'about' && josekiInfo}
         </div></div>
       </section>
       <div class="bottom-bar" role="toolbar" aria-label="Move navigation">{navButtons}</div>
@@ -1175,7 +1189,7 @@ export function App() {
       id="explore"
       cols={[
         { id: 'left', name: 'left', label: 'Search · Joseki', width: 300, min: 220, max: 560, node: leftPanel },
-        { id: 'center', node: <main class="center">{status}{sideSwitch}{boardEl}<div class="nav">{navButtons}</div>{editToolbar}{viewOptions}</main> },
+        { id: 'center', min: 600, node: <main class="center">{status}{sideSwitch}{boardEl}<div class="nav">{navButtons}</div>{editToolbar}{viewOptions}</main> },
         { id: 'right', name: 'right', label: 'Tree · Moves', width: 390, min: 260, max: 640, node: rightPanel },
       ]}
     />
@@ -1326,13 +1340,3 @@ function rebaseLine(path: Step[], source: Step[]): Step[] {
   return out.slice(path.length)
 }
 
-function mainLineEnd(ctx: Ctx, path: Step[]): Step[] {
-  const out = [...path]
-  const seen = new Set(out.map((s) => s.key))
-  for (;;) {
-    const c = candidates(ctx, out[out.length - 1])[0]
-    if (!c || seen.has(c.step.key) || (c.cat && !CATEGORIES[c.cat].good)) return out
-    seen.add(c.step.key)
-    out.push(c.step)
-  }
-}

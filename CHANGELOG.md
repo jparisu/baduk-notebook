@@ -15,6 +15,13 @@
 - `scripts/migrate-0.2.mjs` converted the databases (same 165 positions and 161 moves); the old one-off SGF conversion scripts were removed.
 - Drafts saved in the browser by an earlier version are not restored (new storage key).
 
+### Position-first interface
+- **One Position panel** replaces "This joseki" and "Position evaluation": the sequence the position belongs to (name, other names, topics, difficulty, sources), its main move, its tags and its comments.
+- **One editor** in Explore (Edit) and Design: the position (comments, tags, main move), its name, then the move into it from the previous position of your line. The Move / Position / Name tabs of Design are gone. The move part only appears once the previous position is in a database, since the same position can be reached by several moves.
+- **Main move** of each position: the `main` tag, chosen in the editor or with **Make this the main move** in the tree; by default the first stored move. The tree and → follow it, unless you have walked another line through the position; → now works the line ahead out again at each step, so a new main move counts at once. Next moves marks it.
+- **Board size** is set in text units (40em) and never grows when the window gets smaller: side columns shrink to their minimum first, and below 1100px the panels stack under the board.
+- The Sensei's Library page names that were written into four joseki descriptions ("Sources: 33PointInvasion, …") are now links in their `sources` tag.
+
 ### Fixes
 - Right after a deploy, the site could fail with "Could not load the databases: JSON.parse…" because the browser reused the previous version's file list. Database files are now always revalidated, and only `.json` files are loaded.
 

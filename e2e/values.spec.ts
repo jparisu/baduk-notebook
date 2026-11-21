@@ -18,9 +18,7 @@ test('a key described in the Known tags dialog can be added in the editor and is
   await page.locator('#add-tag-key-pos').fill('ladder')
   await page.locator('.add-tag.open').getByRole('button', { name: 'Add' }).click()
   await page.locator('#f-pos-ladder').check()
-  await expect(page.locator('.pos-values')).toHaveCount(0) // the evaluation card is replaced by the editor in Edit mode
-  await page.locator('.top').getByRole('button', { name: 'Editing' }).click()
-  await expect(page.locator('.pos-values')).toContainText('Ladder')
+  await expect(page.locator('.pos-values')).toContainText('Ladder') // the Position panel shows it at once
   await page.getByRole('button', { name: /Export/ }).click()
   await expect(page.locator('.file-list')).toContainText('db/tags.json')
 })
@@ -54,17 +52,17 @@ test('Settings hide the keys you do not want to see', async ({ page }) => {
   await expect(page.locator('.pos-values')).toContainText('White plays first')
 })
 
-test('This joseki shows the tags of the sequence and keeps its About header in view', async ({ page }) => {
-  await page.setViewportSize({ width: 1366, height: 768 })
+test('the Position panel shows the position with the tags of its sequence and its main move', async ({ page }) => {
   await openEntry(page, 'Bent four', 'Corner')
+  const panel = page.locator('[data-card=position]')
   // Topics are one group of chips, on one row.
-  await expect(page.locator('[data-card=joseki] .f', { hasText: 'Topics' }).locator('.value')).toHaveCount(3)
-  await expect(page.locator('[data-card=joseki] .fold-head', { hasText: 'About' })).toHaveCount(0) // at the start, its comments are the position's
+  await expect(panel.locator('.f', { hasText: 'Topics' }).locator('.value')).toHaveCount(3)
   await openEntry(page, '3-3 invasion')
   await page.keyboard.press('ArrowRight')
-  const card = (await page.locator('[data-card=joseki]').boundingBox())!
-  const h = (await page.locator('[data-card=joseki] .fold-head', { hasText: 'About' }).boundingBox())!
-  expect(h.y + h.height).toBeLessThanOrEqual(card.y + card.height + 1)
+  await expect(panel).toContainText('Sequence')
+  await expect(panel.locator('.f', { hasText: 'Main move' })).toContainText('R16')
+  await expect(panel.locator('.f', { hasText: 'Sources' }).locator('a').first()).toHaveAttribute('href', 'https://senseis.xmp.net/?33PointInvasion')
+  await expect(page.locator('[data-card=joseki]')).toHaveCount(0)
 })
 
 test('a move from another database has a line in its color under the tree node; Settings change that color', async ({ page }) => {

@@ -5,7 +5,7 @@
       "stones": "B:qd W:od",
       "toPlay": "B",
       "comments": [
-        "{{White}} approaches the 3-4 stone high, on the 5-4 point. The usual answer is the inside attachment, hane and draw back (tsuke-hiki), one of the first joseki beginners learn. {{White}} then protects with a solid or a hanging connection. Sources: 34PointHighApproach, 34PointHighApproachInsideContact, 34PointHighApproachAttachDrawbackJoseki, 34PointHighApproachInsideContactHangingConnection.",
+        "{{White}} approaches the 3-4 stone high, on the 5-4 point. The usual answer is the inside attachment, hane and draw back (tsuke-hiki), one of the first joseki beginners learn. {{White}} then protects with a solid or a hanging connection.",
         "{{TR:P16|{{White}}'s high approach}} to {{TR:R16|the 3-4 stone}}. High approach on the 5-4 point: faces the center more than the low approach and leaves the corner to {{Black}}."
       ],
       "tags": {
@@ -25,7 +25,10 @@
         ],
         "difficulty": "20k",
         "sources": [
-          "Sensei's Library (senseis.xmp.net), joseki pages listed in XSUM. Sequences copied from its diagrams and mirrored to the top-right corner."
+          "https://senseis.xmp.net/?34PointHighApproach",
+          "https://senseis.xmp.net/?34PointHighApproachInsideContact",
+          "https://senseis.xmp.net/?34PointHighApproachAttachDrawbackJoseki",
+          "https://senseis.xmp.net/?34PointHighApproachInsideContactHangingConnection"
         ],
         "era": [
           "classic",

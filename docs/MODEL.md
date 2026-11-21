@@ -20,6 +20,11 @@ A position is the stones on a local area of the board plus **who plays next**.
 
 Nothing else is a fixed field: a position's name, evaluation, status, difficulty… are tags.
 
+**Main move:** every position with moves has one main move, the line the tree and → follow by default.
+The position's `main` tag names the id the main move leads to (it must be one of its moves); without
+it, the main move is the first move stored from the position, unless that is a bad move. Once you
+have walked another line through a position, the tree and → follow the last line you took instead (§7).
+
 **Same position:** two positions are the same when one is a rotation or reflection of the other
 (8 symmetries), with the same colors and the same player to move. Colors are **not** swapped.
 Black to play and White to play, with the same stones, are different positions; a tenuki joins them.
@@ -82,6 +87,7 @@ Keys the app itself relies on:
 | `topics` | positions | Free nested words (`life & death/corner`, `ko`) used by the library to find sequences (§4). |
 | `difficulty` | positions | A rank; the library and the quiz filter by it. |
 | `board` | both | Shapes drawn on the board (§3.2). |
+| `main` | positions | The id the main move leads to (§1). Set with **Main move** in the editor or **Make this the main move** in the tree. |
 
 ### 3.2 The `board` tag and references in comments
 
@@ -192,7 +198,8 @@ The tree draws the graph around the line you are on.
 ### Your trail
 - The app remembers the lines you visit in this session (the **trail**).
 - **Ahead** of the current move the tree shows, in this order: the moves you stepped back over; the
-  last line you saw through this position (from the trail); the main line. → and End follow it.
+  last line you saw through this position (from the trail); the main line (the main move of each
+  position, §1). → and End follow it, and it is worked out again at each step.
 - A move that is not in any database (free play) opens a new branch at that point.
 - The trail is kept in the browser with the session.
 
@@ -223,8 +230,17 @@ The tree draws the graph around the line you are on.
 
 ## 8. Editing
 
-In **Edit**, the panel shows the move into the current position and the position itself, in the
-database that receives the edits:
+In **Edit** and in **Design**, one panel edits the current position, in the database that receives the
+edits, from top to bottom:
+
+1. **The position:** its comments, its tags and its **main move** (a list of its next moves).
+2. **Its name:** at the start of a sequence, its names, id and placement; elsewhere, naming the
+   position starts a new sequence there.
+3. **The move into it:** the move from the previous position of your line. The same position can be
+   reached by other moves, and each keeps its own comments and tags, so this part belongs to the
+   move, not to the position. It can only be described once the previous position is in a database.
+
+In each part:
 
 - **Comments:** one box each; add as many as you like, empty one or press × to remove it.
 - **Tags:** the record shows only the tags it has, plus the ones `db/tags.json` suggests (the `kind`
@@ -234,8 +250,6 @@ database that receives the edits:
   choose its type. A new plain key (text, list, number, yes/no) lives only in the data. A new key
   whose type cannot be told from its value (options, a color, a rank, a balance) is also described in
   `db/tags.json`. **Rename a key…** renames a key that is not described, keeping its value.
-- **Name:** at the start of a sequence, its names, its id and its placement; elsewhere, naming the
-  position starts a new sequence there.
 
 ## 9. Storage, merging and validation
 

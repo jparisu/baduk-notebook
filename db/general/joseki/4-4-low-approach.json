@@ -5,7 +5,7 @@
       "stones": "B:pd W:nc",
       "toPlay": "B",
       "comments": [
-        "{{White}} approaches the 4-4 stone with a small knight's move, the most common star point approach. {{Black}} answers by extending (small knight or one-space high), pincering, kicking, attaching, or playing elsewhere. Sources: 44PointLowApproach, 44PointLowApproachLowExtensionSlide33, 44PointLowApproachHighExtension, 44PointLowApproachAttach, 44PointOneSpaceLowPincerInvasionBlock.",
+        "{{White}} approaches the 4-4 stone with a small knight's move, the most common star point approach. {{Black}} answers by extending (small knight or one-space high), pincering, kicking, attaching, or playing elsewhere.",
         "{{TR:O17|{{White}}'s low approach}} to {{TR:Q16|the 4-4 stone}}, along the top. The approach from the other side is the same position mirrored. Small knight approach (keima kakari). It threatens to slide into the corner at {{CR:Q18}} or to extend along the top, and it is the approach that strong players and AI programs prefer."
       ],
       "tags": {
@@ -24,7 +24,11 @@
         ],
         "difficulty": "20k",
         "sources": [
-          "Sensei's Library (senseis.xmp.net), joseki pages listed in XSUM. Sequences copied from its diagrams and mirrored to the top-right corner."
+          "https://senseis.xmp.net/?44PointLowApproach",
+          "https://senseis.xmp.net/?44PointLowApproachLowExtensionSlide33",
+          "https://senseis.xmp.net/?44PointLowApproachHighExtension",
+          "https://senseis.xmp.net/?44PointLowApproachAttach",
+          "https://senseis.xmp.net/?44PointOneSpaceLowPincerInvasionBlock"
         ],
         "era": [
           "classic",

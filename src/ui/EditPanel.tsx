@@ -1,7 +1,9 @@
 /**
- * Edit panel (docs/MODEL.md §8): the comments and tags of the current move and position in the target
- * database. A record only shows the tags it has (plus the ones db/tags.json suggests and the values a
- * position inherits); any key can be added, removed or created on the spot.
+ * Edit panel (docs/MODEL.md §8): everything about the current position, in the target database —
+ * its comments, tags and main move, its name, and then the move that led to it from the previous
+ * position of your line. The same position can be reached by other moves, so the move's data is
+ * stored apart, on that move. A record only shows the tags it has (plus the ones db/tags.json suggests
+ * and the values a position inherits); any key can be added, removed or created on the spot.
  * Writing anything on a move played freely saves the line up to it.
  */
 import { useState } from 'preact/hooks'
@@ -15,7 +17,8 @@ import { locate, nameSequence, renameTag, setComments, setTags, type Location, t
 import { updateRegistry } from '../edit/workspace'
 import { isStartId, seqOf } from '../core/model'
 import type { Workspace } from '../edit/workspace'
-import { frame, isInherited, lineFields, primaryLabel, type Ctx, type Step } from '../view'
+import { apply, ptName } from '../core/geometry'
+import { candidates, entryFields, frame, inBook, isInherited, lineFields, mainMove, moveOf, primaryLabel, rootStep, type Ctx, type Step } from '../view'
 
 export interface EditApi {
   ws: Workspace
@@ -25,12 +28,12 @@ export interface EditApi {
   commit: (msg?: string) => void
   onFocusText: (el: HTMLTextAreaElement) => void
   onDeleteMove: () => void
-  /** Design tab: show one group (the move, the position or its name) instead of everything. */
-  only?: 'move' | 'pos' | 'name'
+  /** Makes the last move of a line the main move of the position before it. */
+  onMakeMain: (line: Step[]) => void
 }
 
 /** Keys edited in their own place, not in the tag list. */
-const OWN_PLACE = new Set(['name'])
+const OWN_PLACE = new Set(['name', 'main'])
 
 export function EditPanel(p: EditApi) {
   const { ctx, path } = p
@@ -278,31 +281,42 @@ export function EditPanel(p: EditApi) {
     if (err) return p.commit(err)
     p.commit(`This sequence is now ${seq}`)
   }
-  const show = (g: 'move' | 'pos' | 'name') => !p.only || p.only === g
   const names = asList(read('pos', 'name'))
+  const next = candidates(ctx, step)
+  const main = mainMove(ctx, step, next)
+  // The move into this position, from the previous position of your line.
+  const prev = hasMove ? path[path.length - 2] : null
+  const m = moveOf(step)
+  const moveName = prev && m ? `${(frame(ctx, prev).swap ? -m.sign : m.sign) === 1 ? 'Black' : 'White'} ${m.pt ? ptName(apply(frame(ctx, prev), m.pt)) : 'tenuki'}` : ''
+  const prevLabel = prev ? primaryLabel(ctx, path.slice(0, -1)) : null
+  const prevName = prevLabel ? entryFields(ctx, prevLabel, rootStep(ctx, prevLabel)).text('name') || seqOf(prevLabel).split('/').pop() : null
 
   return (
     <div class="edit-panel">
-      {p.only === 'move' && !hasMove && <p class="hint">This is the start of the line: select a move in the tree.</p>}
-      {hasMove && show('move') && (
-        <section aria-label="This move">
-          {keysOf('move').filter(buttons).map((k) => tagRow('move', k))}
-          {comments('move', 'Why this move is good or bad. {{Player}} = who played it, {{Opponent}} = the other.')}
-          <h3 class="tags-h">Tags of this move</h3>
-          {keysOf('move').filter((k) => !buttons(k)).map((k) => tagRow('move', k))}
-          {addTag('move')}
-        </section>
-      )}
-
-      {show('pos') && <section aria-label="This position">
+      <section aria-label="This position">
         <h2>This position</h2>
         {comments('pos', 'What this position means: the result, what tenuki gives, what to watch out for… {{Player}} = who plays next.')}
-        <h3 class="tags-h">Tags of this position</h3>
+        <h3 class="tags-h">Tags</h3>
         {keysOf('pos').map((k) => tagRow('pos', k))}
         {addTag('pos')}
-      </section>}
+        {next.length > 0 && (
+          <label class="f edit-f">
+            <span class="fl">Main move</span>
+            <span class="fv">
+              <select id="f-pos-main" value={main ? String(next.indexOf(main)) : ''} onChange={(e) => {
+                const c = next[Number((e.target as HTMLSelectElement).value)]
+                if (c) p.onMakeMain([...path, c.step])
+              }}>
+                {!main && <option value="">—</option>}
+                {next.map((c, i) => <option key={i} value={String(i)}>{c.pt ? ptName(c.pt) : 'Tenuki'}{c.label ? ` · ${c.label}` : ''}</option>)}
+              </select>
+              <small class="hint">The line the tree and → follow from here, until you take another one.</small>
+            </span>
+          </label>
+        )}
+      </section>
 
-      {show('name') && <section>
+      <section aria-label="Name">
         <h2>Name</h2>
         {definesHere ? (
           <>
@@ -350,9 +364,26 @@ export function EditPanel(p: EditApi) {
             </div>
           </form>
         )}
-      </section>}
+      </section>
 
-      {targetOwnsMove && show('move') && <button class="danger" onClick={p.onDeleteMove}>Delete this move and what follows from {p.target}</button>}
+      {hasMove && (
+        <section aria-label="The move into this position" class="move-in">
+          <h2>The move into it · {moveName}</h2>
+          {inBook(ctx, prev!) ? (
+            <>
+              <p class="hint">From {prevName ? <b>{prevName}</b> : 'the previous position'}, the one before it on your line. Other moves can reach this position too; each keeps its own comments and tags.</p>
+              {keysOf('move').filter(buttons).map((k) => tagRow('move', k))}
+              {comments('move', 'Why this move is good or bad. {{Player}} = who played it, {{Opponent}} = the other.')}
+              <h3 class="tags-h">Tags</h3>
+              {keysOf('move').filter((k) => !buttons(k)).map((k) => tagRow('move', k))}
+              {addTag('move')}
+              {targetOwnsMove && <button class="danger" onClick={p.onDeleteMove}>Delete this move and what follows from {p.target}</button>}
+            </>
+          ) : (
+            <p class="hint">The previous position is not in a database yet. Store it first (annotate it, or Save lines); then this move can be described.</p>
+          )}
+        </section>
+      )}
     </div>
   )
 }

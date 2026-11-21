@@ -11,7 +11,7 @@ test('starts at the empty corner and recognizes the joseki as you play', async (
   await expect(page.locator('.next-moves .mv').first()).toBeVisible() // the 4-4 connector opens its joseki
   await clickPoint(page, 'R17')
   await expect(page.locator('.status')).toContainText('3-3 invasion')
-  await expect(page.locator('.joseki-info')).toContainText('4-4 point · 3-3 invasion')
+  await expect(page.locator('.position-info')).toContainText('4-4 point · 3-3 invasion')
   await expect(page.locator('.why-card')).toContainText('Takes the corner')
   await expect(page.locator('.next-moves .mv').first()).toContainText('Q17')
 })
@@ -43,9 +43,9 @@ test('hovering a reference draws its marks on the board', async ({ page }) => {
 test('switching a database off hides its notes', async ({ page }) => {
   await openEntry(page, '3-3 invasion')
   for (const p of ['R17', 'Q17', 'R16', 'R15', 'Q18', 'P18']) await clickPoint(page, p) // the line of the jparisu notes
-  await expect(page.locator('.pos-eval .note-card')).toContainText('Remember')
+  await expect(page.locator('.position-info .note-card')).toContainText('Remember')
   await page.locator('.top .layer', { hasText: 'jparisu' }).locator('input').uncheck()
-  await expect(page.locator('.pos-eval .note-card')).toHaveCount(0)
+  await expect(page.locator('.position-info .note-card')).toHaveCount(0)
 })
 
 test('orientation controls move the corner', async ({ page }) => {

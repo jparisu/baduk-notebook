@@ -19,7 +19,9 @@ test('builds a mistake line: right-click to classify, name it, save it, export i
   await page.locator('.dtree-canvas .tree-node', { hasText: 'S18' }).click({ button: 'right' })
   await page.locator('.ctx-menu').getByRole('menuitem', { name: 'Mistake', exact: true }).click()
   await expect(page.locator('.toast')).toContainText('Saved as mistake in jparisu')
-  await page.locator('.design-info').getByRole('tab', { name: 'Name' }).click()
+  // The selected position: one panel with its tags, its name and the move into it.
+  await page.locator('.dtree-canvas .tree-node', { hasText: 'S18' }).click()
+  await expect(page.locator('.design-info .move-in')).toContainText('White S18')
   await page.locator('#f-name-new').fill('3-3 point · 2-2 invasion')
   await page.getByRole('button', { name: 'Name this position' }).click()
   await expect(page.locator('.design-board .status')).toContainText('2-2 invasion')
@@ -59,7 +61,7 @@ test('the library shows mistake joseki only when asked', async ({ page }) => {
   await clickPoint(page, 'S18')
   await page.locator('.dtree-canvas .tree-node', { hasText: 'S18' }).click({ button: 'right' })
   await page.locator('.ctx-menu').getByRole('menuitem', { name: 'Mistake', exact: true }).click()
-  await page.locator('.design-info').getByRole('tab', { name: 'Name' }).click()
+  await page.locator('.dtree-canvas .tree-node', { hasText: 'S18' }).click()
   await page.locator('#f-name-new').fill('2-2 invasion')
   await page.getByRole('button', { name: 'Name this position' }).click()
   await page.locator('.top .modes').getByText('Explore').click()
@@ -86,6 +88,19 @@ test('Only new shows the start position and only the moves added in Design', asy
 test('position fields show the value inherited from earlier moves until you write your own', async ({ page }) => {
   await openDesign(page, './?open=joseki/4-4+point')
   await clickPoint(page, 'S12') // a new move: the position has no explanation of its own
-  await page.locator('.design-info').getByRole('tab', { name: 'Position' }).click()
   await expect(page.locator('.design-info .hint.inherited').first()).toContainText('Inherited from the start')
+})
+
+test('the main move of a position is chosen in the editor, and the tree and → follow it', async ({ page }) => {
+  await openDesign(page, './?open=joseki/4-4+point/3-3+invasion')
+  for (let i = 0; i < 2; i++) await page.keyboard.press('ArrowRight') // Black Q17, White R16: Black has three answers
+  const main = page.locator('#f-pos-main')
+  const before = await main.locator('option:checked').textContent()
+  const other = (await main.locator('option').allTextContents()).find((t) => t !== before)!
+  await main.selectOption({ label: other })
+  await expect(page.locator('.toast')).toContainText('Main move saved in jparisu')
+  await expect(main.locator('option:checked')).toHaveText(other)
+  await main.blur() // arrow keys go to the board, not to the list
+  await page.keyboard.press('ArrowRight')
+  await expect(page.locator('.design-board .status')).toContainText(`Move 3: Black ${other.split(' ')[0]}`)
 })
