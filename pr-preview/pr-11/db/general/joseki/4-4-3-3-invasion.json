@@ -5,7 +5,7 @@
       "stones": "B:pd W:qc",
       "toPlay": "B",
       "comments": [
-        "{{White}} takes the corner and {{Black}}'s base. {{Black}} chooses which side gets the wall, then picks a sente variation (extend, knight's move) or the territorial double hane. Sources: 33PointInvasion, 44Point33InvasionJoseki, 44Point33InvasionHaneExtend, 44Point33InvasionExtendSmallKnight, 44Point33InvasionDoubleHane.",
+        "{{White}} takes the corner and {{Black}}'s base. {{Black}} chooses which side gets the wall, then picks a sente variation (extend, knight's move) or the territorial double hane.",
         "{{Black}} chooses the direction of the wall with the block."
       ],
       "tags": {
@@ -22,7 +22,11 @@
         ],
         "difficulty": "15k",
         "sources": [
-          "Sensei's Library (senseis.xmp.net), joseki pages listed in XSUM. Sequences copied from its diagrams and mirrored to the top-right corner."
+          "https://senseis.xmp.net/?33PointInvasion",
+          "https://senseis.xmp.net/?44Point33InvasionJoseki",
+          "https://senseis.xmp.net/?44Point33InvasionHaneExtend",
+          "https://senseis.xmp.net/?44Point33InvasionExtendSmallKnight",
+          "https://senseis.xmp.net/?44Point33InvasionDoubleHane"
         ],
         "era": [
           "classic",
