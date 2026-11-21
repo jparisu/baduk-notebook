@@ -9,7 +9,7 @@ import { search, userViewFor, type Match } from '../core/search'
 import { parseSgfPt, parseSgfPtList, ptName, type DisplayOptions, type Pt, type Sign, type SignMap } from '../core/geometry'
 import { candidates, rootStep, type Ctx, type Step } from '../view'
 import type { Settings } from '../settings'
-import { CATEGORIES } from '../core/fields'
+import { CATEGORIES } from '../core/kinds'
 import { IDENTITY } from '../core/geometry'
 
 type Tool = 'B' | 'W' | 'alt' | 'erase'

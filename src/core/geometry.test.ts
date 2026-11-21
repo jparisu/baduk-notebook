@@ -52,11 +52,18 @@ describe('player words in texts', () => {
   })
 })
 
-import { parseText, propMarks } from './refs'
+import { boardMarks, parseText, writeBoard } from './refs'
 import { IDENTITY as ID } from './geometry'
-describe('eye marks', () => {
-  it('are read from the position and from text references', () => {
-    expect(propMarks({ XEYEM: ['ra'] })).toEqual([{ type: 'EYE', pts: [[17, 0]] }])
+describe('board marks', () => {
+  it('the board tag uses the reference syntax, and writes back the same', () => {
+    const entries = ['TR:Q16,R17', 'LB:Q16=A', 'AR:Q16-R14', 'EYE:S19']
+    const marks = boardMarks(entries)
+    expect(marks.find((m) => m.type === 'EYE')).toEqual({ type: 'EYE', pts: [[17, 0]] })
+    expect(marks.find((m) => m.type === 'LB')).toEqual({ type: 'LB', pts: [[15, 3]], label: 'A' })
+    expect(writeBoard(marks)).toEqual(['TR:Q16,R17', 'LB:Q16=A', 'AR:Q16-R14', 'EYE:S19'])
+    expect(boardMarks(['nonsense', 'ZZ:Q16'])).toEqual([])
+  })
+  it('eyes are read from text references', () => {
     const seg = parseText('Two {{EYE:S19,T18|eyes}}.', ID, 'x')
     expect(seg.some((s) => 'ref' in s && s.ref.every((m) => m.type === 'EYE'))).toBe(true)
   })

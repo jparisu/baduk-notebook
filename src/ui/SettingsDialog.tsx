@@ -1,6 +1,6 @@
 /** Settings dialog (SPEC §8.8). */
-import { getSchema } from '../core/schema'
-import { CATEGORIES, MOVE_CATEGORIES, type Category } from '../core/fields'
+import { labelOf } from '../core/tags'
+import { CATEGORIES, MOVE_CATEGORIES, type Category } from '../core/kinds'
 import { DEFAULT_SETTINGS, type Settings, type Theme } from '../settings'
 import type { DatabaseInfo } from '../data/load'
 
@@ -10,8 +10,10 @@ const THEMES: [Theme, string, string][] = [
   ['minimal', 'Minimalist', 'Black and white, flat, square'],
 ]
 
-export function SettingsDialog({ s, set, close, databases, active, toggleDb }: {
+export function SettingsDialog({ s, set, close, databases, active, toggleDb, tagKeys }: {
   s: Settings
+  /** Every tag key described in db/tags.json or used in the databases, in display order. */
+  tagKeys: string[]
   set: (s: Settings) => void
   close: () => void
   databases: DatabaseInfo[]
@@ -71,13 +73,13 @@ export function SettingsDialog({ s, set, close, databases, active, toggleDb }: {
             </label>
           ))}
         </div>
-        <h3>Values shown</h3>
-        <p class="hint">The keys of positions and moves (db/schema.json) shown in the panels. They stay in the editor.</p>
+        <h3>Tags shown</h3>
+        <p class="hint">Tags of positions and moves shown in the panels: the ones described in db/tags.json and every key used in your databases. Hidden tags stay in the editor.</p>
         <div class="cat-grid">
-          {getSchema().fields.filter((f) => f.key !== 'category').map((f) => (
-            <label key={f.key} class="cat-row">
-              <input type="checkbox" checked={!(s.hiddenKeys ?? []).includes(f.key)} onChange={() => up('hiddenKeys', (s.hiddenKeys ?? []).includes(f.key) ? s.hiddenKeys.filter((x) => x !== f.key) : [...(s.hiddenKeys ?? []), f.key])} />
-              {f.label} <small class="hint">{{ move: 'move', position: 'position', sequence: 'joseki' }[f.for]}</small>
+          {tagKeys.filter((k) => k !== 'kind').map((k) => (
+            <label key={k} class="cat-row">
+              <input type="checkbox" checked={!(s.hiddenKeys ?? []).includes(k)} onChange={() => up('hiddenKeys', (s.hiddenKeys ?? []).includes(k) ? s.hiddenKeys.filter((x) => x !== k) : [...(s.hiddenKeys ?? []), k])} />
+              {labelOf(k)} {labelOf(k) !== k && <small class="hint">{k}</small>}
             </label>
           ))}
         </div>

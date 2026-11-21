@@ -5,16 +5,20 @@
       "stones": "B:qd,qe,qf,rc,rd,rf,sc,sf W:pc,pd,pe,pf,pg,qb,qc,qg,rb,rg,sb,sg",
       "toPlay": "B",
       "free": "horizontal",
-      "name": "Bent three · side · enclosed",
-      "notes": [
+      "comments": [
+        "Three points with a bend. Like straight three, the point in the middle of the bend decides the result.",
         "{{SQ:T16,T15,S15|The 3-point eye space}}. {{CR:T15|The bend}} is the vital point.",
         "One eye space of 3 points",
         "0 outside liberties"
       ],
-      "values": {
+      "tags": {
+        "name": [
+          "Bent three · side · enclosed",
+          "曲三"
+        ],
         "black-first": "B-alive",
         "white-first": "B-dead",
-        "tags": [
+        "topics": [
           "eye shape",
           "killable eye shape"
         ],
@@ -24,101 +28,102 @@
         "inside-stones": "0",
         "arrangement": "connected",
         "difficulty": "25k",
-        "summary": "Three points with a bend. Like straight three, the point in the middle of the bend decides the result.",
-        "aliases": [
-          "曲三"
-        ],
         "sources": [
           "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search."
         ]
-      },
-      "moves": [
-        {
-          "move": "se",
-          "to": "life & death/Bent three/Side, enclosed/Black vital point",
-          "notes": [
-            "Takes the vital point. {{SQ:T16}} and {{SQ:S15}} become two separate eyes."
-          ],
-          "values": {
-            "category": "main"
-          }
-        },
-        {
-          "move": "tenuki",
-          "to": "life & death/Bent three/Side, enclosed/White first"
-        },
-        {
-          "move": "re",
-          "to": "life & death/Bent three/Side, enclosed/Black S15",
-          "notes": [
-            "Leaves {{SQ:T16,T15|a two-point space}}, which is only one eye."
-          ],
-          "values": {
-            "category": "mistake"
-          }
-        }
-      ]
+      }
     },
     {
       "id": "life & death/Bent three/Side, enclosed/Black vital point",
       "stones": "B:qd,qe,qf,rc,rd,rf,sc,se,sf W:pc,pd,pe,pf,pg,qb,qc,qg,rb,rg,sb,sg",
       "toPlay": "W",
       "free": "horizontal",
-      "name": "Black vital point",
-      "notes": [
+      "comments": [
         "Two eyes"
       ],
-      "values": {
+      "tags": {
+        "name": [
+          "Black vital point"
+        ],
         "black-first": "B-alive",
         "white-first": "B-alive"
-      },
-      "moves": []
+      }
     },
     {
       "id": "life & death/Bent three/Side, enclosed/White first/White vital point",
       "stones": "B:qd,qe,qf,rc,rd,rf,sc,sf W:pc,pd,pe,pf,pg,qb,qc,qg,rb,rg,sb,se,sg",
       "toPlay": "B",
       "free": "horizontal",
-      "name": "White vital point",
-      "notes": [
+      "comments": [
         "One eye"
       ],
-      "values": {
+      "tags": {
+        "name": [
+          "White vital point"
+        ],
         "black-first": "B-dead",
         "white-first": "B-dead"
-      },
-      "moves": []
+      }
     },
     {
       "id": "life & death/Bent three/Side, enclosed/White first",
       "stones": "B:qd,qe,qf,rc,rd,rf,sc,sf W:pc,pd,pe,pf,pg,qb,qc,qg,rb,rg,sb,sg",
       "toPlay": "W",
       "free": "horizontal",
-      "name": "White first",
-      "moves": [
-        {
-          "move": "se",
-          "to": "life & death/Bent three/Side, enclosed/White first/White vital point",
-          "notes": [
-            "Takes the vital point. {{Black}} can make only one eye."
-          ],
-          "values": {
-            "category": "main"
-          }
-        }
-      ]
+      "tags": {
+        "name": [
+          "White first"
+        ]
+      }
     },
     {
       "id": "life & death/Bent three/Side, enclosed/Black S15",
       "stones": "B:qd,qe,qf,rc,rd,re,rf,sc,sf W:pc,pd,pe,pf,pg,qb,qc,qg,rb,rg,sb,sg",
       "toPlay": "W",
       "free": "horizontal",
-      "name": "Black S15",
-      "values": {
+      "tags": {
+        "name": [
+          "Black S15"
+        ],
         "black-first": "B-dead",
         "white-first": "B-dead"
-      },
-      "moves": []
+      }
+    }
+  ],
+  "moves": [
+    {
+      "from": "life & death/Bent three/Side, enclosed",
+      "to": "life & death/Bent three/Side, enclosed/Black vital point",
+      "comments": [
+        "Takes the vital point. {{SQ:T16}} and {{SQ:S15}} become two separate eyes."
+      ],
+      "tags": {
+        "kind": "main"
+      }
+    },
+    {
+      "from": "life & death/Bent three/Side, enclosed",
+      "to": "life & death/Bent three/Side, enclosed/White first"
+    },
+    {
+      "from": "life & death/Bent three/Side, enclosed",
+      "to": "life & death/Bent three/Side, enclosed/Black S15",
+      "comments": [
+        "Leaves {{SQ:T16,T15|a two-point space}}, which is only one eye."
+      ],
+      "tags": {
+        "kind": "mistake"
+      }
+    },
+    {
+      "from": "life & death/Bent three/Side, enclosed/White first",
+      "to": "life & death/Bent three/Side, enclosed/White first/White vital point",
+      "comments": [
+        "Takes the vital point. {{Black}} can make only one eye."
+      ],
+      "tags": {
+        "kind": "main"
+      }
     }
   ]
 }

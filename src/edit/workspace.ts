@@ -6,7 +6,7 @@ import { get, set, del } from 'idb-keyval'
 import { structuredPatch } from 'diff'
 import type { DatabaseInfo } from '../data/load'
 import { parseDbFile, writeDbFile, type DbFile } from '../core/model'
-import { getSchema, parseSchema, setSchema, writeSchema, type Schema } from '../core/schema'
+import { getRegistry, parseRegistry, setRegistry, writeRegistry, type TagRegistry } from '../core/tags'
 import { storageKey } from '../storage'
 
 export interface WorkFile extends DbFile {
@@ -20,26 +20,27 @@ export interface Workspace {
   originalIndex: string
   dirty: Set<string>
   indexDirty: boolean
-  /** The value schema (db/schema.json), editable in the app. */
-  schema: Schema
-  originalSchema: string
-  schemaDirty: boolean
+  /** The tag descriptions (db/tags.json), editable in the app. */
+  registry: TagRegistry
+  originalRegistry: string
+  registryDirty: boolean
   version: number
 }
 
-const DRAFT_KEY = storageKey('baduk-notebook.drafts.v2')
+// v3: the 0.2 data model (positions and moves with comments and tags).
+const DRAFT_KEY = storageKey('baduk-notebook.drafts.v3')
 
 interface Draft {
   databases: DatabaseInfo[] | null
-  schema?: Schema | null
+  registry?: TagRegistry | null
   files: { db: string; path: string; text: string; isNew: boolean }[]
 }
 
-export function createWorkspace(databases: DatabaseInfo[], loaded: { db: string; path: string; text: string }[], schemaText = writeSchema(getSchema())): Workspace {
+export function createWorkspace(databases: DatabaseInfo[], loaded: { db: string; path: string; text: string }[], tagsText = writeRegistry(getRegistry())): Workspace {
   return {
-    schema: parseSchema(schemaText),
-    originalSchema: schemaText,
-    schemaDirty: false,
+    registry: parseRegistry(tagsText),
+    originalRegistry: tagsText,
+    registryDirty: false,
     files: loaded.map((f) => ({ ...parseDbFile(f.db, f.path, f.text), original: f.text })),
     databases,
     originalIndex: indexText(databases),
@@ -60,37 +61,43 @@ export async function restoreDrafts(ws: Workspace): Promise<number> {
     return 0
   }
   if (!draft) return 0
-  if (draft.schema) {
-    // Before the files: reading them follows the schema.
-    ws.schema = draft.schema
-    ws.schemaDirty = true
-    setSchema(draft.schema)
+  if (draft.registry) {
+    ws.registry = draft.registry
+    ws.registryDirty = true
+    setRegistry(draft.registry)
   }
   if (draft.databases) {
     ws.databases = draft.databases
     ws.indexDirty = true
   }
+  let n = 0
   for (const f of draft.files) {
-    const positions = parseDbFile(f.db, f.path, f.text).positions
+    let parsed
+    try {
+      parsed = parseDbFile(f.db, f.path, f.text)
+    } catch {
+      continue // a draft this version cannot read
+    }
     const existing = ws.files.find((x) => x.path === f.path)
-    if (existing) existing.positions = positions
-    else ws.files.push({ db: f.db, path: f.path, positions, original: null })
+    if (existing) Object.assign(existing, { positions: parsed.positions, loose: parsed.loose })
+    else ws.files.push({ ...parsed, original: null })
     ws.dirty.add(f.path)
+    n++
   }
   ws.version++
-  return draft.files.length + (draft.databases ? 1 : 0) + (draft.schema ? 1 : 0)
+  return n + (draft.databases ? 1 : 0) + (draft.registry ? 1 : 0)
 }
 
 export async function saveDrafts(ws: Workspace) {
   const draft: Draft = {
     databases: ws.indexDirty ? ws.databases : null,
-    schema: ws.schemaDirty ? ws.schema : null,
+    registry: ws.registryDirty ? ws.registry : null,
     files: ws.files
       .filter((f) => ws.dirty.has(f.path))
       .map((f) => ({ db: f.db, path: f.path, text: writeDbFile(f), isNew: f.original === null })),
   }
   try {
-    if (!draft.files.length && !draft.databases && !draft.schema) await del(DRAFT_KEY)
+    if (!draft.files.length && !draft.databases && !draft.registry) await del(DRAFT_KEY)
     else await set(DRAFT_KEY, draft)
   } catch {
     /* storage unavailable: drafts live only in this tab */
@@ -104,18 +111,18 @@ export async function discardDrafts(ws: Workspace) {
     /* ignore */
   }
   ws.files = ws.files.filter((f) => f.original !== null)
-  for (const f of ws.files) if (ws.dirty.has(f.path)) f.positions = parseDbFile(f.db, f.path, f.original!).positions
+  for (const f of ws.files) if (ws.dirty.has(f.path)) Object.assign(f, parseDbFile(f.db, f.path, f.original!), { original: f.original })
   ws.dirty.clear()
   ws.databases = JSON.parse(ws.originalIndex).databases
   ws.indexDirty = false
-  ws.schema = parseSchema(ws.originalSchema)
-  ws.schemaDirty = false
-  setSchema(ws.schema)
+  ws.registry = parseRegistry(ws.originalRegistry)
+  ws.registryDirty = false
+  setRegistry(ws.registry)
   ws.version++
 }
 
 export function changeCount(ws: Workspace) {
-  return ws.dirty.size + (ws.indexDirty ? 1 : 0) + (ws.schemaDirty ? 1 : 0)
+  return ws.dirty.size + (ws.indexDirty ? 1 : 0) + (ws.registryDirty ? 1 : 0)
 }
 
 /* ---- Export ---- */
@@ -129,7 +136,7 @@ export interface Change {
 export function changes(ws: Workspace, onlyDbs?: Set<string>): Change[] {
   const out: Change[] = []
   if (ws.indexDirty) out.push({ path: 'db/index.json', before: ws.originalIndex, after: indexText(ws.databases) })
-  if (ws.schemaDirty) out.push({ path: 'db/schema.json', before: ws.originalSchema, after: writeSchema(ws.schema) })
+  if (ws.registryDirty) out.push({ path: 'db/tags.json', before: ws.originalRegistry, after: writeRegistry(ws.registry) })
   for (const f of ws.files) {
     if (!ws.dirty.has(f.path) || (onlyDbs && !onlyDbs.has(f.db))) continue
     const after = writeDbFile(f)
@@ -176,10 +183,10 @@ export function download(name: string, data: Blob | string, type = 'text/plain')
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-/** Replaces the value schema (the Fields dialog). */
-export function updateSchema(ws: Workspace, schema: Schema) {
-  ws.schema = schema
-  ws.schemaDirty = writeSchema(schema) !== ws.originalSchema
-  setSchema(schema)
+/** Replaces the tag descriptions (the Keys dialog, or a key created in the editor). */
+export function updateRegistry(ws: Workspace, registry: TagRegistry) {
+  ws.registry = registry
+  ws.registryDirty = writeRegistry(registry) !== ws.originalRegistry
+  setRegistry(registry)
   ws.version++
 }

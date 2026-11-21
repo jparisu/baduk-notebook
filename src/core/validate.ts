@@ -1,9 +1,9 @@
-/** Database validator (SPEC §10.1 "Checks before export", §12.4). Used by the app and by CI. */
-import type { DbFile } from './model'
+/** Database validator (docs/MODEL.md §9). Used by the app before export and by CI. */
+import type { DbFile, Rec } from './model'
 import { buildGraph } from './graph'
-import { playerWords } from './refs'
-import { fieldOfProp, keyOf } from './schema'
-import { parsePt, parseSgfPt, parseSgfPtList } from './geometry'
+import { MARK_TYPES, playerWords } from './refs'
+import { asList, defOf, type TagValue } from './tags'
+import { parsePt } from './geometry'
 
 export interface Issue {
   severity: 'error' | 'warning'
@@ -12,54 +12,72 @@ export interface Issue {
   message: string
 }
 
-const POINT_LISTS = ['TR', 'SQ', 'CR', 'MA', 'XTB', 'XTW', 'XCUT', 'XEYEM', 'XWEAK', 'XLAD', 'XMOYO']
-const POINT_PAIRS = ['AR', 'LN', 'XWALL', 'XINF']
-const TEXT = ['XMW', 'XPW', 'XSUM']
-/** Properties that are not schema values. */
-const OWN = new Set([...POINT_LISTS, ...POINT_PAIRS, ...TEXT, 'LB', 'XNAME', 'XTAG', 'XLINK'])
-const REF_TYPES = new Set(['TR', 'SQ', 'CR', 'MA', 'LB', 'AR', 'LN', 'WALL', 'INF', 'TB', 'TW', 'CUT', 'EYE'])
+const REF_TYPES = new Set<string>(MARK_TYPES)
+export const RANK = /^([1-9]|[12]\d|30)k$|^[1-9]d$|^[1-9]p$/
+
+function checkPoints(body: string, where: string, push: (m: string) => void) {
+  const pts = body.split(/[,\-:]/).map((p) => p.split('=')[0]).filter(Boolean)
+  for (const p of pts) if (!parsePt(p)) push(`Invalid point "${p}" in "${where}"`)
+}
 
 function checkRefs(text: string, push: (m: string) => void) {
   text = playerWords(text, false, 1) // {{Black}}, {{Player}}… are words, not board references
   for (const m of text.matchAll(/\{\{([A-Z]+):([^|}]*)(?:\|[^}]*)?\}\}/g)) {
     if (!REF_TYPES.has(m[1])) push(`Unknown visual reference type "${m[1]}" in "${m[0]}"`)
-    const pts = m[2].split(/[,\-:]/).map((p) => p.split('=')[0]).filter(Boolean)
-    for (const p of pts) if (!parsePt(p)) push(`Invalid point "${p}" in "${m[0]}"`)
+    checkPoints(m[2], m[0], push)
   }
   const opens = (text.match(/\{\{/g) ?? []).length, closes = (text.match(/\}\}/g) ?? []).length
   if (opens !== closes) push('Unbalanced {{ }} in text')
+  // Anything else in braces would be shown as raw text: {{R16}} needs a type, e.g. {{CR:R16|R16}}.
+  for (const m of text.replace(/\{\{([A-Z]+):[^|}]*(?:\|[^}]*)?\}\}/g, '').matchAll(/\{\{[^}]*\}\}/g)) push(`"${m[0]}" is not a board reference: write it as {{TYPE:points|words}}, e.g. {{CR:Q16|Q16}}`)
 }
 
-function checkProps(d: Record<string, string[]>, err: (m: string, sev?: Issue['severity']) => void) {
-  for (const [k, vals] of Object.entries(d)) {
-    if (POINT_LISTS.includes(k)) for (const v of vals) if (!parseSgfPtList(v).length) err(`${k}[${v}] is not a valid point`)
-    if (POINT_PAIRS.includes(k))
-      for (const v of vals) {
-        const [a, b] = v.split(':')
-        if (!a || !b || !parseSgfPt(a) || !parseSgfPt(b)) err(`${k}[${v}] must be two points like pd:qc`)
+/** A tag's value against its description in db/tags.json. Keys that are not described accept any plain value. */
+export function checkTag(key: string, v: TagValue, err: (m: string) => void) {
+  const ok = typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean' || (Array.isArray(v) && v.every((x) => typeof x === 'string'))
+  if (!ok) return err(`${key}: a tag holds text, a number, true/false or a list of texts`)
+  const d = defOf(key)
+  if (!d) return
+  const opts = d.options?.map((o) => o.value) ?? []
+  const vals = asList(v)
+  switch (d.type) {
+    case 'choice':
+      if (Array.isArray(v)) err(`${key} takes one value`)
+      for (const x of vals) if (!opts.includes(x)) err(`${key}: "${x}" is not one of ${opts.join(', ')}`)
+      break
+    case 'multi':
+      for (const x of vals) if (!opts.includes(x)) err(`${key}: "${x}" is not one of ${opts.join(', ')}`)
+      break
+    case 'slider':
+      if (typeof v !== 'number' || Math.abs(v) > 1) err(`${key}: ${v} must be a number from -1 to 1`)
+      break
+    case 'number':
+      if (typeof v !== 'number') err(`${key}: ${v} must be a number`)
+      break
+    case 'flag':
+      if (typeof v !== 'boolean') err(`${key}: must be true or false`)
+      break
+    case 'color':
+      if (!['B', 'W', 'none'].includes(String(v))) err(`${key}: ${v} must be B, W or none`)
+      break
+    case 'rank':
+      if (!RANK.test(String(v))) err(`${key}: ${v} must look like 15k, 2d or 1p`)
+      break
+    case 'board':
+      for (const e of vals) {
+        const m = e.match(/^([A-Z]{2,4}):(.+)$/)
+        if (!m || !REF_TYPES.has(m[1])) err(`${key}: "${e}" must look like TR:Q16 or AR:Q16-R14`)
+        else checkPoints(m[2], e, err)
       }
-    if (TEXT.includes(k)) for (const v of vals) checkRefs(v, (m) => err(m, 'warning'))
-    if (OWN.has(k)) continue
-    // Values: the schema (db/schema.json) says which keys exist and what they accept.
-    const f = fieldOfProp(k)
-    const key = keyOf(k)
-    if (!f) {
-      err(`Unknown key "${key}": add it to db/schema.json`, 'warning')
-      continue
-    }
-    const opts = f.options?.map((o) => o.value) ?? []
-    for (const v of vals) {
-      if ((f.type === 'choice' || f.type === 'multi') && !opts.includes(v)) err(`${key}: "${v}" is not one of ${opts.join(', ')}`)
-      if (f.type === 'slider' && !(Number.isFinite(Number(v)) && Math.abs(Number(v)) <= 1)) err(`${key}: ${v} must be a number from -1 to 1`)
-      if (f.type === 'color' && !['B', 'W', 'none'].includes(v)) err(`${key}: ${v} must be B, W or none`)
-    }
-    if (f.type === 'choice' && vals.length > 1) err(`${key} takes one value`)
   }
-  if (d.XDIFF && !/^([1-9]|[12]\d|30)k$|^[1-9]d$/.test(d.XDIFF[0])) err(`difficulty ${d.XDIFF[0]} must look like 15k or 2d`)
-  if (d.XPB && !Number.isFinite(Number(d.XPB[0]))) err(`balance ${d.XPB[0]} must be a number`)
 }
 
-/** Validates the JSON databases (docs/MODEL.md): fields, ids, and that every move leads where it says. */
+function checkRec(r: Rec, err: (m: string, sev?: Issue['severity']) => void) {
+  for (const c of r.comments) checkRefs(c, (m) => err(m))
+  for (const [k, v] of Object.entries(r.tags)) checkTag(k, v, err)
+}
+
+/** Validates the JSON databases: ids, tags, and that every move goes from one position to the next. */
 export function validateAll(files: DbFile[], known: Set<string>): Issue[] {
   const issues: Issue[] = []
   for (const f of files) {
@@ -69,21 +87,11 @@ export function validateAll(files: DbFile[], known: Set<string>): Issue[] {
       const err = (message: string, severity: Issue['severity'] = 'error') => issues.push({ severity, file: f.path, id: p.id, message })
       if (!/^[^:]+(:\d+[a-z]*)?$/.test(p.id)) err(`Id "${p.id}" must look like "joseki/4-4 point" or "joseki/4-4 point:5"`)
       if (!['B', 'W'].includes(p.toPlay)) err('toPlay must be B or W')
-      checkProps(p.data, err)
-      for (const m of p.moves) {
-        if (m.move !== 'tenuki' && !parseSgfPt(m.move)) err(`Invalid move "${m.move}"`)
-        checkProps(m.data, (msg, sev) => err(`move ${m.move}: ${msg}`, sev))
-      }
+      checkRec(p, err)
+      for (const m of p.moves) checkRec(m, (msg, sev) => err(`move to ${m.to}: ${msg}`, sev))
     }
   }
   const g = buildGraph(files)
   for (const pr of g.problems) issues.push({ severity: 'error', file: pr.file, id: pr.id, message: pr.message })
-  // No two tenukis in a row.
-  for (const f of files)
-    for (const p of f.positions)
-      for (const m of p.moves.filter((m) => m.move === 'tenuki')) {
-        const next = files.find((x) => x.db === f.db && x.positions.some((q) => q.id === m.to))?.positions.find((q) => q.id === m.to)
-        if (next?.moves.some((x) => x.move === 'tenuki')) issues.push({ severity: 'error', file: f.path, id: p.id, message: 'Two tenukis in a row' })
-      }
   return issues
 }

@@ -1,5 +1,5 @@
 /** SVG Go board: stones, next-move markers, markup and overlays (SPEC §8.3, §11). */
-import { CATEGORIES, type Category } from '../core/fields'
+import { CATEGORIES, type Category } from '../core/kinds'
 import { colName, SIZE, type Pt, type SignMap } from '../core/geometry'
 import type { Mark } from '../core/refs'
 

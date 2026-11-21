@@ -14,14 +14,15 @@ test('game scenario: mark the opponent\'s unknown move as a mistake and my answe
   await expect(page.locator('.offbook-pill')).toHaveCount(0)
   await clickPoint(page, 'S15') // my answer
   await page.locator('.cat-btn', { hasText: 'Punishment' }).click()
-  await page.locator('#f-XEV').fill('0.5') // the evaluation slider, toward Black
-  await page.locator('#f-node-XMW').fill('Cuts off the hane stone.')
-  await page.locator('#f-node-XMW').blur()
+  await page.locator('#f-pos-evaluation').fill('0.5') // the evaluation slider (inherited from the line), toward Black
+  await page.locator('#f-move-comment').fill('Cuts off the hane stone.')
+  await page.locator('#f-move-comment').blur()
   await page.getByRole('button', { name: /Export \(1\)/ }).click()
   await expect(page.locator('.modal')).toContainText('All checks pass')
   await page.locator('summary', { hasText: 'Show the patch' }).click()
-  await expect(page.locator('.patch')).toContainText('"category": "mistake"')
-  await expect(page.locator('.patch')).toContainText('"category": "punish"')
+  await expect(page.locator('.patch')).toContainText('"kind": "mistake"')
+  await expect(page.locator('.patch')).toContainText('"kind": "punish"')
+  await expect(page.locator('.patch')).toContainText('"comments": [')
   await expect(page.locator('.patch')).toContainText('"evaluation": 0.5')
   const download = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Download .patch' }).click()
@@ -93,18 +94,18 @@ test('the eye mark is drawn on the board', async ({ page }) => {
   await expect(page.locator('svg.board .mark-eye')).toHaveCount(1)
 })
 
-test('a position and a move can have several notes', async ({ page }) => {
+test('a position and a move can have several comments', async ({ page }) => {
   await clickPoint(page, 'Q16')
   await clickPoint(page, 'R13') // not in the databases
   await page.getByRole('button', { name: 'Edit' }).click()
-  await page.locator('#f-node-XMW').fill('First note on the move.')
-  await page.locator('#f-node-XMW').blur()
-  await page.locator('#f-node-XMW-new').fill('Second note on the move.')
-  await page.locator('#f-node-XMW-new').blur()
-  await expect(page.locator('#f-node-XMW')).toHaveValue('First note on the move.')
-  await expect(page.locator('#f-node-XMW-1')).toHaveValue('Second note on the move.')
-  await page.locator('.note-item').first().getByRole('button', { name: 'Remove this note' }).click()
-  await expect(page.locator('#f-node-XMW')).toHaveValue('Second note on the move.')
+  await page.locator('#f-move-comment').fill('First comment on the move.')
+  await page.locator('#f-move-comment').blur()
+  await page.locator('#f-move-comment-new').fill('Second comment on the move.')
+  await page.locator('#f-move-comment-new').blur()
+  await expect(page.locator('#f-move-comment')).toHaveValue('First comment on the move.')
+  await expect(page.locator('#f-move-comment-1')).toHaveValue('Second comment on the move.')
+  await page.locator('.note-item').first().getByRole('button', { name: 'Remove this comment' }).click()
+  await expect(page.locator('#f-move-comment')).toHaveValue('Second comment on the move.')
 })
 
 test('life & death results name the color, and Swap colors flips them', async ({ page }) => {

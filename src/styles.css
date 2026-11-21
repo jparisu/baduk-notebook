@@ -6,6 +6,9 @@
 
 /* ---------- Modern (default) ---------- */
 :root {
+  /* Board size relative to the text (SPEC §8.1). */
+  --board-size: 40em;
+  --board-size-design: 33em;
   --bg: #eef1f8;
   --bg-grad: radial-gradient(1200px 600px at 10% -10%, #e0e7ff 0%, transparent 60%), radial-gradient(900px 500px at 110% 10%, #fae8ff 0%, transparent 55%), #f3f5fb;
   --panel: rgba(255, 255, 255, .82);
@@ -277,7 +280,8 @@ h3 { font-size: 13px; margin: 14px 0 6px; padding-top: 12px; border-top: 1px sol
 .status { font-size: 13px; color: var(--muted); text-align: center; display: flex; flex-wrap: wrap; justify-content: center; gap: 0 4px; }
 .status b { color: var(--fg); }
 .board-wrap { display: flex; justify-content: center; touch-action: pan-y; }
-.board { width: 100%; max-width: 600px; height: auto; display: block; filter: drop-shadow(0 12px 20px rgba(60, 40, 10, .22)); }
+/* The board has one size, in text units (it never grows to fill the space); it only shrinks when there is not enough room. */
+.board { width: 100%; max-width: var(--board-size); height: auto; display: block; filter: drop-shadow(0 12px 20px rgba(60, 40, 10, .22)); }
 :root[data-style="minimal"] .board, :root[data-style="simple"] .board { filter: none; }
 .board-bg { fill: var(--board); }
 :root[data-style="modern"] .board-bg { rx: .35px; }
@@ -409,7 +413,7 @@ h3 { font-size: 13px; margin: 14px 0 6px; padding-top: 12px; border-top: 1px sol
 @media (max-width: 1100px) {
   .layout { grid-template-columns: 230px minmax(0, 1fr); grid-template-areas: "top top" "left center" "right right" "tree tree"; }
 }
-@media (max-width: 700px) {
+@media (max-width: 1100px) {
   .layout {
     grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "center" "right" "tree"; gap: 10px;
     padding-top: calc(4px + env(safe-area-inset-top, 0px)); padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px));
@@ -419,7 +423,6 @@ h3 { font-size: 13px; margin: 14px 0 6px; padding-top: 12px; border-top: 1px sol
   .top h1 { font-size: 16px; }
   .pane { padding: 12px; border-radius: calc(var(--radius) * .8); }
   .center { padding: 10px 6px; }
-  .board { max-width: none; }
   .modal { align-items: flex-end; padding: 0; }
   .modal .box { border-radius: var(--radius) var(--radius) 0 0; max-height: 92vh; padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
   .modal .f { grid-template-columns: minmax(0, 1fr); }
@@ -498,7 +501,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 .feedback.bad { border-color: #d33232; background: color-mix(in srgb, #d33232 10%, transparent); color: var(--fg); }
 .rate { display: flex; flex-direction: column; gap: 6px; }
 .quiz-done { align-items: center; text-align: center; justify-content: center; min-height: 300px; }
-@media (max-width: 700px) {
+@media (max-width: 1100px) {
   .edit-toolbar .row > .grp-label { width: 100%; }
   .stats b { font-size: 18px; }
 }
@@ -569,7 +572,7 @@ button.link { background: none; border: none !important; padding: 0; color: var(
 @media (max-width: 1100px) {
   .layout { grid-template-columns: 260px minmax(0, 1fr); grid-template-areas: "top top" "left center" "right right"; }
 }
-@media (max-width: 700px) {
+@media (max-width: 1100px) {
   .layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "center" "right"; }
   .cat-buttons { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -621,8 +624,6 @@ button.link { background: none; border: none !important; padding: 0; color: var(
 .stone-ico { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 1px solid #000; flex: none; }
 .stone-ico.b { background: radial-gradient(circle at 35% 30%, #777, #111 55%); }
 .stone-ico.w { background: radial-gradient(circle at 35% 30%, #fff, #ddd 70%); border-color: #999; }
-.layout.hide-left .board, .layout.hide-right .board { max-width: 700px; }
-.layout.hide-left.hide-right .board { max-width: 840px; }
 
 /* left: this joseki */
 .joseki-info .info-title { font-size: 18px; font-weight: var(--head-weight); margin: 0 0 2px; text-wrap: balance; }
@@ -642,7 +643,7 @@ button.link { background: none; border: none !important; padding: 0; color: var(
 .eval-big .score { font-size: 24px; font-weight: 800; letter-spacing: -.02em; white-space: nowrap; }
 .balance-bar { position: relative; flex: 1; height: 10px; border-radius: 999px; border: 1px solid var(--line); background: linear-gradient(90deg, #f5f5f2 0 50%, #151515 50% 100%); }
 .balance-bar i { position: absolute; top: -4px; bottom: -4px; width: 4px; margin-left: -2px; border-radius: 2px; background: var(--accent); box-shadow: 0 0 0 2px var(--panel-solid); }
-.pos-text { font-size: 14px; line-height: 1.55; margin: 8px 0 0; }
+.pos-text { font-size: 15px; line-height: 1.55; margin: 8px 0 0; }
 .warn-card { display: flex; gap: 10px; align-items: flex-start; background: var(--warn-bg); border: 1px solid color-mix(in srgb, var(--warn-line) 45%, transparent); border-radius: 14px; padding: 10px 12px; margin-top: 10px; font-size: 13px; line-height: 1.5; }
 .warn-card b { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
 .warn-badge { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--warn-line); color: #1a1300; font-weight: 900; font-size: 13px; }
@@ -658,8 +659,8 @@ button.link { background: none; border: none !important; padding: 0; color: var(
 .why-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .move-badge { display: inline-flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 800; }
 .cat-pill { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; color: #fff; background: var(--cat, var(--muted)); }
-.why-text { font-size: 17px; line-height: 1.55; margin: 10px 0; font-weight: 500; }
-.why-text::before { content: "“"; font-family: Georgia, serif; font-size: 42px; line-height: 0; vertical-align: -.38em; margin-right: 4px; color: var(--cat, var(--muted)); opacity: .45; }
+.why-text { font-size: 15px; line-height: 1.55; margin: 10px 0; font-weight: 500; }
+.why-text::before { content: "“"; font-family: Georgia, serif; font-size: 32px; line-height: 0; vertical-align: -.36em; margin-right: 4px; color: var(--cat, var(--muted)); opacity: .45; }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .tag { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
 .history { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
@@ -697,7 +698,7 @@ button.link { background: none; border: none !important; padding: 0; color: var(
   .layout.hide-right { grid-template-areas: "top top" "left center" "right right"; }
   .right-rail { writing-mode: horizontal-tb; }
 }
-@media (max-width: 700px) {
+@media (max-width: 1100px) {
   .layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "center" "right"; }
 }
 .next-moves { border-top: 0; padding-top: 0; }
@@ -741,13 +742,12 @@ button.link.small { font-size: 12px; display: inline-flex; align-items: center; 
   .layout:not(.phone) { height: 100vh; grid-template-rows: auto minmax(0, 1fr); padding-bottom: 12px; overflow: hidden; }
   .layout:not(.phone) > .side, .layout:not(.phone) > .center, .layout:not(.phone) > .pane { min-height: 0; max-height: 100%; overflow: auto; }
   .layout:not(.phone) > .side { padding-right: 2px; scrollbar-width: thin; }
-  .layout:not(.phone) .board { max-width: min(640px, calc(100vh - 250px)); }
-  .layout.hide-left:not(.phone) .board, .layout.hide-right:not(.phone) .board { max-width: min(720px, calc(100vh - 250px)); }
-  .layout.hide-left.hide-right:not(.phone) .board { max-width: min(860px, calc(100vh - 250px)); }
+  /* On a short screen the board also fits the height, so the page stays one screen. */
+  .layout:not(.phone) .board { max-width: min(var(--board-size), calc(100vh - 250px)); }
   .center { gap: 8px; padding: 10px 14px; }
   .card-head { padding: 9px 12px; }
   .card-body { padding: 0 12px 12px; }
-  .why-text { font-size: 16px; margin: 6px 0 8px; }
+  .why-text { font-size: 15px; margin: 6px 0 8px; }
   .title-row h2 { font-size: 20px; }
 }
 /* Cards keep their height; the column scrolls instead of squeezing them. */
@@ -775,7 +775,7 @@ button.link.small { font-size: 12px; display: inline-flex; align-items: center; 
    ====================================================================== */
 .layout.mode-design { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "main"; }
 .design-board { display: flex; flex-direction: column; gap: 8px; }
-.design-board .board { max-width: min(460px, calc(100vh - 300px)); }
+.design-board .board { max-width: min(var(--board-size-design), calc(100vh - 300px)); }
 .design-tree { display: flex; flex-direction: column; gap: 8px; height: 100%; }
 .dtree-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .dtree-bar .seg button, .dtree-bar > button { font-size: 12px; padding: 4px 10px; }
@@ -943,3 +943,29 @@ body.dragging-y, body.dragging-y * { cursor: row-resize !important; user-select:
 /* Where something comes from: underlined in its database's color (Settings can change the colors). */
 .db-ul { text-decoration-line: underline; text-decoration-thickness: 3px; text-underline-offset: 5px; text-decoration-skip-ink: none; }
 .db-color { width: 28px; height: 22px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: none; cursor: pointer; }
+
+/* Tags in the editor (docs/MODEL.md §8): each row has its control and a remove button; "Add a tag" below. */
+.edit-panel h3.tags-h { margin: 8px 0 2px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.tag-control { display: flex; gap: 4px; align-items: center; min-width: 0; }
+.tag-control > input, .tag-control > select, .tag-control > textarea, .tag-control > .chips, .tag-control > .seg, .tag-control > .slider-col { flex: 1; min-width: 0; }
+.slider-col { display: flex; flex-direction: column; gap: 2px; }
+.tag-control > .tag-x { flex: none; padding: 2px 6px; }
+.tag-f.free-key .fl { font-style: italic; }
+.edit-f input.invalid { border-color: #d33232; }
+.add-tag { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin-top: 2px; }
+.add-tag.open { flex-direction: column; align-items: stretch; padding: 8px; border: 1px dashed var(--line); border-radius: var(--radius-sm); }
+.add-tag.open .grp { flex-wrap: wrap; }
+.add-tag.open .grp input { flex: 1 1 140px; min-width: 0; }
+.values.free-tag { font-style: italic; }
+.main-badge { margin-right: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 1px 5px; border-radius: 6px; background: var(--chip); color: var(--chip-fg); align-self: center; }
+.position-info { display: flex; flex-direction: column; gap: 6px; }
+.position-info .info-move { font-weight: 400; color: var(--muted); font-size: .85em; }
+.edit-panel .move-in { border-top: 1px solid var(--line); padding-top: 10px; }
+/* Comments of a position: each its own block, edged with its database's color, foldable. */
+.comment-card { border-left: 4px solid var(--db, var(--line)); background: var(--panel-solid, var(--panel)); border-radius: var(--radius-sm); box-shadow: 0 4px 14px -8px rgba(0, 0, 0, .35); margin-top: 8px; }
+.comment-head { display: flex; align-items: center; gap: 8px; width: 100%; background: transparent; border: none !important; padding: 6px 10px 0; text-align: left; color: var(--muted); min-height: 0; box-shadow: none; }
+.comment-card.closed .comment-head { padding-bottom: 6px; }
+.comment-head .who { font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--db, var(--muted)); text-transform: uppercase; }
+.comment-head .peek { flex: 1; min-width: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.comment-head .chev { margin-left: auto; font-size: 11px; }
+.comment-body { padding: 2px 12px 10px; font-size: 15px; line-height: 1.55; }

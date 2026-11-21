@@ -6,17 +6,16 @@
 import GoBoard from '@sabaki/go-board'
 import { canonical } from './hash'
 import { apply, compose, inverse, transformMap, type Pt, type Sign, type SignMap, type Transform } from './geometry'
-import { CATEGORIES, categoryOf, type Category, type Props } from './fields'
-import { boardOf, isStartId, movePt, seqOf, signOf, type DbFile, type Free, type MoveRec, type PosRec } from './model'
+import { CATEGORIES, categoryOf, type Category } from './kinds'
+import { boardOf, isStartId, moveBetween, movePt, seqOf, signOf, type DbFile, type Free, type MoveRec, type PosRec, type Rec } from './model'
 
-/** Fields from one database record (a position or a move), with the transform from its stored frame to the canonical frame. */
+/** One database record (a position or a move), with the transform from its stored frame to the canonical frame. */
 export interface Contribution {
   db: string
-  props: Props
+  /** The record itself: its comments and tags. */
+  rec: Rec
   toCanon: Transform
   file: string
-  /** The record that holds `props` (a position or a move); editors write into `node.data`. */
-  node: { data: Props }
   /** The position record: the position itself, or the one a move starts from. */
   pos: PosRec
   move?: MoveRec
@@ -44,7 +43,7 @@ export interface PosNode {
   parents: string[]
 }
 
-/** A sequence (docs/MODEL.md §3): its start is the position whose id has no ":N". */
+/** A sequence (docs/MODEL.md §4): its start is the position whose id has no ":N". */
 export interface Entry {
   id: string
   type: 'joseki' | 'shape'
@@ -77,6 +76,7 @@ export const freeOf = (n: PosNode | undefined): Free => n?.contribs[0]?.pos.free
 export function buildGraph(files: DbFile[]): Graph {
   const g: Graph = { nodes: new Map(), entries: new Map(), depth: new Map(), ids: new Map(), problems: [] }
   const placed = new Map<PosRec, { key: string; toCanon: Transform; board: SignMap; toMove: Sign; file: DbFile }>()
+  const recs = new Map<string, PosRec>() // "db|id"
 
   // 1. Positions.
   for (const f of files)
@@ -86,11 +86,12 @@ export function buildGraph(files: DbFile[]): Graph {
       const { key, toCanon } = canonical(board, toMove)
       if (g.ids.has(`${f.db}|${p.id}`)) g.problems.push({ file: f.path, id: p.id, message: `The id "${p.id}" is used twice in ${f.db}` })
       g.ids.set(`${f.db}|${p.id}`, key)
+      recs.set(`${f.db}|${p.id}`, p)
       placed.set(p, { key, toCanon, board, toMove, file: f })
       let n = g.nodes.get(key)
       if (!n) g.nodes.set(key, (n = { key, board: transformMap(toCanon, board), toMove, contribs: [], edges: [], parents: [] }))
       const label = seqOf(p.id)
-      const c: Contribution = { db: f.db, props: p.data, toCanon, file: f.path, node: p, pos: p, label }
+      const c: Contribution = { db: f.db, rec: p, toCanon, file: f.path, pos: p, label }
       n.contribs.push(c)
       if (isStartId(p.id)) {
         let e = g.entries.get(label)
@@ -99,12 +100,20 @@ export function buildGraph(files: DbFile[]): Graph {
       }
     }
 
-  // 2. Moves.
+  // 2. Moves: the point played is worked out from the two positions.
+  for (const f of files) for (const m of f.loose) g.problems.push({ file: f.path, id: m.from, message: `A move from "${m.from}" must be stored in the file of that position` })
+  const tenukis = new Set<string>() // "from key|to key"
   for (const [p, at] of placed)
     for (const m of p.moves) {
+      const to = recs.get(`${at.file.db}|${m.to}`)
+      if (!to) {
+        g.problems.push({ file: at.file.path, id: p.id, message: `A move points to "${m.to}", which is not in ${at.file.db}` })
+        continue
+      }
+      m.move = moveBetween(p, to) ?? ''
       const pt = movePt(m.move)
       if (m.move !== 'tenuki' && !pt) {
-        g.problems.push({ file: at.file.path, id: p.id, message: `Invalid move "${m.move}"` })
+        g.problems.push({ file: at.file.path, id: p.id, message: `No single move leads from "${p.id}" to "${m.to}"` })
         continue
       }
       let next: SignMap = at.board
@@ -117,9 +126,18 @@ export function buildGraph(files: DbFile[]): Graph {
         }
       }
       const { key, toCanon } = canonical(next, -at.toMove as Sign)
-      const target = g.ids.get(`${at.file.db}|${m.to}`)
-      if (!target) g.problems.push({ file: at.file.path, id: p.id, message: `Move ${m.move} points to "${m.to}", which is not in ${at.file.db}` })
-      else if (target !== key) g.problems.push({ file: at.file.path, id: p.id, message: `Move ${m.move} does not lead to "${m.to}"` })
+      if (g.ids.get(`${at.file.db}|${m.to}`) !== key) {
+        g.problems.push({ file: at.file.path, id: p.id, message: `Move ${m.move} does not lead to "${m.to}"` })
+        continue
+      }
+      // Two tenukis are like none: a tenuki back to the position the first one left would make a loop.
+      if (!pt) {
+        if (tenukis.has(`${key}|${at.key}`)) {
+          g.problems.push({ file: at.file.path, id: p.id, message: `Two tenukis in a row: "${m.to}" already leads here by a tenuki` })
+          continue
+        }
+        tenukis.add(`${at.key}|${key}`)
+      }
       let child = g.nodes.get(key)
       if (!child) g.nodes.set(key, (child = { key, board: transformMap(toCanon, next), toMove: -at.toMove as Sign, contribs: [], edges: [], parents: [] }))
       const parent = g.nodes.get(at.key)!
@@ -128,8 +146,15 @@ export function buildGraph(files: DbFile[]): Graph {
         parent.edges.push((edge = { child: key, sign: at.toMove, pt: pt ? apply(at.toCanon, pt) : null, rel: compose(toCanon, inverse(at.toCanon)), contribs: [] }))
         child.parents.push(at.key)
       }
-      edge.contribs.push({ db: at.file.db, props: m.data, toCanon: at.toCanon, file: at.file.path, node: m, pos: p, move: m, label: seqOf(p.id) })
+      edge.contribs.push({ db: at.file.db, rec: m, toCanon: at.toCanon, file: at.file.path, pos: p, move: m, label: seqOf(p.id) })
     }
+
+  // The main move (docs/MODEL.md §1) must be one of the position's own moves.
+  for (const [p, at] of placed) {
+    const main = p.tags.main
+    if (main !== undefined && !(typeof main === 'string' && p.moves.some((m) => m.to === main)))
+      g.problems.push({ file: at.file.path, id: p.id, message: `main: "${String(main)}" is not the id of a move from this position` })
+  }
 
   // 3. N: shortest distance from the starting positions (no move into them).
   const queue = [...g.nodes.values()].filter((n) => !n.parents.length).map((n) => n.key)
@@ -146,7 +171,7 @@ export function buildGraph(files: DbFile[]): Graph {
   // 4. Sequences that start with a bad move.
   for (const e of g.entries.values()) {
     const into = [...g.nodes.get(e.root)!.parents].flatMap((pk) => g.nodes.get(pk)!.edges.filter((ed) => ed.child === e.root))
-    const cats = into.flatMap((ed) => ed.contribs.map((c) => categoryOf(c.props))).filter((c): c is Category => !!c)
+    const cats = into.flatMap((ed) => ed.contribs.map((c) => categoryOf(c.rec.tags))).filter((c): c is Category => !!c)
     e.mistake = cats.length > 0 && cats.every((c) => !CATEGORIES[c].good)
   }
   return g
@@ -167,7 +192,7 @@ export function edgeCategory(e: Edge, active: Set<string>, order: string[]): Cat
   let best: Category | null = null, rank = -1
   for (const c of e.contribs) {
     if (!active.has(c.db)) continue
-    const cat = categoryOf(c.props)
+    const cat = categoryOf(c.rec.tags)
     const r = order.indexOf(c.db)
     if (cat && r >= rank) {
       best = cat

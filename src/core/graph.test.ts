@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { DbFile, PosRec } from './model'
 import { buildGraph, labelsAt, visibleEdges } from './graph'
 import { parsePt } from './geometry'
 import { candidates, playFree, primaryLabel, startStep } from '../view'
@@ -51,11 +52,26 @@ describe('position graph', () => {
     }
   })
 
-  it('reports a move that does not lead to the id it names', () => {
-    const bad = buildGraph([{ db: 'x', path: 'x/a.json', positions: [
-      { id: 'a', stones: '', toPlay: 'B', free: 'corner', data: {}, moves: [{ move: 'pd', to: 'a:1', data: {} }] },
-      { id: 'a:1', stones: 'B:qc', toPlay: 'W', free: 'corner', data: {}, moves: [] },
-    ] }])
-    expect(bad.problems.map((p) => p.message)).toEqual(['Move pd does not lead to "a:1"'])
+  const pos = (id: string, stones: string, toPlay: 'B' | 'W', to: string[] = []): PosRec =>
+    ({ id, stones, toPlay, free: 'corner', comments: [], tags: {}, moves: to.map((t) => ({ to: t, move: '', comments: [], tags: {} })) })
+  const file = (...positions: PosRec[]): DbFile => ({ db: 'x', path: 'x/a.json', positions, loose: [] })
+
+  it('works out the point of a move from its two positions, in any orientation', () => {
+    const g = buildGraph([file(pos('a', 'B:pd', 'W', ['a:1']), pos('a:1', 'B:dp W:cq', 'B'))]) // a:1 stored mirrored
+    expect(g.problems).toEqual([])
+    const m = g.nodes.get(g.ids.get('x|a')!)!.contribs[0].pos.moves[0]
+    expect(m.move).toBe('qc')
+  })
+
+  it('a move with only the player changed is a tenuki; a tenuki back is refused', () => {
+    const g = buildGraph([file(pos('a', 'B:pd', 'W', ['a:1']), pos('a:1', 'B:pd', 'B', ['a']))])
+    expect(g.nodes.get(g.ids.get('x|a')!)!.edges[0].pt).toBeNull()
+    expect(g.problems.map((p) => p.message)).toEqual(['Two tenukis in a row: "a" already leads here by a tenuki'])
+    expect(g.nodes.get(g.ids.get('x|a:1')!)!.edges).toEqual([])
+  })
+
+  it('reports a move that is not a single move', () => {
+    const bad = buildGraph([file(pos('a', '', 'B', ['a:1']), pos('a:1', 'B:qc,pd', 'W'))])
+    expect(bad.problems.map((p) => p.message)).toEqual(['No single move leads from "a" to "a:1"'])
   })
 })

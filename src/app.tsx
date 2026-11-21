@@ -6,34 +6,35 @@ import {
 } from 'lucide-preact'
 import { loadDatabases, type DatabaseInfo } from './data/load'
 import { buildGraph, type Graph } from './core/graph'
-import { CATEGORIES, MOVE_CATEGORIES } from './core/fields'
-import { apply, applySign, compose, cornerWindow, inverse, parseSgfPtList, ptName, userTransform, type Corner, type Pt, type Sign } from './core/geometry'
+import { CATEGORIES, MOVE_CATEGORIES } from './core/kinds'
+import { apply, applySign, compose, cornerWindow, inverse, ptName, userTransform, type Corner, type Pt, type Sign } from './core/geometry'
 import type { Mark } from './core/refs'
 import { applyTheme, loadSettings, saveSettings, type Settings } from './settings'
 import {
-  candidates, displayBoard, entryFields, frame, inBook, labelStart, moveOf, movesOf, playFree, positionFields, primaryLabel,
+  candidates, displayBoard, mainLine, mainMove, openPath, entryFields, frame, inBook, labelStart, moveOf, movesOf, playFree, positionFields, primaryLabel,
   replay, rootStep, startStep, toMove, type Candidate, type Ctx, type Start, type Step,
 } from './view'
 import { collectMessages } from './messages'
 import { Board } from './ui/Board'
 import { Tree } from './ui/Tree'
 import { Stack, Workbench } from './ui/Workbench'
-import { CategoryDot, JosekiInfo, LastMove, MoveMark, NextMoves, PositionEval, isVariation } from './ui/Panels'
+import { CategoryDot, LastMove, MoveMark, NextMoves, PositionInfo, isVariation } from './ui/Panels'
 import { Card } from './ui/Card'
 import { type RefHandlers } from './ui/Rich'
 import { SettingsDialog } from './ui/SettingsDialog'
 import { Library } from './ui/Library'
 import { useMedia } from './ui/useMedia'
 import { EditPanel } from './ui/EditPanel'
-import { ExportDialog, SchemaDialog, NewDatabaseDialog, NewEntryDialog, SaveLinesDialog, type SessionLineView } from './ui/Dialogs'
+import { ExportDialog, TagsDialog, NewDatabaseDialog, NewEntryDialog, SaveLinesDialog, type SessionLineView } from './ui/Dialogs'
 import { FindMode } from './ui/FindMode'
 import { QuizMode } from './ui/QuizMode'
 import { download } from './edit/workspace'
 import { importSgf, toSgf } from './edit/sgfx'
-import { updateSchema } from './edit/workspace'
+import { updateRegistry } from './edit/workspace'
 import { changeCount, createWorkspace, discardDrafts, restoreDrafts, saveDrafts, type Workspace } from './edit/workspace'
-import { checkMove, createDatabase, createEntry, deleteMove, locate, promote, setProps } from './edit/ops'
-import { sgfPoint } from './edit/sgfio'
+import { checkMove, createDatabase, createEntry, deleteMove, locate, promote, setTags, type On } from './edit/ops'
+import { asList, sortKeys, type TagValue } from './core/tags'
+import { boardMarks, writeBoard, type MarkType } from './core/refs'
 import { boardOf, seqName, stonesOf } from './core/model'
 import { previewName, storageKey } from './storage'
 import { decodeLine, linkFor, readUrl } from './share'
@@ -43,7 +44,7 @@ import { erase, loadPosition, loadSession, loadTrail, record, remove, savePositi
 const REF_PALETTE = ['#d81b60', '#1e88e5', '#00897b', '#f4511e', '#8e24aa', '#6d4c41', '#3949ab', '#c0ca33']
 
 type Mode = 'explore' | 'design' | 'find' | 'quiz'
-type Tool = 'move' | 'TR' | 'SQ' | 'CR' | 'MA' | 'LB' | 'XCUT' | 'XEYEM' | 'XWALL' | 'XINF' | 'AR' | 'AB' | 'AW' | 'AE'
+type Tool = 'move' | MarkType | 'AB' | 'AW' | 'AE'
 /** Edit tools: id, button text, explanation (shown on hover and long-press). */
 const TOOLS: [Tool, string, string][] = [
   ['move', 'Play', 'Play moves (saved when you annotate them or use Save lines)'],
@@ -52,16 +53,16 @@ const TOOLS: [Tool, string, string][] = [
   ['CR', '○ Circle', 'Circle mark on a point'],
   ['MA', '✕ Cross', 'X mark on a point'],
   ['LB', 'A Letter', 'Letters A, B, C… on points'],
-  ['XCUT', '✂ Cut', 'Cutting point'],
-  ['XEYEM', '◉ Eye', 'Eye: a point that is (or becomes) an eye'],
-  ['XWALL', '▬ Wall', 'Wall: a barrier of stones that stops influence (click start and end)'],
-  ['XINF', '⇢ Influence', 'Direction where a wall or group exerts influence (click start and end)'],
+  ['CUT', '✂ Cut', 'Cutting point'],
+  ['EYE', '◉ Eye', 'Eye: a point that is (or becomes) an eye'],
+  ['WALL', '▬ Wall', 'Wall: a barrier of stones that stops influence (click start and end)'],
+  ['INF', '⇢ Influence', 'Direction where a wall or group exerts influence (click start and end)'],
   ['AR', '→ Arrow', 'Plain arrow (click start and end)'],
   ['AB', '● Black stone', 'Set-up black stone (start position only)'],
   ['AW', '○ White stone', 'Set-up white stone (start position only)'],
   ['AE', '⌫ Erase stone', 'Remove a set-up stone (start position only)'],
 ]
-const PAIR_TOOLS = new Set<Tool>(['XWALL', 'XINF', 'AR'])
+const PAIR_TOOLS = new Set<Tool>(['WALL', 'INF', 'AR'])
 const SETUP_TOOLS = new Set<Tool>(['AB', 'AW', 'AE'])
 const REF_TYPES: [string, string][] = [
   ['TR', 'Triangle'], ['SQ', 'Square'], ['CR', 'Circle'], ['MA', 'Cross'], ['CUT', 'Cutting point'], ['EYE', 'Eye'], ['WALL', 'Wall'], ['INF', 'Influence'], ['AR', 'Arrow'],
@@ -91,7 +92,7 @@ export function App() {
   const [tool, setTool] = useState<Tool>('move')
   const [pending, setPending] = useState<Pt[]>([])
   const [refType, setRefType] = useState<string | null>(null)
-  const [phoneTab, setPhoneTab] = useState<'next' | 'pos' | 'tree' | 'about' | 'edit'>('next')
+  const [phoneTab, setPhoneTab] = useState<'next' | 'pos' | 'tree' | 'edit'>('next')
   const [toast, setToast] = useState<string | null>(null)
   // Design tab (SPEC §8.10)
   const [onlyNew, setOnlyNew] = useState(false)
@@ -103,7 +104,6 @@ export function App() {
   }
   /** Moves that existed when Design was opened ("parent>child"): the others are new (Only new). */
   const known = useRef<Set<string> | null>(null)
-  const [designTab, setDesignTab] = useState<'move' | 'pos' | 'name'>('move')
   const [showFolded, setShowFolded] = useState(false)
   const [ctxMenu, setCtxMenu] = useState<{ line: Step[]; x: number; y: number } | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Step[] | null>(null)
@@ -127,7 +127,8 @@ export function App() {
   const settling = useRef(false)
   const onPointRef = useRef<(pt: Pt) => void>(() => {})
   const latest = useRef<{ start: Start; path: Step[] }>({ start: { kind: 'empty' }, path: [] })
-  const phone = useMedia('(max-width: 700px)')
+  // Three columns only fit with the board at its full size above 1100px; below, the panels stack under the board.
+  const phone = useMedia('(max-width: 1100px)')
 
   const setSettings = (s: Settings) => {
     setSettingsState(s)
@@ -150,8 +151,8 @@ export function App() {
   // Load the databases, restore drafts, and reopen the last position.
   useEffect(() => {
     loadDatabases()
-      .then(async ({ databases, texts, schemaText }) => {
-        const w = createWorkspace(databases, texts, schemaText)
+      .then(async ({ databases, texts, tagsText }) => {
+        const w = createWorkspace(databases, texts, tagsText)
         const restored = await restoreDrafts(w)
         ws.current = w
         const g = buildGraph(w.files)
@@ -182,7 +183,8 @@ export function App() {
         const useShared = shared && !(shared.start.kind === 'label' && !g.entries.has(shared.start.id))
         const st: Start = useShared ? shared!.start : last?.start ?? { kind: 'empty' }
         const p = useShared ? decodeLine(c, st, shared!.line) : replay(c, st, last?.moves ?? [])
-        if (useShared && shared!.line && p.length - 1 < shared!.line.split('.').length) note = `This link's moves stop at move ${p.length - 1}: the next one cannot be played.`
+        const before = useShared ? openPath(c, st).length - 1 : 0 // moves that lead to the opened sequence
+        if (useShared && shared!.line && p.length - 1 - before < shared!.line.split('.').length) note = `This link's moves stop at move ${p.length - 1 - before}: the next one cannot be played.`
         setStart(st)
         setLine({ path: p, future: [] })
         if (note) setToast(note)
@@ -246,7 +248,7 @@ export function App() {
 
   const dbColor = (id: string) => settings.dbColors?.[id] ?? databases.find((d) => d.id === id)?.color ?? '#888'
   const entries = graph ? [...graph.entries.values()].filter((e) => e.defined && e.contribs.some((c) => shown.has(c.db))) : []
-  const entryName = (id: string) => (ctx && ctx.graph.entries.has(id) ? entryFields(ctx, id, rootStep(ctx, id)).one('XNAME')?.value ?? seqName(id) : seqName(id))
+  const entryName = (id: string) => (ctx && ctx.graph.entries.has(id) ? entryFields(ctx, id, rootStep(ctx, id)).text('name') || seqName(id) : seqName(id))
 
   const toggleDb = (id: string) => {
     const next = new Set(active)
@@ -266,7 +268,7 @@ export function App() {
   function openStart(st: Start) {
     if (!ctx) return
     setStart(st)
-    setLine({ path: [startStep(ctx, st)], future: [] })
+    setLine({ path: openPath(ctx, st), future: [] })
     setDrawer(false)
     resetMarks()
   }
@@ -283,8 +285,22 @@ export function App() {
     resetMarks()
     setLine((l) => {
       if (!ctx || !l.path.length) return l
+      // Only moves you stepped back over are kept as the future; otherwise the line ahead (your last line
+      // through here, else the main line) is worked out again at each step, so a new main move counts at once.
+      if (l.future.length) return { path: [...l.path, l.future[0]], future: l.future.slice(1) }
       const ahead = shownAhead(l)
-      return ahead.length ? { path: [...l.path, ahead[0]], future: ahead.slice(1) } : l
+      return ahead.length ? { path: [...l.path, ahead[0]], future: [] } : l
+    })
+  }
+  /** Down: one move forward, along the next variation instead of the line → follows. */
+  const down = () => {
+    if (!ctx) return
+    resetMarks()
+    setLine((l) => {
+      const ahead = shownAhead(l)[0]
+      const list = candidates(ctx, l.path[l.path.length - 1]).filter((c) => !c.cat || !settings.hiddenCategories.includes(c.cat))
+      const c = list.find((x) => x.step.key !== ahead?.key)
+      return c ? { path: [...l.path, c.step], future: [] } : l
     })
   }
   const toStart = () => {
@@ -318,7 +334,7 @@ export function App() {
         return
       }
       if (!ctx || (mode !== 'explore' && mode !== 'design') || dialog) return
-      const nav: Record<string, () => void> = { ArrowLeft: back, ArrowRight: forward, Home: toStart, End: toEnd }
+      const nav: Record<string, () => void> = { ArrowLeft: back, ArrowRight: forward, ArrowDown: down, Home: toStart, End: toEnd }
       if (nav[e.key]) {
         e.preventDefault()
         nav[e.key]()
@@ -330,13 +346,13 @@ export function App() {
       const styles: Record<string, string> = { a: 'aggressive', b: 'balanced', s: 'solid' }
       if (/^[1-8]$/.test(k) && path.length > 1 && cats[Number(k) - 1]) {
         const c = cats[Number(k) - 1]
-        writeNode({ XCAT: [c] }, `Saved as ${CATEGORIES[c].label.toLowerCase()} in ${target}`)
+        writeNode('move', { kind: c }, `Saved as ${CATEGORIES[c].label.toLowerCase()} in ${target}`)
       } else if (styles[k] && path.length > 1) {
-        writeNode({ XSTY: [styles[k]] }, `Style: ${styles[k]}`)
+        writeNode('move', { intention: [styles[k]] }, `Intention: ${styles[k]}`)
       } else if (k === 'p') {
         playFreeMove(null)
       } else if (e.key === 'Enter') {
-        document.getElementById('f-node-XMW')?.focus()
+        document.getElementById('f-move-comment')?.focus()
       } else return
       e.preventDefault()
     }
@@ -381,23 +397,35 @@ export function App() {
     resetMarks()
   }
 
-  function writeNode(values: Record<string, string[] | null>, msg?: string) {
-    writeAt(path, values, msg)
+  function writeNode(on: On, values: Record<string, TagValue | null>, msg?: string) {
+    writeAt(path, on, values, msg)
   }
-  /** Writes properties on the move/position at the end of `at` (saving the line up to it). */
-  function writeAt(at: Step[], values: Record<string, string[] | null>, msg?: string) {
+  /** Writes tags on the move or position at the end of `at` (saving the line up to it). */
+  function writeAt(at: Step[], on: On, values: Record<string, TagValue | null>, msg?: string) {
     const loc = locate(w, ctx!, at, target, primaryLabel(ctx!, at), true)!
-    if (values.XCAT) {
-      const c = values.XCAT[0]
-      Object.assign(values, {
-        TE: ['main', 'alt', 'punish'].includes(c) ? ['1'] : null,
-        BM: ['mistake', 'overplay'].includes(c) ? ['1'] : null,
-        DO: c === 'slack' ? [''] : null,
-        IT: ['situational', 'trick'].includes(c) ? [''] : null,
-      })
-    }
-    setProps(w, loc, values)
+    setTags(w, loc, on, values)
     commit(msg)
+  }
+
+  /** Focuses the first of these fields that exists, once the panel has drawn the new position. */
+  function focusLater(...ids: string[]) {
+    setTimeout(() => {
+      const el = ids.map((id) => document.getElementById(id)).find(Boolean)
+      el?.scrollIntoView({ block: 'nearest' })
+      el?.focus()
+    }, 60)
+  }
+
+  /**
+   * Makes the last move of `at` the main move of the position before it (docs/MODEL.md §1): the `main` tag
+   * of that position, in the target database, names the id the move leads to.
+   */
+  function makeMain(at: Step[]) {
+    if (at.length < 2) return
+    const child = locate(w, ctx!, at, target, primaryLabel(ctx!, at), true)!
+    const parent = locate(w, ctx!, at.slice(0, -1), target, primaryLabel(ctx!, at.slice(0, -1)), true)!
+    setTags(w, parent, 'pos', { main: child.pos.id })
+    commit(`Main move saved in ${target}`)
   }
 
   function onPoint(pt: Pt) {
@@ -410,8 +438,13 @@ export function App() {
     const first = setup && start.kind === 'label' && ctx!.graph.entries.has(start.id) ? rootStep(ctx!, start.id) : path[0]
     const loc = locate(w, ctx!, setup ? [first] : path, target, label, true)!
     const toDisplay = compose(setup ? frame(ctx!, first) : F, loc.T)
-    const sp = sgfPoint(apply(inverse(toDisplay), pt))
-    const d = loc.node.data
+    const sp = apply(inverse(toDisplay), pt)
+    const marks = boardMarks(asList(loc.pos.tags.board))
+    const same = (a: Pt, b: Pt) => a[0] === b[0] && a[1] === b[1]
+    const saveMarks = (list: Mark[]) => {
+      setTags(w, loc, 'pos', { board: writeBoard(list) })
+      commit()
+    }
     if (setup) {
       // Set-up stones change the start position itself, so only while it has no moves yet.
       if (loc.pos.moves.length) return flash('Set-up stones can only change while the start position has no moves.')
@@ -419,25 +452,21 @@ export function App() {
       const [x, y] = apply(inverse(toDisplay), pt)
       b[y][x] = tool === 'AE' ? 0 : (tool === 'AB') !== toDisplay.swap ? 1 : -1
       loc.pos.stones = stonesOf(b)
-      setProps(w, loc, {})
+      setTags(w, loc, 'pos', {})
       return commit()
     }
+    const type = tool as MarkType
     if (PAIR_TOOLS.has(tool)) {
       if (!pending.length) return setPending([pt])
-      const first = sgfPoint(apply(inverse(toDisplay), pending[0]))
+      const from = apply(inverse(toDisplay), pending[0])
       setPending([])
-      setProps(w, loc, { [tool]: [...(d[tool] ?? []), `${first}:${sp}`] })
-      return commit()
+      return saveMarks([...marks, { type, pts: [from, sp] }])
     }
-    if (tool === 'LB') {
-      const vals = d.LB ?? []
-      const has = vals.find((v) => v.startsWith(sp + ':'))
-      setProps(w, loc, { LB: has ? vals.filter((v) => v !== has) : [...vals, `${sp}:${String.fromCharCode(65 + vals.length)}`] })
-      return commit()
-    }
-    const list = (d[tool] ?? []).flatMap(parseSgfPtList).map(sgfPoint)
-    setProps(w, loc, { [tool]: list.includes(sp) ? list.filter((x) => x !== sp) : [...list, sp] })
-    commit()
+    // Point marks: a second click on the same point removes it.
+    const has = marks.find((m) => m.type === type && same(m.pts[0], sp))
+    if (has) return saveMarks(marks.filter((m) => m !== has))
+    const letter = type === 'LB' ? String.fromCharCode(65 + marks.filter((m) => m.type === 'LB').length) : undefined
+    saveMarks([...marks, { type, pts: [sp], label: letter }])
   }
 
   function insertRef() {
@@ -458,7 +487,7 @@ export function App() {
   function clearMarks() {
     const loc = locate(w, ctx!, path, target, label, false)
     if (!loc) return
-    setProps(w, loc, Object.fromEntries(['TR', 'SQ', 'CR', 'MA', 'LB', 'XCUT', 'XWALL', 'XINF', 'AR', 'LN', 'XTB', 'XTW'].map((k) => [k, null])))
+    setTags(w, loc, 'pos', { board: null })
     commit('Marks cleared on this position')
   }
 
@@ -546,7 +575,7 @@ export function App() {
   for (const m of messages) for (const s of m.segments) if ('ref' in s) refMarks.set(s.id, s.ref)
   if (label) {
     const ef = entryFields(ctx, label, path[labelStart(ctx, path, label)])
-    for (const t of ef.text('XSUM')) for (const s of t.segments) if ('ref' in s) refMarks.set(s.id, s.ref)
+    for (const t of ef.comments()) for (const s of t.segments) if ('ref' in s) refMarks.set(s.id, s.ref)
   }
   const colors = settings.aids === 'always' ? new Map([...refMarks.keys()].map((id, i) => [id, REF_PALETTE[i % REF_PALETTE.length]])) : null
   const shownRefs = colors ? [...refMarks.keys()] : [hovered ?? pinned].filter((x): x is string => !!x)
@@ -624,7 +653,7 @@ export function App() {
           </select>
         </label>
       )}
-      {edit && <button onClick={() => setDialog('keys')} title="The keys positions and moves can have (db/schema.json): add, remove, change icons and options">Keys…</button>}
+      {edit && <button onClick={() => setDialog('keys')} title="Known tags (db/tags.json): how the interface shows and edits a key — type, options, icons, colors. Any other key still works, shown as key: value">Keys…</button>}
       {(edit || nChanges > 0) && (
         <button class={nChanges ? 'changes' : ''} onClick={() => setDialog('export')}>
           <Upload size={15} /> Export{nChanges ? ` (${nChanges})` : ''}
@@ -694,7 +723,9 @@ export function App() {
     }
     return null
   })()
-  const forwardLine = line.future.length ? line.future : fromTrail ?? mainLineEnd(ctx, path).slice(path.length)
+  // Whatever line is ahead, it goes on to the end along the main move of each position.
+  const aheadBase = line.future.length ? line.future : fromTrail ?? []
+  const forwardLine = [...aheadBase, ...mainLine(ctx, [...path, ...aheadBase])]
   aheadRef.current = { path, ahead: forwardLine }
   const ZOOMS = [0.6, 0.75, 0.9, 1, 1.15, 1.35, 1.6]
   const zoomIdx = Math.max(0, ZOOMS.findIndex((z) => z >= settings.treeZoom - 0.001))
@@ -805,6 +836,7 @@ export function App() {
       target={target}
       commit={commit}
       onFocusText={(el) => (lastText.current = el)}
+      onMakeMain={makeMain}
       onDeleteMove={() => {
         if (deleteMove(w, path, target)) {
           setLine({ path: path.slice(0, -1), future: [] })
@@ -823,7 +855,7 @@ export function App() {
   const nextMoves = <NextMoves {...common} side={side} setSide={setSide} highlighted={highlighted} onHighlight={setHighlighted} onPlay={playCandidate} />
 
   /* Left: search, this joseki, evaluation. Right: tree, last move (or edit), next moves. Fixed-size panels. */
-  const josekiInfo = <JosekiInfo {...common} onOpenLabel={onOpenLabel} onCopyLink={(id) => copyLink(linkFor(ctx, { kind: 'label', id }, [startStep(ctx, { kind: 'label', id })], { corner: 'tr', mirror: false, swap: false }), entryName(id))} />
+  const positionInfo = <PositionInfo {...common} onOpenLabel={onOpenLabel} onCopyLink={(id) => copyLink(linkFor(ctx, { kind: 'label', id }, openPath(ctx, { kind: 'label', id }), { corner: 'tr', mirror: false, swap: false }), entryName(id))} />
   const leftPanel = (
     <aside class="side-panel left" aria-label="Search and joseki information">
       <Stack
@@ -831,8 +863,7 @@ export function App() {
         head={startBar}
         items={[
           { id: 'search', title: 'Search positions', icon: <Search size={15} />, weight: 1.3, body: library },
-          { id: 'joseki', title: 'This joseki', icon: <BookOpen size={15} />, weight: 1, body: josekiInfo },
-          ...(!edit ? [{ id: 'eval', title: 'Position evaluation', icon: <Grid3x3 size={15} />, weight: 0.8, body: <PositionEval {...common} /> }] : []),
+          { id: 'position', title: 'Position', icon: <Grid3x3 size={15} />, weight: 1.6, body: positionInfo },
         ]}
       />
     </aside>
@@ -977,7 +1008,7 @@ export function App() {
             <div class="ctx-h">This move is…</div>
             <div class="ctx-cats">
               {cats.map((c, i) => (
-                <button key={c} role="menuitem" title={`${CATEGORIES[c].label} (key ${i + 1})`} onClick={() => { writeAt(ctxMenu.line, { XCAT: [c] }, `Saved as ${CATEGORIES[c].label.toLowerCase()} in ${target}`); setCtxMenu(null) }}>
+                <button key={c} role="menuitem" title={`${CATEGORIES[c].label} (key ${i + 1})`} onClick={() => { writeAt(ctxMenu.line, 'move', { kind: c }, `Saved as ${CATEGORIES[c].label.toLowerCase()} in ${target}`); setCtxMenu(null) }}>
                   <CategoryDot cat={c} /> {CATEGORIES[c].label}
                 </button>
               ))}
@@ -985,14 +1016,14 @@ export function App() {
             <hr />
           </>
         )}
-        <button role="menuitem" onClick={() => { writeAt(ctxMenu.line, { XST: ['end'] }, 'Marked as joseki end'); setCtxMenu(null) }}>▣ Mark as joseki end</button>
-        <button role="menuitem" onClick={() => { writeAt(ctxMenu.line, { XST: ['end-mistake'] }, 'Marked as end after a mistake'); setCtxMenu(null) }}>▣ Mark as end after a mistake</button>
-        <button role="menuitem" onClick={() => { setDesignTab('pos'); setCtxMenu(null); setTimeout(() => document.getElementById('f-XPB')?.focus(), 50) }}>Set the result…</button>
-        <button role="menuitem" onClick={() => { setDesignTab('move'); setCtxMenu(null); setTimeout(() => document.getElementById('f-node-XMW')?.focus(), 50) }}>Edit why…</button>
+        <button role="menuitem" onClick={() => { writeAt(ctxMenu.line, 'pos', { status: 'end' }, 'Marked as joseki end'); setCtxMenu(null) }}>▣ Mark as joseki end</button>
+        <button role="menuitem" onClick={() => { writeAt(ctxMenu.line, 'pos', { status: 'end-mistake' }, 'Marked as end after a mistake'); setCtxMenu(null) }}>▣ Mark as end after a mistake</button>
+        <button role="menuitem" onClick={() => { go(ctxMenu.line); setCtxMenu(null); focusLater('f-pos-status', 'add-tag-pos') }}>Set the result…</button>
+        <button role="menuitem" onClick={() => { go(ctxMenu.line); setCtxMenu(null); focusLater('f-move-comment') }}>Edit why…</button>
         <hr />
-        <button role="menuitem" onClick={() => { setDesignTab('name'); setCtxMenu(null); setTimeout(() => document.getElementById('f-name-new')?.focus(), 50) }}>⚑ Name a joseki from here…</button>
+        <button role="menuitem" onClick={() => { go(ctxMenu.line); setCtxMenu(null); focusLater('f-name-new', 'f-pos-name') }}>⚑ Name a joseki from here…</button>
         {ctxLast.edge && (
-          <button role="menuitem" onClick={() => { if (promote(w, ctxMenu.line, target)) commit('This is now the main line'); else flash(`Only moves stored in ${target} can be reordered here.`); setCtxMenu(null) }}>Make this the main line</button>
+          <button role="menuitem" onClick={() => { makeMain(ctxMenu.line); setCtxMenu(null) }}>Make this the main move</button>
         )}
         <button role="menuitem" onClick={() => { copyLink(linkFor(ctx, start, ctxMenu.line, settings.display), 'this position'); setCtxMenu(null) }}>Copy link</button>
         <hr />
@@ -1037,7 +1068,7 @@ export function App() {
       <button onClick={() => download(`${(label ? entryName(label) : 'position').replace(/[^\w\- ]+/g, '').trim() || 'position'}.sgf`, toSgf(ctx, path[path.length - 1]), 'application/x-go-sgf')} title="Download this position and the moves after it as SGF">
         <FileDown size={15} /> SGF
       </button>
-      <button onClick={() => setDialog('keys')} title="The keys positions and moves can have (db/schema.json): add, remove, change icons and options">Keys…</button>
+      <button onClick={() => setDialog('keys')} title="Known tags (db/tags.json): how the interface shows and edits a key — type, options, icons, colors. Any other key still works, shown as key: value">Keys…</button>
       <button class={nChanges ? 'changes' : ''} onClick={() => setDialog('export')} title="Download a patch or propose the changes on GitHub">
         <Upload size={15} /> Export / pull request{nChanges ? ` (${nChanges})` : ''}
       </button>
@@ -1087,23 +1118,14 @@ export function App() {
       </section>
   )
   const designInfo = (
-      <section class="card design-info" aria-label="Selected move and position">
-            <div class="info-head">
-              <div class="seg" role="tablist">
-                {(['move', 'pos', 'name'] as const).map((t) => (
-                  <button key={t} role="tab" aria-selected={designTab === t} class={designTab === t ? 'on' : ''} onClick={() => setDesignTab(t)}>
-                    {{ move: 'Move', pos: 'Position', name: 'Name' }[t]}
-                  </button>
-                ))}
-              </div>
-            </div>
+      <section class="card design-info" aria-label="Selected position">
             <EditPanel
               ws={w}
               ctx={ctx}
               path={path}
               target={target}
                       commit={commit}
-              only={designTab}
+              onMakeMain={makeMain}
               onFocusText={(el) => (lastText.current = el)}
               onDeleteMove={() => deleteAt(path)}
             />
@@ -1143,8 +1165,8 @@ export function App() {
   )
 
   const phoneTabs: [typeof phoneTab, string][] = edit
-    ? [['edit', 'Edit'], ['next', 'Next'], ['tree', 'Tree'], ['about', 'About']]
-    : [['next', 'Next'], ['pos', 'Position'], ['tree', 'Tree'], ['about', 'About']]
+    ? [['edit', 'Edit'], ['pos', 'Position'], ['next', 'Next'], ['tree', 'Tree']]
+    : [['next', 'Next'], ['pos', 'Position'], ['tree', 'Tree']]
   const tab = phoneTabs.some(([t]) => t === phoneTab) ? phoneTab : phoneTabs[0][0]
   const explore = phone ? (
     <>
@@ -1170,9 +1192,8 @@ export function App() {
         <div class="card"><div class="card-body">
           {tab === 'edit' && editPanel}
           {tab === 'next' && nextMoves}
-          {tab === 'pos' && <PositionEval {...common} />}
+          {tab === 'pos' && positionInfo}
           {tab === 'tree' && <>{treeToolbar}<div class="tree-box">{treeView}</div>{treeLegend}</>}
-          {tab === 'about' && josekiInfo}
         </div></div>
       </section>
       <div class="bottom-bar" role="toolbar" aria-label="Move navigation">{navButtons}</div>
@@ -1182,7 +1203,7 @@ export function App() {
       id="explore"
       cols={[
         { id: 'left', name: 'left', label: 'Search · Joseki', width: 300, min: 220, max: 560, node: leftPanel },
-        { id: 'center', node: <main class="center">{status}{sideSwitch}{boardEl}<div class="nav">{navButtons}</div>{editToolbar}{viewOptions}</main> },
+        { id: 'center', min: 600, node: <main class="center">{status}{sideSwitch}{boardEl}<div class="nav">{navButtons}</div>{editToolbar}{viewOptions}</main> },
         { id: 'right', name: 'right', label: 'Tree · Moves', width: 390, min: 260, max: 640, node: rightPanel },
       ]}
     />
@@ -1255,7 +1276,7 @@ export function App() {
             setSettings({ ...settings, display })
             const st: Start = { kind: 'label', id }
             const c = { ...ctx, U: userTransform(display) }
-            const p = [startStep(c, st)]
+            const p = openPath(c, st)
             for (const k of keys.slice(1)) {
               const n = candidates(c, p[p.length - 1]).find((x) => x.step.key === k)
               if (!n) break
@@ -1269,8 +1290,8 @@ export function App() {
       )}
       {mode === 'quiz' && <QuizMode ctx={ctx} phone={phone} settings={settings} entryName={entryName} />}
 
-      {dialog === 'keys' && <SchemaDialog schema={w.schema} close={() => setDialog(null)} save={(sc) => { updateSchema(w, sc); commit('Keys saved in this browser; use Export to propose them') }} />}
-      {dialog === 'settings' && <SettingsDialog s={settings} set={setSettings} close={() => setDialog(null)} databases={databases} active={active} toggleDb={toggleDb} />}
+      {dialog === 'keys' && <TagsDialog registry={w.registry} close={() => setDialog(null)} save={(r) => { updateRegistry(w, r); commit('Tags saved in this browser; use Export to propose them') }} />}
+      {dialog === 'settings' && <SettingsDialog s={settings} tagKeys={sortKeys([...w.registry.tags.map((d) => d.key), ...w.files.flatMap((f) => f.positions.flatMap((p) => [...Object.keys(p.tags), ...p.moves.flatMap((m) => Object.keys(m.tags))]))])} set={setSettings} close={() => setDialog(null)} databases={databases} active={active} toggleDb={toggleDb} />}
       {dialog === 'export' && (
         <ExportDialog ws={w} close={() => setDialog(null)} onDiscard={async () => {
           await discardDrafts(w)
@@ -1297,7 +1318,7 @@ export function App() {
           saveDrafts(w)
           const st: Start = { kind: 'label', id: e.id }
           setStart(st)
-          setLine({ path: [startStep({ ...ctx, graph: g }, st)], future: [] })
+          setLine({ path: openPath({ ...ctx, graph: g }, st), future: [] })
           flash(`Created ${e.name} in ${target}`)
           return null
         }} />
@@ -1333,13 +1354,3 @@ function rebaseLine(path: Step[], source: Step[]): Step[] {
   return out.slice(path.length)
 }
 
-function mainLineEnd(ctx: Ctx, path: Step[]): Step[] {
-  const out = [...path]
-  const seen = new Set(out.map((s) => s.key))
-  for (;;) {
-    const c = candidates(ctx, out[out.length - 1])[0]
-    if (!c || seen.has(c.step.key) || (c.cat && !CATEGORIES[c.cat].good)) return out
-    seen.add(c.step.key)
-    out.push(c.step)
-  }
-}

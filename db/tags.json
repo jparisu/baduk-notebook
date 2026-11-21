@@ -1,8 +1,16 @@
 {
-  "fields": [
+  "tags": [
     {
-      "key": "category",
-      "label": "This move is",
+      "key": "name",
+      "label": "Name",
+      "for": "position",
+      "type": "list",
+      "panel": "sequence",
+      "hint": "The first name is the title; the others are other names."
+    },
+    {
+      "key": "kind",
+      "label": "Kind",
       "for": "move",
       "type": "choice",
       "control": "buttons",
@@ -60,13 +68,14 @@
           "good": true,
           "ring": true
         }
-      ]
+      ],
+      "suggest": true
     },
     {
-      "key": "style",
-      "label": "Style",
+      "key": "intention",
+      "label": "Intention",
       "for": "move",
-      "type": "choice",
+      "type": "multi",
       "options": [
         {
           "value": "aggressive",
@@ -302,16 +311,17 @@
       "icon": "⚡"
     },
     {
-      "key": "tags",
-      "label": "Tags",
-      "for": "sequence",
+      "key": "topics",
+      "label": "Topics",
+      "for": "position",
       "type": "list",
-      "hint": "Nested with /: eye shape, basic joseki…"
+      "hint": "Nested with /: eye shape, basic joseki…",
+      "panel": "sequence"
     },
     {
       "key": "eye-space",
       "label": "Eye space",
-      "for": "sequence",
+      "for": "position",
       "type": "choice",
       "options": [
         {
@@ -338,12 +348,13 @@
           "value": "7",
           "label": "7 points"
         }
-      ]
+      ],
+      "panel": "sequence"
     },
     {
       "key": "surrounded",
       "label": "Surrounded",
-      "for": "sequence",
+      "for": "position",
       "type": "choice",
       "options": [
         {
@@ -358,12 +369,13 @@
           "value": "open",
           "label": "Open"
         }
-      ]
+      ],
+      "panel": "sequence"
     },
     {
       "key": "outside-liberties",
       "label": "Outside liberties",
-      "for": "sequence",
+      "for": "position",
       "type": "choice",
       "options": [
         {
@@ -382,12 +394,13 @@
           "value": "3+",
           "label": "3+"
         }
-      ]
+      ],
+      "panel": "sequence"
     },
     {
       "key": "inside-stones",
       "label": "Inside stones",
-      "for": "sequence",
+      "for": "position",
       "type": "choice",
       "options": [
         {
@@ -402,12 +415,13 @@
           "value": "2+",
           "label": "2+"
         }
-      ]
+      ],
+      "panel": "sequence"
     },
     {
       "key": "arrangement",
       "label": "Arrangement",
-      "for": "sequence",
+      "for": "position",
       "type": "choice",
       "options": [
         {
@@ -418,12 +432,13 @@
           "value": "separated",
           "label": "Separated"
         }
-      ]
+      ],
+      "panel": "sequence"
     },
     {
       "key": "ko-type",
       "label": "Ko type",
-      "for": "sequence",
+      "for": "position",
       "type": "choice",
       "options": [
         {
@@ -442,37 +457,28 @@
           "value": "10000year",
           "label": "Ten-thousand-year"
         }
-      ]
+      ],
+      "panel": "sequence"
     },
     {
       "key": "difficulty",
       "label": "Difficulty",
-      "for": "sequence",
-      "type": "text",
-      "hint": "15k, 2d…"
-    },
-    {
-      "key": "summary",
-      "label": "Description",
-      "for": "sequence",
-      "type": "text"
-    },
-    {
-      "key": "aliases",
-      "label": "Also called",
-      "for": "sequence",
-      "type": "list"
+      "for": "position",
+      "type": "rank",
+      "hint": "15k, 2d…",
+      "panel": "sequence"
     },
     {
       "key": "sources",
       "label": "Sources",
-      "for": "sequence",
-      "type": "list"
+      "for": "position",
+      "type": "list",
+      "panel": "sequence"
     },
     {
       "key": "era",
       "label": "Era",
-      "for": "sequence",
+      "for": "position",
       "type": "multi",
       "options": [
         {
@@ -487,7 +493,14 @@
           "value": "ai",
           "label": "AI era"
         }
-      ]
+      ],
+      "panel": "sequence"
+    },
+    {
+      "key": "board",
+      "label": "On the board",
+      "type": "board",
+      "hint": "Shapes drawn on the board: TR:Q16, AR:Q16-R17, LB:Q16=A, EYE:S18…"
     }
   ]
 }

@@ -1,5 +1,5 @@
 /**
- * Find position (docs/MODEL.md §4–5): exact, contained and near matches. Positions fixed in the corner
+ * Find position (docs/MODEL.md §5–6): exact, contained and near matches. Positions fixed in the corner
  * are compared corner by corner; the others slide along the directions their placement (`free`) allows.
  * Colors are never swapped.
  */

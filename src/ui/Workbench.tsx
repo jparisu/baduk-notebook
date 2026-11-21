@@ -81,7 +81,9 @@ export function Workbench({ id, cols, phone, class: cls }: { id: string; cols: C
   cols.forEach((c, i) => {
     const fixed = !!c.width
     const shut = fixed && closed[c.id]
-    template.push(fixed ? (shut ? '0px' : `${widths[c.id] ?? c.width}px`) : 'minmax(0, 1fr)')
+    // A narrow window shrinks the side columns down to their minimum before it squeezes the middle one.
+    const w = widths[c.id] ?? c.width!
+    template.push(fixed ? (shut ? '0px' : `minmax(${Math.min(c.min ?? w, w)}px, ${w}px)`) : `minmax(${c.min ?? 0}px, 1fr)`)
     parts.push(
       <div key={c.id} class={`wb-col ${c.class ?? ''} ${shut ? 'shut' : ''}`} data-col={c.id}>
         {!shut && c.node}

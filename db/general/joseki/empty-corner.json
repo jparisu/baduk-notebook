@@ -4,109 +4,119 @@
       "id": "joseki",
       "stones": "",
       "toPlay": "B",
-      "name": "Empty corner",
-      "notes": [
+      "comments": [
+        "Choose where to play first in an empty corner. Each first move leads into the joseki that start from it. Example notes, to verify.",
         "An empty corner. The first stone decides the balance between corner territory and influence toward the sides."
       ],
-      "values": {
+      "tags": {
+        "name": [
+          "Empty corner"
+        ],
         "status": "start",
-        "tags": [
+        "topics": [
           "opening",
           "first move"
         ],
-        "difficulty": "25k",
-        "summary": "Choose where to play first in an empty corner. Each first move leads into the joseki that start from it. Example notes, to verify."
-      },
-      "moves": [
-        {
-          "move": "pd",
-          "to": "joseki/4-4 point",
-          "notes": [
-            "4-4 point (hoshi): takes the corner in one move and faces both sides. The {{CR:R17|3-3 point}} stays open for an invasion."
-          ],
-          "values": {
-            "category": "main",
-            "style": "balanced",
-            "purpose": [
-              "influence"
-            ]
-          }
-        },
-        {
-          "move": "qd",
-          "to": "joseki/3-4 point",
-          "notes": [
-            "3-4 point (komoku): a firmer corner that points toward one side. The opponent usually approaches from {{TR:R14,P17|the open side}}."
-          ],
-          "values": {
-            "category": "main",
-            "style": "solid",
-            "purpose": [
-              "territory"
-            ]
-          }
-        },
-        {
-          "move": "qc",
-          "to": "joseki/3-3 point",
-          "notes": [
-            "3-3 point (san-san): a secure corner in one move, but low and slow toward the center."
-          ],
-          "values": {
-            "category": "alt",
-            "style": "solid",
-            "purpose": [
-              "territory"
-            ]
-          }
-        },
-        {
-          "move": "od",
-          "to": "joseki:1",
-          "notes": [
-            "5-4 point (takamoku): faces the outside and the side. The opponent can still take the corner with a move {{SQ:R16,Q17,R17|deeper in the corner}}."
-          ],
-          "values": {
-            "category": "situational",
-            "style": "aggressive",
-            "purpose": [
-              "influence"
-            ]
-          }
-        },
-        {
-          "move": "oc",
-          "to": "joseki:1b",
-          "notes": [
-            "5-3 point (mokuhazushi): aims along the side. The opponent can still take the corner with a move {{SQ:R16,Q17,R17|deeper in the corner}}."
-          ],
-          "values": {
-            "category": "situational",
-            "style": "balanced",
-            "purpose": [
-              "influence"
-            ]
-          }
-        }
-      ]
+        "difficulty": "25k"
+      }
     },
     {
       "id": "joseki:1",
       "stones": "B:od",
       "toPlay": "W",
-      "values": {
+      "tags": {
         "status": "start"
-      },
-      "moves": []
+      }
     },
     {
       "id": "joseki:1b",
       "stones": "B:oc",
       "toPlay": "W",
-      "values": {
+      "tags": {
         "status": "start"
-      },
-      "moves": []
+      }
+    }
+  ],
+  "moves": [
+    {
+      "from": "joseki",
+      "to": "joseki/4-4 point",
+      "comments": [
+        "4-4 point (hoshi): takes the corner in one move and faces both sides. The {{CR:R17|3-3 point}} stays open for an invasion."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "balanced"
+        ],
+        "purpose": [
+          "influence"
+        ]
+      }
+    },
+    {
+      "from": "joseki",
+      "to": "joseki/3-4 point",
+      "comments": [
+        "3-4 point (komoku): a firmer corner that points toward one side. The opponent usually approaches from {{TR:R14,P17|the open side}}."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "territory"
+        ]
+      }
+    },
+    {
+      "from": "joseki",
+      "to": "joseki/3-3 point",
+      "comments": [
+        "3-3 point (san-san): a secure corner in one move, but low and slow toward the center."
+      ],
+      "tags": {
+        "kind": "alt",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "territory"
+        ]
+      }
+    },
+    {
+      "from": "joseki",
+      "to": "joseki:1",
+      "comments": [
+        "5-4 point (takamoku): faces the outside and the side. The opponent can still take the corner with a move {{SQ:R16,Q17,R17|deeper in the corner}}."
+      ],
+      "tags": {
+        "kind": "situational",
+        "intention": [
+          "aggressive"
+        ],
+        "purpose": [
+          "influence"
+        ]
+      }
+    },
+    {
+      "from": "joseki",
+      "to": "joseki:1b",
+      "comments": [
+        "5-3 point (mokuhazushi): aims along the side. The opponent can still take the corner with a move {{SQ:R16,Q17,R17|deeper in the corner}}."
+      ],
+      "tags": {
+        "kind": "situational",
+        "intention": [
+          "balanced"
+        ],
+        "purpose": [
+          "influence"
+        ]
+      }
     }
   ]
 }

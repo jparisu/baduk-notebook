@@ -1,8 +1,40 @@
 # Changelog
 
-## Unreleased
+## v0.2.0
 
-### Data model (docs/MODEL.md)
+### Positions, moves, comments and tags (docs/MODEL.md)
+- **Two kinds of record**: positions (nodes) and moves (edges). A file holds `positions` and `moves`; a move is just `from` and `to`, and the point played is worked out from the two positions. When only the player changes, the move is a tenuki.
+- **Comments and tags** on both: a list of comments (the texts shown, with board references you can hover or click), and a free dictionary of tags. Any key can be used on any position or move without declaring it, with a text, number, yes/no or list value. A new position or move starts with no tags.
+- **Known tags** (`db/tags.json`, replaces `db/schema.json`): only describes the keys the interface shows its own way (`kind` with its colors, `intention`, `evaluation` bar, `sente` stone, `status`, life & death results, `difficulty` rank…). Other keys are shown as key: value. Descriptions say where a key is offered (`for`), whether it is always offered (`suggest`), and whether it belongs to **This joseki** (`panel: "sequence"`).
+- **Editor**: each record shows only the tags it has (plus suggested ones, values other databases set there, and inherited ones), each with a × to remove it. **+ Add a tag** picks a known key, a key used elsewhere, or creates a new one with its type; **Rename a key…** renames one.
+- **Settings › Tags shown** lists every key, described or used in the databases, to hide any of them.
+- Renamed keys: `category` → `kind`, `style` → `intention` (now several options), `tags` → `topics`. The name and other names are one `name` list; a sequence's summary became the first comment of its start position; notes became comments.
+- **Board shapes** are the `board` tag, in the same `TYPE:points` syntax as references in comments (`TR:Q16`, `AR:Q16-R14`, `EYE:S18`).
+- **Two tenukis are like none**: a tenuki back to the position a tenuki came from is refused, so the tree cannot loop.
+- **SGF**: downloads carry tags in an `XT` property and comments as SGF comments, and load back with them.
+- `scripts/migrate-0.2.mjs` converted the databases (same 165 positions and 161 moves); the old one-off SGF conversion scripts were removed.
+- Drafts saved in the browser by an earlier version are not restored (new storage key).
+
+### Position-first interface
+- **One Position panel** replaces "This joseki" and "Position evaluation": the sequence the position belongs to (name, other names, topics, difficulty, sources), its main move, its tags and its comments.
+- **One editor** in Explore (Edit) and Design: the position (comments, tags, main move), its name, then the move into it from the previous position of your line. The Move / Position / Name tabs of Design are gone. The move part only appears once the previous position is in a database, since the same position can be reached by several moves.
+- **Main move** of each position: the `main` tag, chosen in the editor or with **Make this the main move** in the tree; by default the first stored move. The tree and → follow it, unless you have walked another line through the position; → now works the line ahead out again at each step, so a new main move counts at once. Next moves marks it.
+- **Board size** is set in text units (40em) and never grows when the window gets smaller: side columns shrink to their minimum first, and below 1100px the panels stack under the board.
+- The Sensei's Library page names that were written into four joseki descriptions ("Sources: 33PointInvasion, …") are now links in their `sources` tag.
+
+### Explore
+- **Lines start at the root.** A position opened from a link, the library or Find gets the moves that lead to it (back to the empty corner, by main moves), so the tree, move numbers and the names along the line all start there. Move numbers now match the ids (the 3-3 invasion's first move is move 3).
+- **Names along the line** drop the part they share with the name before: "Empty corner › 4-4 point › 3-3 invasion › extend".
+- **Comments of a position** are each their own block, edged with their database's color, and fold from their header. Comment text is a little smaller in Last move and the same size for positions.
+- The Position panel no longer shows the main move (it is in the editor and marked in Next moves).
+- **Tree:** Linear and Proximity pack their rows (no empty rows for hidden moves; the other moves from here sit next to the current one), and the line ahead always goes on to the end along the main moves. Dashed outlines of moves that are not stored are thinner.
+- **↓** plays the next variation, where → follows the line.
+- A comment's `{{R16}}` (a point without a shape) showed as raw text; it is now a reference, and the validator reports any `{{…}}` that is not one.
+
+### Fixes
+- Right after a deploy, the site could fail with "Could not load the databases: JSON.parse…" because the browser reused the previous version's file list. Database files are now always revalidated, and only `.json` files are loaded.
+
+### Data model, first JSON version (superseded above where they differ)
 - **Values and keys**: a position or move is its notes plus a dictionary of values. The keys live in `db/schema.json` and are edited in the app (**Keys…**): label, icon, type (choice, several choices, slider, flag, color, text, list), options with icons and colors, what Swap colors does, and inheritance. "This move is", Evaluation, Status, Black/White plays first, Sente, Ko, Tags, Difficulty… are all keys.
 - Points are gone. Evaluation is a slider between White and Black, shown as a bar without numbers.
 - Tags are a key; the shape descriptors became keys of their own (eye space, surrounded, outside liberties, inside stones, arrangement, ko type).

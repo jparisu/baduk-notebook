@@ -1,17 +1,19 @@
 import { describe, expect, it } from 'vitest'
+import './testdb' // the tag descriptions: evaluation is inherited, names are not
 import { buildGraph } from './core/graph'
 import { IDENTITY } from './core/geometry'
 import type { PosRec } from './core/model'
+import type { Tags } from './core/tags'
 import { candidates, lineFields, startStep, type Ctx } from './view'
 
-const pos = (id: string, stones: string, toPlay: 'B' | 'W', data: Record<string, string[]>, moves: [string, string][]): PosRec =>
-  ({ id, stones, toPlay, free: 'corner', data, moves: moves.map(([move, to]) => ({ move, to, data: {} })) })
+const pos = (id: string, stones: string, toPlay: 'B' | 'W', tags: Tags, to: string[]): PosRec =>
+  ({ id, stones, toPlay, free: 'corner', comments: [], tags, moves: to.map((t) => ({ to: t, move: '', comments: [], tags: {} })) })
 
-describe('inherited position fields', () => {
-  const g = buildGraph([{ db: 'x', path: 'x/a.json', positions: [
-    pos('a', 'B:pd', 'W', { XPW: ['Start text'], XPB: ['2'], XNAME: ['A'] }, [['qc', 'a:2']]),
-    pos('a:2', 'B:pd W:qc', 'B', {}, [['pc', 'a:3']]),
-    pos('a:3', 'B:pc,pd W:qc', 'W', { XPB: ['-1'] }, [['qd', 'a/b']]),
+describe('inherited position tags', () => {
+  const g = buildGraph([{ db: 'x', path: 'x/a.json', loose: [], positions: [
+    pos('a', 'B:pd', 'W', { evaluation: 0.5, name: ['A'], 'my-note': 'free key' }, ['a:2']),
+    pos('a:2', 'B:pd W:qc', 'B', {}, ['a:3']),
+    pos('a:3', 'B:pc,pd W:qc', 'W', { evaluation: -1 }, ['a/b']),
     pos('a/b', 'B:pc,pd W:qc,qd', 'B', {}, []),
   ] }])
   const ctx: Ctx = { graph: g, active: new Set(['x']), order: ['x'], U: IDENTITY }
@@ -20,14 +22,21 @@ describe('inherited position fields', () => {
 
   it('a position without its own value shows the one of the closest earlier position', () => {
     const f = lineFields(ctx, line.slice(0, 2))
-    expect(f.one('XPW')?.value).toBe('Start text')
-    expect(f.source('XPW')).toBe(0)
-    expect(f.one('XNAME')).toBeNull() // names are not inherited
+    expect(f.get('evaluation')?.value).toBe(0.5)
+    expect(f.source('evaluation')).toBe(0)
+    expect(f.get('name')).toBeNull() // names are not inherited
+    expect(f.get('my-note')).toBeNull() // keys without a description are not inherited
+    expect(f.keys()).toEqual(['evaluation'])
   })
   it('its own value wins, and is inherited from there on', () => {
-    expect(lineFields(ctx, line.slice(0, 3)).one('XPB')?.value).toBe('-1')
+    expect(lineFields(ctx, line.slice(0, 3)).get('evaluation')?.value).toBe(-1)
   })
   it('inheritance stops at the start of another sequence', () => {
-    expect(lineFields(ctx, line).one('XPW')).toBeNull()
+    expect(lineFields(ctx, line).get('evaluation')).toBeNull()
+  })
+  it('any key can be read, described or not', () => {
+    const f = lineFields(ctx, line.slice(0, 1))
+    expect(f.keys()).toEqual(['name', 'evaluation', 'my-note'])
+    expect(f.text('my-note')).toBe('free key')
   })
 })

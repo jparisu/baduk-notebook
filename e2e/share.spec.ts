@@ -4,7 +4,8 @@ import { clickPoint, fresh } from './helpers'
 test('a link opens a joseki at its first move', async ({ page }) => {
   await page.goto('./?open=joseki/3-4+point/Low+approach')
   await expect(page.locator('.status')).toContainText('3-4 point · low approach')
-  await expect(page.locator('.status')).toContainText('Start')
+  await expect(page.locator('.status')).toContainText('Move 2: White') // the line starts at the empty corner
+  await expect(page.locator('.crumbs')).toContainText('Empty corner')
 })
 
 test('the address bar follows the position, and that link opens the same position elsewhere', async ({ page, browser }) => {
@@ -36,6 +37,6 @@ test('copy link buttons copy the link', async ({ page, context }) => {
   await page.getByRole('button', { name: 'Copy link to this position' }).click()
   await expect(page.locator('.toast')).toContainText('Link to this position copied')
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('?open=joseki/4-4+point/Low+approach')
-  await page.locator('.joseki-info').getByRole('button', { name: /Copy link/ }).click()
+  await page.locator('.position-info').getByRole('button', { name: /Copy link/ }).click()
   await expect(page.locator('.toast')).toContainText('copied')
 })
