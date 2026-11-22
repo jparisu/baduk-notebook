@@ -245,3 +245,12 @@ test('Proximity packs the other moves next to the current one, not below hidden 
   expect(ys).toBe(3) // the line and the two other answers, each on the next row
 })
 
+
+test('the current name in the line of names opens its sequence at its first move', async ({ page }) => {
+  await openEntry(page, '3-3 invasion')
+  await expect(page.locator('.position-info .crumbs b')).toContainText('3-3 invasion') // at its first move: plain text
+  for (let i = 0; i < 2; i++) await page.keyboard.press('ArrowRight') // still inside the 3-3 invasion
+  await page.locator('.position-info .crumbs .link.cur').click()
+  await expect(page.locator('.status')).toContainText('Move 2: White R17')
+  await expect(page.locator('.position-info .go-first')).toHaveCount(0)
+})

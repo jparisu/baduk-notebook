@@ -5,6 +5,7 @@
  */
 import type { ComponentChildren } from 'preact'
 import { useState } from 'preact/hooks'
+import { Link2 } from 'lucide-preact'
 import { CATEGORIES, type Category } from '../core/kinds'
 import { defOf, labelOf, typeOf, valueLabel, asList } from '../core/tags'
 import { apply, ptName } from '../core/geometry'
@@ -197,24 +198,34 @@ export function PositionInfo(p: Common & { onOpenLabel: (id: string) => void; on
     <div class="position-info">
       {entry ? (
         <>
-          <p class="info-title"><span class="db-ul" style={{ textDecorationColor: p.dbColor(entry.contribs[0]?.db ?? '') }} title={`From ${entry.contribs[0]?.db}`}>{p.entryName(label!)}</span>{at < path.length - 1 && <span class="info-move"> · move {path.length - 1 - at}</span>}</p>
-          {crumbs.length > 1 && (
+          <p class="info-title">
+            <span class="db-ul" style={{ textDecorationColor: p.dbColor(entry.contribs[0]?.db ?? '') }} title={`From ${entry.contribs[0]?.db}`}>{p.entryName(label!)}</span>
+            {at < path.length - 1 && <span class="info-move"> · move {path.length - 1 - at}</span>}
+            {p.onCopyLink && (
+              <button class="icon ghost copy-link" onClick={() => p.onCopyLink!(label!)} title="Copy a link that opens this sequence at its first move" aria-label="Copy link to this sequence">
+                <Link2 size={14} />
+              </button>
+            )}
+          </p>
+          {/* The names along the line; each opens its sequence at its first move, the current one too when you are past it. */}
+          {(crumbs.length > 1 || at < path.length - 1) && (
             <div class="crumbs" aria-label="Names along this line">
               {crumbs.map((c, i) => {
                 const name = shortAfter(i > 0 ? p.entryName(crumbs[i - 1]) : null, p.entryName(c))
+                const here = c === label
                 return (
                   <span key={c}>
                     {i > 0 && <span class="sep">›</span>}
-                    {c === label ? <b title={p.entryName(c)}>{name}</b> : <button class="link" title={p.entryName(c)} onClick={() => p.onOpenLabel(c)}>{name}</button>}
+                    {here && at === path.length - 1 ? (
+                      <b title={p.entryName(c)}>{name}</b>
+                    ) : (
+                      <button class={`link ${here ? 'cur' : ''}`} title={`${p.entryName(c)}: go to its first move`} onClick={() => p.onOpenLabel(c)}>{name}</button>
+                    )}
                   </span>
                 )
               })}
             </div>
           )}
-          <div class="info-links">
-            {at < path.length - 1 && <button class="link go-first" onClick={() => p.onOpenLabel(label!)}>⏮ Go to its first move{at > 0 ? ` (move ${at})` : ''}</button>}
-            {p.onCopyLink && <button class="link" onClick={() => p.onCopyLink!(label!)} title="Copy a link that opens this sequence at its first move">🔗 Copy link</button>}
-          </div>
         </>
       ) : (
         <p class="hint">This position has no name yet.</p>

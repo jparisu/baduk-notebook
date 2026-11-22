@@ -37,6 +37,6 @@ test('copy link buttons copy the link', async ({ page, context }) => {
   await page.getByRole('button', { name: 'Copy link to this position' }).click()
   await expect(page.locator('.toast')).toContainText('Link to this position copied')
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('?open=joseki/4-4+point/Low+approach')
-  await page.locator('.position-info').getByRole('button', { name: /Copy link/ }).click()
+  await page.locator('.position-info').getByRole('button', { name: 'Copy link to this sequence' }).click()
   await expect(page.locator('.toast')).toContainText('copied')
 })

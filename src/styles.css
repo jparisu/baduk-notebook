@@ -969,3 +969,6 @@ body.dragging-y, body.dragging-y * { cursor: row-resize !important; user-select:
 .comment-head .peek { flex: 1; min-width: 0; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .comment-head .chev { margin-left: auto; font-size: 11px; }
 .comment-body { padding: 2px 12px 10px; font-size: 15px; line-height: 1.55; }
+.position-info .info-title { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 6px; margin: 0 0 2px; }
+.position-info .info-title .copy-link { padding: 2px 4px; min-height: 0; }
+.crumbs .link.cur { color: var(--fg); font-weight: 700; }
