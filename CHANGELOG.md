@@ -31,6 +31,10 @@
 - **↓** plays the next variation, where → follows the line.
 - A comment's `{{R16}}` (a point without a shape) showed as raw text; it is now a reference, and the validator reports any `{{…}}` that is not one.
 
+### Find
+- **Colors swapped:** stones placed with Black and White the other way round are found too. Such results say "colors swapped", come after a match with the colors as stored, and open with Swap colors on.
+- **Every position can be found.** Positions after a named variation that kept the id of the sequence before it (such as the life & death positions after White plays first) were never indexed, so Find missed them in any orientation. Side shapes already slid along their edge; a test now checks every life & death position on every edge, slid, and with colors swapped.
+
 ### Fixes
 - Right after a deploy, the site could fail with "Could not load the databases: JSON.parse…" because the browser reused the previous version's file list. Database files are now always revalidated, and only `.json` files are loaded.
 

@@ -44,7 +44,11 @@ test('Find: one result per position (not the same stones after a tenuki), the bo
   await page.getByRole('button', { name: '○ White' }).click()
   await clickPoint(page, 'R17')
   const exact = page.locator('.result', { has: page.locator('.pill-exact') })
-  await expect(exact).toHaveCount(1)
+  // The 3-3 invasion; and, with the colors swapped, the shoulder hit on the 3-3 point (listed after it).
+  await expect(exact).toHaveCount(2)
+  await expect(exact.first()).not.toContainText('colors swapped')
+  await expect(exact.nth(1)).toContainText('shoulder hit')
+  await expect(exact.nth(1)).toContainText('colors swapped')
   // Undo, redo.
   await page.getByRole('button', { name: /Undo/ }).click()
   await expect(page.locator('svg.board .stone-w')).toHaveCount(0)

@@ -177,7 +177,7 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
         </div>
       )}
       <h2>How it searches</h2>
-      <p class="hint">Each 10×10 corner is compared with every position fixed in the corner, in all 8 orientations (colors are never swapped). Positions that may slide, such as side and centre shapes, are also found where you placed them. Exact matches come first, then positions contained in yours, then positions that differ by up to 2 stones.</p>
+      <p class="hint">Each 10×10 corner is compared with every position fixed in the corner, in all 8 orientations, and also with the colors swapped (those matches say so and open with Swap colors on). Positions that may slide, such as side and centre shapes, are also found where you placed them. Exact matches come first, then positions contained in yours, then positions that differ by up to 2 stones.</p>
     </div>
   )
 
@@ -198,6 +198,7 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
             </span>
             <span class="r-meta">
               {m.keys.length > 1 ? `Move ${m.keys.length - 1}` : 'Start position'} · {m.where}
+              {m.swapped && <span class="swapped-tag" title="Found with Black and White swapped"> · colors swapped</span>}
               {view.swap ? ' · colors swapped' : ''}{view.mirror ? ' · mirrored' : ''}
               {m.kind === 'contained' ? ` · ${m.extra} extra stone${m.extra === 1 ? '' : 's'}` : ''}
               {m.kind === 'near' ? ` · differs by ${m.missing + m.extra}` : ''}

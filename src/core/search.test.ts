@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { parsePt, apply, compose, userTransform, type SignMap } from './geometry'
+import { parsePt, apply, compose, userTransform, SYMMETRIES, transformMap, type SignMap } from './geometry'
+import { boardOf } from './model'
 import { search, userViewFor } from './search'
 import { rootStep, type Ctx } from '../view'
 import { ctxOf, loadDb } from '../testdb'
@@ -23,12 +24,42 @@ describe('find position', () => {
     expect(res.every((r) => r.where !== 'top-right corner')).toBe(true)
   })
 
-  it('does not match the same stones with colors swapped', () => {
+  it('matches the same stones with colors swapped, and says so', () => {
     const m = empty()
     put(m, -1, 'D4')
     put(m, 1, 'C3')
-    expect(search(g, active, m).some((r) => r.kind === 'exact' && r.entryId === INV)).toBe(false)
+    const hit = search(g, active, m).find((r) => r.kind === 'exact' && r.entryId === INV)!
+    expect(hit.swapped).toBe(true)
+    expect(userViewFor(hit.toCanon, rootStep(base, INV).D).swap).toBe(true)
   })
+
+  it('a match with the colors as stored comes before the same match with colors swapped', () => {
+    const m = empty()
+    put(m, 1, 'D4')
+    put(m, -1, 'C3')
+    const exact = search(g, active, m).filter((r) => r.kind === 'exact')
+    expect(exact[0].swapped).toBe(false)
+  })
+
+  it('finds every life & death position, on every edge and slid along it, also with colors swapped', () => {
+    let tried = 0
+    const missed: string[] = []
+    for (const f of loadDb((p) => p.startsWith('general/shapes/')))
+      for (const pos of f.positions) {
+        const b = boardOf(pos.stones)
+        for (const dx of pos.free === 'corner' ? [0] : [-3])
+          for (const t of [SYMMETRIES[3], { ...SYMMETRIES[6], swap: true }]) {
+            const shifted = empty()
+            let fits = true
+            b.forEach((row, y) => row.forEach((s, x) => { if (s) { if (x + dx < 0 || x + dx > 18) fits = false; else shifted[y][x + dx] = s } }))
+            if (!fits) continue
+            tried++
+            if (!search(g, active, transformMap(t, shifted)).some((r) => r.kind === 'exact')) missed.push(`${pos.id} dx=${dx}`)
+          }
+      }
+    expect(tried).toBeGreaterThan(80)
+    expect(missed).toEqual([])
+  }, 30000)
 
   it('returns the display options that show the match like the input', () => {
     const ctx: Ctx = { ...base, U: userTransform({ corner: 'tr', mirror: false, swap: false }) }

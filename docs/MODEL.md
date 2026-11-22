@@ -180,6 +180,10 @@ Find matches a position by sliding its stones along the free directions, for all
 ## 6. Finding positions
 
 - **By stones:** place stones (Find) and the app lists the matching positions with their ids and topics.
+  Every orientation is tried, and also the colors swapped: a match found with Black and White swapped
+  says so, comes after the same match with the colors as stored, and opens with Swap colors on.
+  Every position of the databases can be found, including ones after a named variation that kept the
+  id of the sequence before it.
 - **By id and topics:** pick an id branch (`joseki` › `4-4 point` › `3-3 invasion`) and/or topics,
   and optionally type part of a name.
 - Results are **sequences, not single positions**. Each row is one id and opens at its start.
