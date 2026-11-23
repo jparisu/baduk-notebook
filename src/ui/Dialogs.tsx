@@ -360,7 +360,8 @@ export function TagsDialog({ registry, save, close }: { registry: TagRegistry; s
               </select>
             </label>
             <label class="f"><span class="fl">Icon</span><input value={f.icon ?? ''} placeholder="a symbol or emoji" onInput={(e) => upd({ icon: (e.target as HTMLInputElement).value || undefined })} /></label>
-            <label class="f"><span class="fl">Hint</span><input value={f.hint ?? ''} onInput={(e) => upd({ hint: (e.target as HTMLInputElement).value || undefined })} /></label>
+            <label class="f"><span class="fl">Description</span><input id="schema-description" value={f.description ?? ''} placeholder="What it means (shown when you hover its name)" onInput={(e) => upd({ description: (e.target as HTMLInputElement).value || undefined })} /></label>
+            <label class="f"><span class="fl">Hint</span><input value={f.hint ?? ''} placeholder="Help in the editor" onInput={(e) => upd({ hint: (e.target as HTMLInputElement).value || undefined })} /></label>
             {f.for !== 'move' && <label class="f"><span class="fl">Inherited</span><span><input type="checkbox" checked={!!f.inherit} onChange={(e) => upd({ inherit: (e.target as HTMLInputElement).checked || undefined })} /> later positions show it until they set their own</span></label>}
             {f.type === 'choice' && (
               <label class="f"><span class="fl">Shown as</span>
@@ -388,6 +389,7 @@ export function TagsDialog({ registry, save, close }: { registry: TagRegistry; s
                     <input class="o-icon" value={o.icon ?? ''} placeholder="icon" aria-label="Icon" onInput={(e) => updOpt(k, { icon: (e.target as HTMLInputElement).value || undefined })} />
                     <input class="o-label" value={o.label} placeholder="label" aria-label="Label" onInput={(e) => updOpt(k, { label: (e.target as HTMLInputElement).value })} />
                     <input class="o-value" value={o.value} placeholder="value" aria-label="Stored value" onInput={(e) => updOpt(k, { value: (e.target as HTMLInputElement).value.trim() })} />
+                    <input class="o-desc" value={o.description ?? ''} placeholder="what it means" aria-label="Description" onInput={(e) => updOpt(k, { description: (e.target as HTMLInputElement).value || undefined })} />
                     <input class="o-color" type="color" value={o.color ?? '#888888'} aria-label="Color" onInput={(e) => updOpt(k, { color: (e.target as HTMLInputElement).value })} />
                     <select aria-label="With Swap colors it becomes" value={o.swap ?? ''} onChange={(e) => updOpt(k, { swap: (e.target as HTMLSelectElement).value || undefined })}>
                       <option value="">no swap</option>

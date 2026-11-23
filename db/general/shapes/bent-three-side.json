@@ -103,10 +103,6 @@
     },
     {
       "from": "life & death/Bent three/Side, enclosed",
-      "to": "life & death/Bent three/Side, enclosed/White first"
-    },
-    {
-      "from": "life & death/Bent three/Side, enclosed",
       "to": "life & death/Bent three/Side, enclosed/Black S15",
       "comments": [
         "Leaves {{SQ:T16,T15|a two-point space}}, which is only one eye."
@@ -114,6 +110,10 @@
       "tags": {
         "kind": "mistake"
       }
+    },
+    {
+      "from": "life & death/Bent three/Side, enclosed",
+      "to": "life & death/Bent three/Side, enclosed/White first"
     },
     {
       "from": "life & death/Bent three/Side, enclosed/White first",

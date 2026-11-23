@@ -1,7 +1,7 @@
 /** View model: turns the canonical graph into what the screen shows, after transforms and database filters. */
 import type { Graph, Contribution, Edge, PosNode } from './core/graph'
 import { edgeCategory, labelsAt, visibleEdges } from './core/graph'
-import { CATEGORIES, CATEGORY_ORDER, type Category } from './core/kinds'
+import type { Category } from './core/kinds'
 import GoBoard from '@sabaki/go-board'
 import { isStartId } from './core/model'
 import { asList, asText, defOf, sortKeys, swapValue, swapsValue, type TagValue } from './core/tags'
@@ -131,31 +131,29 @@ export function candidates(ctx: Ctx, step: Step): Candidate[] {
       dbs: [...new Set(edge.contribs.filter((c) => ctx.active.has(c.db)).map((c) => c.db))],
     }
   })
-  const rank = (c: Candidate) => (c.cat ? CATEGORY_ORDER.indexOf(c.cat) : 99)
-  return list.sort((a, b) => rank(a) - rank(b))
+  return orderMoves(ctx, step, list)
 }
 
 /**
- * The main move of a position (docs/MODEL.md §1): the one the tree and → follow by default.
- * The position's `main` tag names the id the main move leads to (the database listed last wins);
- * without it, the first move stored from the position, unless it is a bad move.
+ * The order of the moves from a position (docs/MODEL.md §1): the order they are stored in. A database
+ * that stores every one of these moves decides (the one listed last); otherwise the first database's
+ * order, then the moves only later databases have. The first move is the main move.
  */
+function orderMoves(ctx: Ctx, step: Step, list: Candidate[]): Candidate[] {
+  const recs = node(ctx, step).contribs.filter((c) => ctx.active.has(c.db)).sort((a, b) => ctx.order.indexOf(a.db) - ctx.order.indexOf(b.db))
+  const at = (c: Candidate, rec: Contribution) => rec.pos.moves.findIndex((m) => c.edge.contribs.some((x) => x.db === rec.db && x.move === m))
+  const full = [...recs].reverse().find((r) => list.every((c) => at(c, r) >= 0))
+  const rank = (c: Candidate): [number, number] => {
+    if (full) return [0, at(c, full)]
+    for (let i = 0; i < recs.length; i++) if (at(c, recs[i]) >= 0) return [i, at(c, recs[i])]
+    return [recs.length, 0]
+  }
+  return list.map((c) => [c, rank(c)] as const).sort((a, b) => a[1][0] - b[1][0] || a[1][1] - b[1][1]).map(([c]) => c)
+}
+
+/** The main move of a position: the first of its moves (see orderMoves). The tree and → follow it by default. */
 export function mainMove(ctx: Ctx, step: Step, list = candidates(ctx, step)): Candidate | null {
-  const contribs = node(ctx, step).contribs
-    .filter((c) => ctx.active.has(c.db))
-    .sort((a, b) => ctx.order.indexOf(a.db) - ctx.order.indexOf(b.db))
-  const leadsTo = (db: string, id: string) => list.find((c) => c.edge.contribs.some((x) => x.db === db && x.move?.to === id))
-  for (const c of [...contribs].reverse()) {
-    const id = c.pos.tags.main
-    const hit = typeof id === 'string' ? leadsTo(c.db, id) : undefined
-    if (hit) return hit
-  }
-  for (const c of contribs) {
-    const first = c.pos.moves[0]
-    const hit = first ? leadsTo(c.db, first.to) : undefined
-    if (hit) return hit.cat && !CATEGORIES[hit.cat].good ? null : hit
-  }
-  return list.find((c) => !c.cat || CATEGORIES[c.cat].good) ?? null
+  return list[0] ?? null
 }
 
 /** The line that follows the main moves from the end of `path` (stops before a loop). */

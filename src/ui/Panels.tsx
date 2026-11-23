@@ -7,7 +7,7 @@ import type { ComponentChildren } from 'preact'
 import { useState } from 'preact/hooks'
 import { Link2 } from 'lucide-preact'
 import { CATEGORIES, type Category } from '../core/kinds'
-import { defOf, labelOf, typeOf, valueLabel, asList } from '../core/tags'
+import { defOf, describe, labelOf, typeOf, valueLabel, asList } from '../core/tags'
 import { apply, ptName } from '../core/geometry'
 import { labelsAt } from '../core/graph'
 import type { Msg } from '../messages'
@@ -16,10 +16,10 @@ import { candidates, entryFields, frame, lineFields, mainMove, moveOf, type Fiel
 import { Rich, type RefHandlers } from './Rich'
 import { Fold } from './Card'
 
-export function Row({ label, children }: { label: string; children: ComponentChildren }) {
+export function Row({ label, title, children }: { label: string; title?: string; children: ComponentChildren }) {
   return (
     <div class="f">
-      <div class="fl">{label}</div>
+      <div class="fl" title={title}>{label}</div>
       <div class="fv">{children}</div>
     </div>
   )
@@ -143,23 +143,23 @@ export function TagRows({ keys, f, icons, only, hidden = [] }: { keys: string[];
     }
     if (only === 'bars') return []
     const icon = icons && d?.icon ? <span class="ico" aria-hidden>{d.icon}</span> : null
-    if (type === 'flag') return r.value === true ? [<Row key={key} label={labelOf(key)}>{icon}Yes</Row>] : []
+    if (type === 'flag') return r.value === true ? [<Row key={key} label={labelOf(key)} title={describe(key)}>{icon}Yes</Row>] : []
     if (type === 'color') {
       const v = String(r.value)
-      return [<Row key={key} label={labelOf(key)}><span class="value">{v === 'B' || v === 'W' ? <StoneIcon sign={v === 'B' ? 1 : -1} size={14} /> : icon}{valueLabel(key, v)}</span></Row>]
+      return [<Row key={key} label={labelOf(key)} title={describe(key)}><span class="value">{v === 'B' || v === 'W' ? <StoneIcon sign={v === 'B' ? 1 : -1} size={14} /> : icon}{valueLabel(key, v)}</span></Row>]
     }
     const vals = type === 'list' || type === 'multi' ? f.list(key) : asList(r.value)
     const show = (v: string) => {
       const o = d?.options?.find((x) => x.value === v)
       return (
-        <span key={v} class="value">
+        <span key={v} class="value" title={describe(key, v)}>
           {o?.color && <span class="dot" style={{ background: o.color, borderColor: o.color }} />}
           {icons && o?.icon && !o.color && <span class="ico" aria-hidden>{o.icon}</span>}
           {/^https?:\/\/\S+$/.test(v) ? <a href={v} target="_blank" rel="noopener noreferrer" title={v}>{linkText(v)}</a> : valueLabel(key, v)}
         </span>
       )
     }
-    return [<Row key={key} label={labelOf(key)}><span class={`values ${d ? '' : 'free-tag'}`}>{icon}{vals.map(show)}</span></Row>]
+    return [<Row key={key} label={labelOf(key)} title={describe(key)}><span class={`values ${d ? '' : 'free-tag'}`}>{icon}{vals.map(show)}</span></Row>]
   })
   return <>{out}</>
 }
@@ -293,11 +293,11 @@ export function LastMove(p: Common & { onGoTo: (n: number) => void }) {
             {mf && mf.keys().filter((k) => k !== 'kind' && k !== 'board' && !(s.hiddenKeys ?? []).includes(k)).flatMap((k) => {
               const d = defOf(k)
               const v = mf.get(k)!.value
-              if (typeOf(k, v) === 'flag') return v === true ? [<span key={k} class="tag" title={labelOf(k)}>{s.icons && d?.icon ? <span class="ico" aria-hidden>{d.icon}</span> : null}{labelOf(k)}</span>] : []
+              if (typeOf(k, v) === 'flag') return v === true ? [<span key={k} class="tag" title={describe(k)}>{s.icons && d?.icon ? <span class="ico" aria-hidden>{d.icon}</span> : null}{labelOf(k)}</span>] : []
               return mf.list(k).map((x) => {
                 const o = d?.options?.find((y) => y.value === x)
                 // Keys the interface knows show their value; others say which key it is.
-                return <span key={k + x} class="tag" title={labelOf(k)}>{s.icons && o?.icon ? <span class="ico" aria-hidden>{o.icon}</span> : null}{d?.options ? valueLabel(k, x) : `${labelOf(k)}: ${valueLabel(k, x)}`}</span>
+                return <span key={k + x} class="tag" title={d?.options ? describe(k, x) : describe(k)}>{s.icons && o?.icon ? <span class="ico" aria-hidden>{o.icon}</span> : null}{d?.options ? valueLabel(k, x) : `${labelOf(k)}: ${valueLabel(k, x)}`}</span>
               })
             })}
           </div>

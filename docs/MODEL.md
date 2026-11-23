@@ -20,10 +20,13 @@ A position is the stones on a local area of the board plus **who plays next**.
 
 Nothing else is a fixed field: a position's name, evaluation, status, difficulty… are tags.
 
-**Main move:** every position with moves has one main move, the line the tree and → follow by default.
-The position's `main` tag names the id the main move leads to (it must be one of its moves); without
-it, the main move is the first move stored from the position, unless that is a bad move. Once you
-have walked another line through a position, the tree and → follow the last line you took instead (§7).
+**Order of the moves and main move:** the moves from a position are in the order they are stored, and
+the first is the **main move**, the line the tree and → follow by default. When several databases
+store moves from the same position, a database that stores every one of them decides the order (the
+one listed last); otherwise the first database's order is used, then the moves only later databases
+have. So a personal database that only notes one move does not change the main move, and reordering
+the moves from a personal database copies them all into it. Once you have walked another line through
+a position, the tree and → follow the last line you took instead (§7).
 
 **Same position:** two positions are the same when one is a rotation or reflection of the other
 (8 symmetries), with the same colors and the same player to move. Colors are **not** swapped.
@@ -87,7 +90,6 @@ Keys the app itself relies on:
 | `topics` | positions | Free nested words (`life & death/corner`, `ko`) used by the library to find sequences (§4). |
 | `difficulty` | positions | A rank; the library and the quiz filter by it. |
 | `board` | both | Shapes drawn on the board (§3.2). |
-| `main` | positions | The id the main move leads to (§1). Set with **Main move** in the editor or **Make this the main move** in the tree. |
 
 ### 3.2 The `board` tag and references in comments
 
@@ -156,7 +158,7 @@ Every position is stored with a unique id. The id has two parts: `<sequence>:<N>
 - **Start:** the position whose id has no `:N`.
 - **Order:** by N, then by letter.
 - **Ends:** positions of the sequence with no move to another position of the same sequence.
-- **Main path:** from the start, follow the `main` moves while the sequence stays the same.
+- **Main path:** from the start, follow the main moves (the first of each position) while the sequence stays the same.
 
 ### Topics
 - The `topics` tag: free and nested words, all in one list (`life & death/corner`, `3-3`, `ko`).
@@ -251,26 +253,30 @@ The tree draws the graph around the line you are on.
 
 ## 8. Editing
 
-In **Edit** and in **Design**, one panel edits the current position, in the database that receives the
-edits, from top to bottom:
+In **Edit** and in **Design**, the editor writes into the database that receives the edits. It has two
+tabs; each part is a box, and each tag a row of its own:
 
-1. **The position:** its comments, its tags and its **main move** (a list of its next moves).
-2. **Its name:** at the start of a sequence, its names, id and placement; elsewhere, naming the
-   position starts a new sequence there.
-3. **The move into it:** the move from the previous position of your line. The same position can be
-   reached by other moves, and each keeps its own comments and tags, so this part belongs to the
-   move, not to the position. It can only be described once the previous position is in a database.
-
-In each part:
-
-- **Comments:** one box each; add as many as you like, empty one or press × to remove it.
-- **Tags:** the record shows only the tags it has, plus the ones `db/tags.json` suggests (the `kind`
-  buttons), the ones other databases set here (so you can override them) and inherited values.
-  Each tag has the control its type asks for and a × to remove it.
-- **+ Add a tag:** pick a known key or one used elsewhere in the databases, or type a new key and
-  choose its type. A new plain key (text, list, number, yes/no) lives only in the data. A new key
-  whose type cannot be told from its value (options, a color, a rank, a balance) is also described in
-  `db/tags.json`. **Rename a key…** renames a key that is not described, keeping its value.
+- **Position:**
+  - **Comments:** one box each; add as many as you like, empty one or press × to remove it. Other
+    databases' comments are shown above, read only, with **Edit in …** to switch to that database.
+  - **Tags:** the tags the position has, the ones other databases set here and inherited values. A
+    value from another database or an earlier position is shown with where it comes from: setting it
+    stores your own value; **Edit in …** switches to the database that has it, to change or remove it
+    there. Hovering a tag's name or one of its options shows what it means (`description` in
+    `db/tags.json`).
+  - **Add:** every key the interface knows, and every key used elsewhere in the databases, is a chip:
+    one click adds it with its control ready (a yes/no tag is set at once). **+ New key…** creates one: a
+    plain key (text, list, number, yes/no) only lives in the data; a key whose type cannot be told from
+    its value (options, a color, a rank, a balance) is also described in `db/tags.json`. **Rename a
+    key…** renames a key that is not described, keeping its value.
+  - **Next moves:** the moves from here in their order; ↑ and ↓ reorder them, and the first is the main
+    move (§1).
+  - **Name:** at the start of a sequence, its names, id and placement; elsewhere, naming the position
+    starts a new sequence there.
+- **Move into it:** the move from the previous position of your line, with its kind (buttons), comments
+  and tags, in the same boxes. The same position can be reached by other moves, and each keeps its own
+  data, so this belongs to the move, not to the position. It can only be described once the previous
+  position is in a database.
 
 ## 9. Storage, merging and validation
 

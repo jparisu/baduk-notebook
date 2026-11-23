@@ -3,7 +3,7 @@ import GoBoard from '@sabaki/go-board'
 import { apply, applySign, inverse, transformMap, type Pt, type Sign, type SignMap, type Transform } from '../core/geometry'
 import { canonical } from '../core/hash'
 import { asText, type TagValue } from '../core/tags'
-import type { Graph } from '../core/graph'
+import { buildGraph, type Graph } from '../core/graph'
 import { boardOf, colorOf, isStartId, moveText, nOf, nextId, seqOf, signOf, stonesOf, type PosRec, type MoveRec, type Free, type Rec } from '../core/model'
 import { displayBoard, frame, node as nodeOf, type Ctx, type Step } from '../view'
 import type { DatabaseInfo } from '../data/load'
@@ -235,18 +235,24 @@ function collect(ws: Workspace, db: string, fromId: string) {
   }
 }
 
-/** Makes the last move of `path` the first move listed from its position in the target database. */
-export function promote(ws: Workspace, path: Step[], target: string): boolean {
-  const e = path[path.length - 1].edge
-  if (!e) return false
-  let done = false
-  for (const c of e.contribs.filter((c) => c.db === target && c.move)) {
-    if (c.pos.moves[0] === c.move) continue
-    c.pos.moves = [c.move!, ...c.pos.moves.filter((m) => m !== c.move)]
-    touch(ws, fileOfPos(ws, target, c.pos))
-    done = true
+/**
+ * Sets the order of the moves from the last position of `path` in the target database; the first is the
+ * main move (docs/MODEL.md §1). The target database gets every one of these moves (copied when only
+ * another database had them), so its order is the one used.
+ */
+export function orderMoves(ws: Workspace, ctx: Ctx, path: Step[], target: string, entryId: string | null, children: Step[]) {
+  const fresh = (): Ctx => ({ ...ctx, graph: buildGraph(ws.files) })
+  let c = ctx
+  for (const child of children) {
+    locate(ws, c, [...path, child], target, entryId, true)
+    c = fresh()
   }
-  return done
+  const parent = locate(ws, c, path, target, entryId, false)
+  if (!parent) return
+  const n = c.graph.nodes.get(path[path.length - 1].key)
+  const mine = children.flatMap((ch) => n?.edges.find((e) => e.child === ch.key)?.contribs.filter((x) => x.db === target && x.pos === parent.pos).map((x) => x.move!) ?? [])
+  parent.pos.moves = [...mine, ...parent.pos.moves.filter((m) => !mine.includes(m))]
+  touch(ws, parent.file)
 }
 
 /**

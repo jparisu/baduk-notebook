@@ -24,7 +24,7 @@ import { type RefHandlers } from './ui/Rich'
 import { SettingsDialog } from './ui/SettingsDialog'
 import { Library } from './ui/Library'
 import { useMedia } from './ui/useMedia'
-import { EditPanel } from './ui/EditPanel'
+import { EditPanel, type EditTab } from './ui/EditPanel'
 import { ExportDialog, TagsDialog, NewDatabaseDialog, NewEntryDialog, SaveLinesDialog, type SessionLineView } from './ui/Dialogs'
 import { FindMode } from './ui/FindMode'
 import { QuizMode } from './ui/QuizMode'
@@ -32,7 +32,7 @@ import { download } from './edit/workspace'
 import { importSgf, toSgf } from './edit/sgfx'
 import { updateRegistry } from './edit/workspace'
 import { changeCount, createWorkspace, discardDrafts, restoreDrafts, saveDrafts, type Workspace } from './edit/workspace'
-import { checkMove, createDatabase, createEntry, deleteMove, locate, promote, setTags, type On } from './edit/ops'
+import { checkMove, createDatabase, createEntry, deleteMove, locate, orderMoves, setTags, type On } from './edit/ops'
 import { asList, sortKeys, type TagValue } from './core/tags'
 import { boardMarks, writeBoard, type MarkType } from './core/refs'
 import { boardOf, seqName, stonesOf } from './core/model'
@@ -92,6 +92,8 @@ export function App() {
   const [tool, setTool] = useState<Tool>('move')
   const [pending, setPending] = useState<Pt[]>([])
   const [refType, setRefType] = useState<string | null>(null)
+  // The editor opens on the move you just played (its kind is what you set most); the start of a line has only its position.
+  const [editTab, setEditTab] = useState<EditTab>('move')
   const [phoneTab, setPhoneTab] = useState<'next' | 'pos' | 'tree' | 'edit'>('next')
   const [toast, setToast] = useState<string | null>(null)
   // Design tab (SPEC §8.10)
@@ -352,7 +354,7 @@ export function App() {
       } else if (k === 'p') {
         playFreeMove(null)
       } else if (e.key === 'Enter') {
-        document.getElementById('f-move-comment')?.focus()
+        (setEditTab('move'), setTimeout(() => document.getElementById('f-move-comment')?.focus(), 30))
       } else return
       e.preventDefault()
     }
@@ -416,16 +418,22 @@ export function App() {
     }, 60)
   }
 
-  /**
-   * Makes the last move of `at` the main move of the position before it (docs/MODEL.md §1): the `main` tag
-   * of that position, in the target database, names the id the move leads to.
-   */
+  /** Sets the order of the moves after the last position of `at` (docs/MODEL.md §1): the first is the main move. */
+  function orderAt(at: Step[], children: Step[]) {
+    orderMoves(w, ctx!, at, target, primaryLabel(ctx!, at), children)
+    commit(`Order of the next moves saved in ${target}`)
+  }
+  /** Makes the last move of `at` the main move of the position before it: it becomes the first of its moves. */
   function makeMain(at: Step[]) {
     if (at.length < 2) return
-    const child = locate(w, ctx!, at, target, primaryLabel(ctx!, at), true)!
-    const parent = locate(w, ctx!, at.slice(0, -1), target, primaryLabel(ctx!, at.slice(0, -1)), true)!
-    setTags(w, parent, 'pos', { main: child.pos.id })
-    commit(`Main move saved in ${target}`)
+    const parent = at.slice(0, -1)
+    const rest = candidates(ctx!, parent[parent.length - 1]).map((c) => c.step).filter((s) => s.key !== at[at.length - 1].key)
+    orderAt(parent, [at[at.length - 1], ...rest])
+  }
+  /** Edits go into another database (to change a value that database stores). */
+  function switchTarget(db: string) {
+    setTarget(db)
+    flash(`Editing into ${db}`)
   }
 
   function onPoint(pt: Pt) {
@@ -836,7 +844,10 @@ export function App() {
       target={target}
       commit={commit}
       onFocusText={(el) => (lastText.current = el)}
-      onMakeMain={makeMain}
+      onOrder={(children) => orderAt(path, children)}
+      onTarget={switchTarget}
+      tab={editTab}
+      onTab={setEditTab}
       onDeleteMove={() => {
         if (deleteMove(w, path, target)) {
           setLine({ path: path.slice(0, -1), future: [] })
@@ -1018,10 +1029,10 @@ export function App() {
         )}
         <button role="menuitem" onClick={() => { writeAt(ctxMenu.line, 'pos', { status: 'end' }, 'Marked as joseki end'); setCtxMenu(null) }}>▣ Mark as joseki end</button>
         <button role="menuitem" onClick={() => { writeAt(ctxMenu.line, 'pos', { status: 'end-mistake' }, 'Marked as end after a mistake'); setCtxMenu(null) }}>▣ Mark as end after a mistake</button>
-        <button role="menuitem" onClick={() => { go(ctxMenu.line); setCtxMenu(null); focusLater('f-pos-status', 'add-tag-pos') }}>Set the result…</button>
-        <button role="menuitem" onClick={() => { go(ctxMenu.line); setCtxMenu(null); focusLater('f-move-comment') }}>Edit why…</button>
+        <button role="menuitem" onClick={() => { go(ctxMenu.line); setEditTab('pos'); setCtxMenu(null); focusLater('f-pos-status', 'add-tag-pos') }}>Set the result…</button>
+        <button role="menuitem" onClick={() => { go(ctxMenu.line); setEditTab('move'); setCtxMenu(null); focusLater('f-move-comment') }}>Edit why…</button>
         <hr />
-        <button role="menuitem" onClick={() => { go(ctxMenu.line); setCtxMenu(null); focusLater('f-name-new', 'f-pos-name') }}>⚑ Name a joseki from here…</button>
+        <button role="menuitem" onClick={() => { go(ctxMenu.line); setEditTab('pos'); setCtxMenu(null); focusLater('f-name-new', 'f-pos-name') }}>⚑ Name a joseki from here…</button>
         {ctxLast.edge && (
           <button role="menuitem" onClick={() => { makeMain(ctxMenu.line); setCtxMenu(null) }}>Make this the main move</button>
         )}
@@ -1125,7 +1136,10 @@ export function App() {
               path={path}
               target={target}
                       commit={commit}
-              onMakeMain={makeMain}
+              onOrder={(children) => orderAt(path, children)}
+      onTarget={switchTarget}
+      tab={editTab}
+      onTab={setEditTab}
               onFocusText={(el) => (lastText.current = el)}
               onDeleteMove={() => deleteAt(path)}
             />

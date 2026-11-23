@@ -15,6 +15,8 @@ export type TagFor = 'move' | 'position'
 export interface TagOption {
   value: string
   label: string
+  /** What the option means, shown when you hover it ("Alternative: an unusual but valid play"). */
+  description?: string
   /** A short symbol or emoji shown before the label. */
   icon?: string
   color?: string
@@ -29,6 +31,8 @@ export interface TagOption {
 export interface TagDef {
   key: string
   label: string
+  /** What the key means, shown when you hover its name. */
+  description?: string
   type: TagType
   /** Where the editor offers it first. Any key can still be added to positions and moves alike. */
   for?: TagFor
@@ -157,6 +161,14 @@ function swapText(d: TagDef, v: string): string {
 
 /** The key shown in this place when colors are swapped ("black-first" ↔ "white-first"). */
 export const swapKeyOf = (key: string) => defOf(key)?.swapKey ?? key
+
+/** "Label: description" of a key or one of its values, for a tooltip. */
+export function describe(key: string, value?: string): string {
+  const d = defOf(key)
+  if (value === undefined) return d?.description ? `${labelOf(key)}: ${d.description}` : labelOf(key)
+  const o = d?.options?.find((x) => x.value === value)
+  return o?.description ? `${o.label}: ${o.description}` : valueLabel(key, value)
+}
 
 /** Display text of one stored value. */
 export function valueLabel(key: string, v: string): string {

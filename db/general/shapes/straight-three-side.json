@@ -98,10 +98,6 @@
     },
     {
       "from": "life & death/Straight three/Side, enclosed",
-      "to": "life & death/Straight three/Side, enclosed/White first"
-    },
-    {
-      "from": "life & death/Straight three/Side, enclosed",
       "to": "life & death/Straight three/Side, enclosed/Black T14",
       "comments": [
         "{{White}} answers at {{CR:T15}} and {{Black}} has only one eye."
@@ -109,6 +105,10 @@
       "tags": {
         "kind": "mistake"
       }
+    },
+    {
+      "from": "life & death/Straight three/Side, enclosed",
+      "to": "life & death/Straight three/Side, enclosed/White first"
     },
     {
       "from": "life & death/Straight three/Side, enclosed/White first",

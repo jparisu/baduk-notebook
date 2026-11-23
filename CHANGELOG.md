@@ -38,6 +38,17 @@
 - **Next to play** (Black, White or either): only positions with that player to move are listed, so when the same stones exist for both players you get the one you mean. Placing stones alternately sets it; loading a game sets it from the last move. The "Next: …" line under each result is gone.
 - **Side shapes slide along any edge.** The placements "slides along the top edge" and "slides along the right edge" became one, `side`: the shape slides along whichever edge it sits on. Every side life & death shape was stored against the right edge but marked as sliding along the top one, so Find only moved it away from the edge, never along it; a bent four on the side is now found anywhere on any edge.
 
+### Editor (Explore and Design)
+- **Two tabs again:** Position, and Move into it. Every part is a box (Comments, Tags, Next moves, Name; Kind, Comments, Tags for the move), and each tag is a row of its own with a line between them.
+- **Adding a tag is one click:** every known key, and every key used elsewhere, is a chip under the tags; clicking adds it with its control ready (a yes/no tag is set at once). "+ New key…" creates one.
+- **Values from other databases** are shown with "from general" (or the earlier move they are inherited from) instead of an empty field. Setting one stores your own value; **Edit in general** switches the edits to the database that has it, where it can be changed or removed. Other databases' comments are shown too, read only.
+- **Descriptions:** hovering a tag's name or an option shows what it means ("Alternative: an unusual but valid play", "Reduce: to reduce the opponent's territory…"). Every known tag and option has one, editable in Known tags.
+- **Main move = the first move.** The `main` tag is gone. The editor lists the next moves in order with ↑ ↓; the first is the main move. A personal database decides the order only when it stores every move from the position (reordering from it copies them in). The moves in the data were put in the order they were shown before (good moves first), so nothing changes until you reorder.
+- Explore panels also show a line between tags, and descriptions on hover.
+
+### Find results
+- Each match says who plays next (in the colors of your board) instead of the corner you placed it in.
+
 ### Fixes
 - Right after a deploy, the site could fail with "Could not load the databases: JSON.parse…" because the browser reused the previous version's file list. Database files are now always revalidated, and only `.json` files are loaded.
 

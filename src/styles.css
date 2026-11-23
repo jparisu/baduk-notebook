@@ -972,3 +972,50 @@ body.dragging-y, body.dragging-y * { cursor: row-resize !important; user-select:
 .position-info .info-title { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 6px; margin: 0 0 2px; }
 .position-info .info-title .copy-link { padding: 2px 4px; min-height: 0; }
 .crumbs .link.cur { color: var(--fg); font-weight: 700; }
+.r-turn { display: inline-flex; align-items: center; gap: 4px; color: var(--fg); }
+
+/* ---- Editor: tabs, boxes, one row per tag (docs/MODEL.md §8) ---- */
+.edit-tabs { display: flex; margin-bottom: 4px; }
+.edit-tabs button { flex: 1; }
+.edit-box { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--panel-solid, var(--panel)); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.edit-box-h { margin: 0; padding: 0; border: none; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.edit-box-hint { margin: -4px 0 0; font-size: 12px; }
+.tag-list { display: flex; flex-direction: column; }
+.tag-row { display: flex; flex-direction: column; gap: 4px; padding: 8px 0; border-top: 1px solid var(--line); }
+.tag-list .tag-row:first-child, .edit-box > .tag-row:first-of-type { border-top: none; padding-top: 0; }
+.tag-row-head { display: flex; align-items: center; gap: 6px; min-height: 22px; }
+.tag-row-head .spacer { flex: 1; }
+.tag-name { font-size: 13px; font-weight: 600; color: var(--fg); cursor: help; }
+.tag-row.free-key .tag-name { font-style: italic; }
+.tag-row .tag-control { display: block; }
+.tag-row .tag-control > input, .tag-row .tag-control > select, .tag-row .tag-control > textarea, .tag-row > input, .tag-row > select { width: 100%; }
+.tag-row.from-other .tag-control, .tag-row.from-inherited .tag-control { opacity: .7; }
+.cat-btn.from-other { border-style: dashed !important; }
+.src-badge { font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 1px 6px; border-radius: 6px; background: var(--chip); color: var(--chip-fg); }
+.add-tag { display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.add-tag-chips { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.add-label { font-size: 12px; color: var(--muted); margin-right: 2px; }
+.add-chip { font-size: 12px; padding: 2px 8px; }
+.add-chip.free { font-style: italic; }
+.add-chip.new { border-style: dashed !important; }
+.new-key { display: flex; flex-direction: column; gap: 6px; }
+.new-key .grp { flex-wrap: wrap; }
+.new-key .grp input { flex: 1 1 140px; min-width: 0; }
+.comments-edit { display: flex; flex-direction: column; gap: 6px; }
+.comment-item { display: flex; gap: 4px; align-items: flex-start; }
+.comment-item textarea { flex: 1; min-height: 56px; }
+.comment-item.new textarea { min-height: 2.6em; }
+.comment-item.from-other { flex-direction: column; align-items: stretch; border-left: 3px solid var(--line); padding: 4px 8px; background: var(--bg); border-radius: 4px; }
+.comment-ro { font-size: 13px; line-height: 1.5; color: var(--muted); }
+.order-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.order-row { display: flex; align-items: center; gap: 6px; padding: 6px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.order-row:first-child { border-top: none; }
+.order-row .what { color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.order-row .spacer { flex: 1; }
+.order-row .icon { padding: 2px 6px; }
+.move-in-head { margin: 4px 0; }
+
+/* Explore panels: a line between tags, so each one stands apart. */
+.kvs > .f + .f, .pos-values > .f + .f { border-top: 1px solid var(--line); padding-top: 6px; margin-top: 6px; }
+.opt-row .o-desc { flex: 1 1 100%; font-size: 12px; }
+.edit-box.single .tag-name { display: none; }

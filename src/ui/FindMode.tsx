@@ -5,6 +5,7 @@ import GoBoard from '@sabaki/go-board'
 import * as sgf from '@sabaki/sgf'
 import { Workbench } from './Workbench'
 import { Board } from './Board'
+import { StoneIcon } from './Panels'
 import { search, userViewFor, type Match } from '../core/search'
 import { parseSgfPt, parseSgfPtList, type DisplayOptions, type Pt, type Sign, type SignMap } from '../core/geometry'
 import { candidates, rootStep, type Ctx, type Step } from '../view'
@@ -162,6 +163,12 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
     }
   }
 
+  /** The player to move in a match, in the colors of the board you set up. */
+  const nextOf = (m: Match): Sign => {
+    const n = ctx.graph.nodes.get(m.keys[m.keys.length - 1])!
+    return (m.toCanon.swap ? -n.toMove : n.toMove) as Sign
+  }
+
   const openMatch = (m: Match) => {
     const steps = lineSteps(base, m.entryId, m.keys)
     props.onOpen(m.entryId, m.keys, userViewFor(m.toCanon, steps[steps.length - 1].D))
@@ -232,7 +239,9 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
               <b>{m.labels.map(props.entryName).join(' · ')}</b>
             </span>
             <span class="r-meta">
-              {m.keys.length > 1 ? `Move ${m.keys.length - 1}` : 'Start position'} · {m.where}
+              {/* Who plays next, in the colors of your board (the match may have them swapped). */}
+              <span class="r-turn"><StoneIcon sign={nextOf(m)} size={12} /> {nextOf(m) === 1 ? 'Black' : 'White'} to play</span>
+              {' · '}{m.keys.length > 1 ? `move ${m.keys.length - 1} of it` : 'its first position'}
               {m.swapped && <span class="swapped-tag" title="Found with Black and White swapped"> · colors swapped</span>}
               {view.mirror ? ' · mirrored' : ''}
               {m.kind === 'contained' ? ` · ${m.extra} extra stone${m.extra === 1 ? '' : 's'}` : ''}

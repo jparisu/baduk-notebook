@@ -14,7 +14,9 @@ test('game scenario: mark the opponent\'s unknown move as a mistake and my answe
   await expect(page.locator('.offbook-pill')).toHaveCount(0)
   await clickPoint(page, 'S15') // my answer
   await page.locator('.cat-btn', { hasText: 'Punishment' }).click()
+  await page.getByRole('tab', { name: 'Position' }).click()
   await page.locator('#f-pos-evaluation').fill('0.5') // the evaluation slider (inherited from the line), toward Black
+  await page.getByRole('tab', { name: /Move into it/ }).click()
   await page.locator('#f-move-comment').fill('Cuts off the hane stone.')
   await page.locator('#f-move-comment').blur()
   await page.getByRole('button', { name: /Export \(1\)/ }).click()
@@ -33,10 +35,12 @@ test('names a position, and the moves after it carry the name', async ({ page })
   await clickPoint(page, 'Q16')
   await clickPoint(page, 'R13') // an approach that is not in the databases
   await page.getByRole('button', { name: 'Edit' }).click()
+  await page.getByRole('tab', { name: 'Position' }).click()
   await page.locator('#f-name-new').fill('Low approach')
   await page.getByRole('button', { name: 'Name this position' }).click()
   await expect(page.locator('.status')).toContainText('Low approach')
   await clickPoint(page, 'O17')
+  await page.getByRole('tab', { name: /Move into it/ }).click()
   await page.locator('.cat-btn', { hasText: 'Main move' }).click()
   await expect(page.locator('.status')).toContainText('Low approach')
 })
@@ -104,7 +108,7 @@ test('a position and a move can have several comments', async ({ page }) => {
   await page.locator('#f-move-comment-new').blur()
   await expect(page.locator('#f-move-comment')).toHaveValue('First comment on the move.')
   await expect(page.locator('#f-move-comment-1')).toHaveValue('Second comment on the move.')
-  await page.locator('.note-item').first().getByRole('button', { name: 'Remove this comment' }).click()
+  await page.locator('.comment-item').first().getByRole('button', { name: 'Remove this comment' }).click()
   await expect(page.locator('#f-move-comment')).toHaveValue('Second comment on the move.')
 })
 
