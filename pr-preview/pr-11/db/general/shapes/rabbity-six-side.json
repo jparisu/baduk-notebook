@@ -4,7 +4,7 @@
       "id": "life & death/Rabbity six/Side, enclosed",
       "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,rg,sc,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,rh,sb,sh",
       "toPlay": "B",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "The largest of the killable eye shapes. The point touching four others is the vital point.",
         "{{SQ:T15,T16,S15,S16,S14,R15|The rabbity six}}. {{CR:S15|The vital point}} touches four of the other points.",
@@ -40,7 +40,7 @@
       "id": "life & death/Rabbity six/Side, enclosed/Black vital point",
       "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,re,rg,sc,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,rh,sb,sh",
       "toPlay": "W",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "Two or more eyes"
       ],
@@ -56,7 +56,7 @@
       "id": "life & death/Rabbity six/Side, enclosed/White first/White vital point",
       "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,rg,sc,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,re,rh,sb,sh",
       "toPlay": "B",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "One eye"
       ],
@@ -72,7 +72,7 @@
       "id": "life & death/Rabbity six/Side, enclosed/White first",
       "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,rg,sc,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,rh,sb,sh",
       "toPlay": "W",
-      "free": "horizontal",
+      "free": "side",
       "tags": {
         "name": [
           "White first"

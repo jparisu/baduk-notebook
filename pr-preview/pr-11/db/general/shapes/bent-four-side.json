@@ -4,7 +4,7 @@
       "id": "life & death/Bent four/Side, enclosed",
       "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,sh",
       "toPlay": "B",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "Four points with a bend, away from the corner. Alive: the two middle points are miai, just as in straight four. In the corner it is a different story: see \"Bent four in the corner\".",
         "{{SQ:T16,T15,T14,S14|The 4-point eye space}} has {{CR:T15,T14|two middle points}}. {{White}} can take only one of them.",
@@ -39,7 +39,7 @@
       "id": "life & death/Bent four/Side, enclosed/White first/White T15",
       "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,se,sh",
       "toPlay": "B",
-      "free": "horizontal",
+      "free": "side",
       "tags": {
         "name": [
           "White T15"
@@ -52,7 +52,7 @@
       "id": "life & death/Bent four/Side, enclosed/White first",
       "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,sh",
       "toPlay": "W",
-      "free": "horizontal",
+      "free": "side",
       "tags": {
         "name": [
           "White first"
@@ -63,7 +63,7 @@
       "id": "life & death/Bent four/Side, enclosed/White first:3b",
       "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,sf,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,se,sh",
       "toPlay": "W",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "Two eyes"
       ],
@@ -76,7 +76,7 @@
       "id": "life & death/Bent four/Side, enclosed/White first/White T14",
       "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,sf,sh",
       "toPlay": "B",
-      "free": "horizontal",
+      "free": "side",
       "tags": {
         "name": [
           "White T14"
@@ -89,7 +89,7 @@
       "id": "life & death/Bent four/Side, enclosed/White first:3",
       "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,se,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,sf,sh",
       "toPlay": "W",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "Two eyes"
       ],

@@ -4,7 +4,7 @@
       "id": "life & death/Crossed five/Side, enclosed",
       "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,rg,sc,sd,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,rh,sb,sh",
       "toPlay": "B",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "Five points in a plus shape. The center is the vital point.",
         "{{SQ:S14,S15,S16,R15,T15|The crossed five}}. {{CR:S15|The center}} touches all four other points.",
@@ -40,7 +40,7 @@
       "id": "life & death/Crossed five/Side, enclosed/Black vital point",
       "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,re,rg,sc,sd,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,rh,sb,sh",
       "toPlay": "W",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "Four eyes"
       ],
@@ -56,7 +56,7 @@
       "id": "life & death/Crossed five/Side, enclosed/White first/White vital point",
       "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,rg,sc,sd,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,re,rh,sb,sh",
       "toPlay": "B",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "One eye"
       ],
@@ -72,7 +72,7 @@
       "id": "life & death/Crossed five/Side, enclosed/White first",
       "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,rg,sc,sd,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,rh,sb,sh",
       "toPlay": "W",
-      "free": "horizontal",
+      "free": "side",
       "tags": {
         "name": [
           "White first"

@@ -4,7 +4,7 @@
       "id": "life & death/Straight three/Side, enclosed",
       "stones": "B:rc,rd,re,rf,rg,sc,sg W:qb,qc,qd,qe,qf,qg,qh,rb,rh,sb,sh",
       "toPlay": "B",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "Three points in a row on the edge. Whoever plays the middle point decides the result.",
         "{{SQ:T14,T15,T16|The 3-point eye space}}. {{CR:T15|The middle point}} is the vital point.",
@@ -32,7 +32,7 @@
       "id": "life & death/Straight three/Side, enclosed/Black vital point",
       "stones": "B:rc,rd,re,rf,rg,sc,se,sg W:qb,qc,qd,qe,qf,qg,qh,rb,rh,sb,sh",
       "toPlay": "W",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "Two eyes"
       ],
@@ -48,7 +48,7 @@
       "id": "life & death/Straight three/Side, enclosed/White first/White vital point",
       "stones": "B:rc,rd,re,rf,rg,sc,sg W:qb,qc,qd,qe,qf,qg,qh,rb,rh,sb,se,sh",
       "toPlay": "B",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "One eye"
       ],
@@ -64,7 +64,7 @@
       "id": "life & death/Straight three/Side, enclosed/White first",
       "stones": "B:rc,rd,re,rf,rg,sc,sg W:qb,qc,qd,qe,qf,qg,qh,rb,rh,sb,sh",
       "toPlay": "W",
-      "free": "horizontal",
+      "free": "side",
       "tags": {
         "name": [
           "White first"
@@ -75,7 +75,7 @@
       "id": "life & death/Straight three/Side, enclosed/Black T14",
       "stones": "B:rc,rd,re,rf,rg,sc,sf,sg W:qb,qc,qd,qe,qf,qg,qh,rb,rh,sb,sh",
       "toPlay": "W",
-      "free": "horizontal",
+      "free": "side",
       "tags": {
         "name": [
           "Black T14"

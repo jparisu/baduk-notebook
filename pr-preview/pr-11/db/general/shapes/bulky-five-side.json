@@ -4,7 +4,7 @@
       "id": "life & death/Bulky five/Side, enclosed",
       "stones": "B:qc,qd,qe,qf,qg,rc,rg,sc,sf,sg W:pb,pc,pd,pe,pf,pg,ph,qb,qh,rb,rh,sb,sh",
       "toPlay": "B",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "A 2×2 square with one point attached. The vital point is the point of the square next to the extra point (it touches three others).",
         "{{SQ:T15,T16,S15,S16,S14|The bulky five}}. {{CR:S15|The vital point}} touches three of the other points.",
@@ -37,7 +37,7 @@
       "id": "life & death/Bulky five/Side, enclosed/Black vital point",
       "stones": "B:qc,qd,qe,qf,qg,rc,re,rg,sc,sf,sg W:pb,pc,pd,pe,pf,pg,ph,qb,qh,rb,rh,sb,sh",
       "toPlay": "W",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "Two eyes"
       ],
@@ -53,7 +53,7 @@
       "id": "life & death/Bulky five/Side, enclosed/White first/White vital point",
       "stones": "B:qc,qd,qe,qf,qg,rc,rg,sc,sf,sg W:pb,pc,pd,pe,pf,pg,ph,qb,qh,rb,re,rh,sb,sh",
       "toPlay": "B",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "One eye"
       ],
@@ -69,7 +69,7 @@
       "id": "life & death/Bulky five/Side, enclosed/White first",
       "stones": "B:qc,qd,qe,qf,qg,rc,rg,sc,sf,sg W:pb,pc,pd,pe,pf,pg,ph,qb,qh,rb,rh,sb,sh",
       "toPlay": "W",
-      "free": "horizontal",
+      "free": "side",
       "tags": {
         "name": [
           "White first"
@@ -80,7 +80,7 @@
       "id": "life & death/Bulky five/Side, enclosed/Black S14",
       "stones": "B:qc,qd,qe,qf,qg,rc,rf,rg,sc,sf,sg W:pb,pc,pd,pe,pf,pg,ph,qb,qh,rb,rh,sb,sh",
       "toPlay": "W",
-      "free": "horizontal",
+      "free": "side",
       "tags": {
         "name": [
           "Black S14"
