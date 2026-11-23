@@ -4,7 +4,7 @@
       "id": "life & death/Pyramid four/Side, enclosed",
       "stones": "B:qd,qe,qf,rc,rd,rf,rg,sc,sg W:pc,pd,pe,pf,pg,qb,qc,qg,qh,rb,rh,sb,sh",
       "toPlay": "B",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "Four points in a T shape. The point touching the other three is the vital point: whoever plays it decides the result.",
         "{{SQ:T14,T15,T16,S15|The pyramid}}. {{CR:T15|The center point}} touches the other three.",
@@ -40,7 +40,7 @@
       "id": "life & death/Pyramid four/Side, enclosed/Black vital point",
       "stones": "B:qd,qe,qf,rc,rd,rf,rg,sc,se,sg W:pc,pd,pe,pf,pg,qb,qc,qg,qh,rb,rh,sb,sh",
       "toPlay": "W",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "Two or more eyes"
       ],
@@ -56,7 +56,7 @@
       "id": "life & death/Pyramid four/Side, enclosed/White first/White vital point",
       "stones": "B:qd,qe,qf,rc,rd,rf,rg,sc,sg W:pc,pd,pe,pf,pg,qb,qc,qg,qh,rb,rh,sb,se,sh",
       "toPlay": "B",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "One eye"
       ],
@@ -72,7 +72,7 @@
       "id": "life & death/Pyramid four/Side, enclosed/White first",
       "stones": "B:qd,qe,qf,rc,rd,rf,rg,sc,sg W:pc,pd,pe,pf,pg,qb,qc,qg,qh,rb,rh,sb,sh",
       "toPlay": "W",
-      "free": "horizontal",
+      "free": "side",
       "tags": {
         "name": [
           "White first"
@@ -83,7 +83,7 @@
       "id": "life & death/Pyramid four/Side, enclosed/White first/White S15",
       "stones": "B:qd,qe,qf,rc,rd,rf,rg,sc,sg W:pc,pd,pe,pf,pg,qb,qc,qg,qh,rb,re,rh,sb,sh",
       "toPlay": "B",
-      "free": "horizontal",
+      "free": "side",
       "tags": {
         "name": [
           "White S15"

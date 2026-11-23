@@ -5,7 +5,7 @@ import { validateAll } from '../core/validate'
 import type { TagDef as FieldDef, TagOption as FieldOption, TagType as FieldType, TagRegistry } from '../core/tags'
 import { changes, download, makePatch, makeZip, type Workspace } from '../edit/workspace'
 import { parsePt, type Pt, type Sign } from '../core/geometry'
-import type { Free } from '../core/model'
+import { FREE_LABELS, type Free } from '../core/model'
 import type { NewEntry } from '../edit/ops'
 import type { DatabaseInfo } from '../data/load'
 import { BRANCH, REPO } from '../config'
@@ -141,7 +141,7 @@ export function NewEntryDialog({ type: initial, target, close, create }: { type:
   const [type, setType] = useState(initial)
   const [name, setName] = useState('')
   const [id, setId] = useState('')
-  const [free, setFree] = useState<Free>(type === 'joseki' ? 'corner' : 'horizontal')
+  const [free, setFree] = useState<Free>(type === 'joseki' ? 'corner' : 'side')
   const [diff, setDiff] = useState(type === 'shape' ? '25k' : '15k')
   const [preset, setPreset] = useState(type === 'joseki' ? '44' : 'empty')
   const [toMove, setToMove] = useState<Sign>(type === 'joseki' ? -1 : 1)
@@ -161,17 +161,14 @@ export function NewEntryDialog({ type: initial, target, close, create }: { type:
       <form onSubmit={submit} class="form">
         <div class="seg" role="group" aria-label="Kind">
           <button type="button" class={type === 'joseki' ? 'on' : ''} onClick={() => { setType('joseki'); setFree('corner'); setPreset('44'); setToMove(-1) }}>Joseki</button>
-          <button type="button" class={type === 'shape' ? 'on' : ''} onClick={() => { setType('shape'); setFree('horizontal'); setPreset('empty'); setToMove(1) }}>Life &amp; death</button>
+          <button type="button" class={type === 'shape' ? 'on' : ''} onClick={() => { setType('shape'); setFree('side'); setPreset('empty'); setToMove(1) }}>Life &amp; death</button>
         </div>
         <label class="f"><span class="fl">Name</span><input id="new-name" type="text" value={name} onInput={(e) => setName((e.target as HTMLInputElement).value)} placeholder={type === 'joseki' ? '3-4 point · small knight approach' : 'Bent four · corner'} /></label>
         <label class="f"><span class="fl">Sequence id</span><input id="new-id" type="text" value={finalId} onInput={(e) => setId((e.target as HTMLInputElement).value)} /></label>
         <label class="f">
           <span class="fl">Placement</span>
           <select id="new-free" value={free} onChange={(e) => setFree((e.target as HTMLSelectElement).value as Free)}>
-            <option value="corner">Fixed in the corner</option>
-            <option value="horizontal">Slides along the top edge</option>
-            <option value="vertical">Slides along the right edge</option>
-            <option value="anywhere">Anywhere</option>
+            {FREE_LABELS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </label>
         <label class="f"><span class="fl">Difficulty</span><input id="new-diff" type="text" value={diff} onInput={(e) => setDiff((e.target as HTMLInputElement).value)} /></label>

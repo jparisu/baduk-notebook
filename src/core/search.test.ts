@@ -47,14 +47,14 @@ describe('find position', () => {
     for (const f of loadDb((p) => p.startsWith('general/shapes/')))
       for (const pos of f.positions) {
         const b = boardOf(pos.stones)
-        for (const dx of pos.free === 'corner' ? [0] : [-3])
+        for (const dy of pos.free === 'corner' ? [0] : [7]) // side shapes: down their edge (the right one)
           for (const t of [SYMMETRIES[3], { ...SYMMETRIES[6], swap: true }]) {
             const shifted = empty()
             let fits = true
-            b.forEach((row, y) => row.forEach((s, x) => { if (s) { if (x + dx < 0 || x + dx > 18) fits = false; else shifted[y][x + dx] = s } }))
+            b.forEach((row, y) => row.forEach((s, x) => { if (s) { if (y + dy > 18) fits = false; else shifted[y + dy][x] = s } }))
             if (!fits) continue
             tried++
-            if (!search(g, active, transformMap(t, shifted)).some((r) => r.kind === 'exact')) missed.push(`${pos.id} dx=${dx}`)
+            if (!search(g, active, transformMap(t, shifted)).some((r) => r.kind === 'exact')) missed.push(`${pos.id} dy=${dy}`)
           }
       }
     expect(tried).toBeGreaterThan(80)
@@ -73,17 +73,27 @@ describe('find position', () => {
     expect(apply(compose(U, p.D), apply(exact.toCanon, parsePt('Q4')!))).toEqual(parsePt('Q4'))
   })
 
-  it('finds a side shape moved along the edge it may slide on', () => {
-    const shape = [...g.entries.values()].find((e) => e.id.startsWith('life & death/Straight three'))!
-    const n = g.nodes.get(shape.root)!
-    // Stored on the top edge; shift it 3 lines to the left.
-    const stored = n.contribs[0].pos.stones
-    const m = empty()
-    for (const part of stored.split(' ')) {
-      const [c, list] = part.split(':')
-      for (const v of list.split(',')) m[v.charCodeAt(1) - 97][v.charCodeAt(0) - 97 - 3] = c === 'B' ? 1 : -1
+  it('finds a side shape anywhere along its edge, but not moved away from it', () => {
+    const shape = [...g.entries.values()].find((e) => e.id === 'life & death/Bent four/Side, enclosed')!
+    const b = boardOf(g.nodes.get(shape.root)!.contribs[0].pos.stones) // stored against the right edge
+    const moved = (dx: number, dy: number) => {
+      const m = empty()
+      b.forEach((row, y) => row.forEach((s, x) => s && (m[y + dy][x + dx] = s)))
+      return m
     }
-    expect(search(g, active, m).some((r) => r.entryId === shape.id && r.kind === 'exact')).toBe(true)
+    const found = (m: SignMap) => search(g, active, m).some((r) => r.entryId === shape.id && r.kind === 'exact')
+    expect(found(moved(0, 6))).toBe(true) // down the right edge
+    expect(found(moved(0, 10))).toBe(true) // near the bottom
+    expect(found(transformMap(SYMMETRIES[1], moved(0, 5)))).toBe(true) // on the left edge
+    expect(found(moved(-3, 6))).toBe(false) // three lines away from the edge: another position
+  })
+
+  it('lists only positions with the chosen player to move', () => {
+    const start = [...g.entries.values()].find((e) => e.id === 'life & death/Straight three/Side, enclosed')!
+    const m = boardOf(g.nodes.get(start.root)!.contribs[0].pos.stones)
+    const ids = (toPlay: 1 | -1) => search(g, active, m, toPlay).filter((r) => r.kind === 'exact').map((r) => r.entryId)
+    expect(ids(1)).toEqual([start.id]) // Black plays first
+    expect(ids(-1)).toEqual([`${start.id}/White first`]) // the same stones, White plays first
   })
 })
 

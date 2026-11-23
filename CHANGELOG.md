@@ -35,6 +35,9 @@
 - **Colors swapped:** stones placed with Black and White the other way round are found too. Such results say "colors swapped", come after a match with the colors as stored, and open with Swap colors on.
 - **Every position can be found.** Positions after a named variation that kept the id of the sequence before it (such as the life & death positions after White plays first) were never indexed, so Find missed them in any orientation. Side shapes already slid along their edge; a test now checks every life & death position on every edge, slid, and with colors swapped.
 
+- **Next to play** (Black, White or either): only positions with that player to move are listed, so when the same stones exist for both players you get the one you mean. Placing stones alternately sets it; loading a game sets it from the last move. The "Next: …" line under each result is gone.
+- **Side shapes slide along any edge.** The placements "slides along the top edge" and "slides along the right edge" became one, `side`: the shape slides along whichever edge it sits on. Every side life & death shape was stored against the right edge but marked as sliding along the top one, so Find only moved it away from the edge, never along it; a bent four on the side is now found anywhere on any edge.
+
 ### Fixes
 - Right after a deploy, the site could fail with "Could not load the databases: JSON.parse…" because the browser reused the previous version's file list. Database files are now always revalidated, and only `.json` files are loaded.
 

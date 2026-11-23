@@ -4,7 +4,7 @@
       "id": "life & death/Straight four/Side, enclosed",
       "stones": "B:rc,rd,re,rf,rg,rh,sc,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,si",
       "toPlay": "B",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "Four points in a row. Alive even if {{White}} plays first: {{Black}} always answers on the other middle point.",
         "{{SQ:T13,T14,T15,T16|The 4-point eye space}} has {{CR:T14,T15|two middle points}}. {{White}} can take only one of them.",
@@ -32,7 +32,7 @@
       "id": "life & death/Straight four/Side, enclosed/White first/White T14",
       "stones": "B:rc,rd,re,rf,rg,rh,sc,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,sf,si",
       "toPlay": "B",
-      "free": "horizontal",
+      "free": "side",
       "tags": {
         "name": [
           "White T14"
@@ -45,7 +45,7 @@
       "id": "life & death/Straight four/Side, enclosed/White first",
       "stones": "B:rc,rd,re,rf,rg,rh,sc,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,si",
       "toPlay": "W",
-      "free": "horizontal",
+      "free": "side",
       "tags": {
         "name": [
           "White first"
@@ -56,7 +56,7 @@
       "id": "life & death/Straight four/Side, enclosed/White first:3b",
       "stones": "B:rc,rd,re,rf,rg,rh,sc,se,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,sf,si",
       "toPlay": "W",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "Two eyes"
       ],
@@ -69,7 +69,7 @@
       "id": "life & death/Straight four/Side, enclosed/White first/White T15",
       "stones": "B:rc,rd,re,rf,rg,rh,sc,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,se,si",
       "toPlay": "B",
-      "free": "horizontal",
+      "free": "side",
       "tags": {
         "name": [
           "White T15"
@@ -82,7 +82,7 @@
       "id": "life & death/Straight four/Side, enclosed/White first:3",
       "stones": "B:rc,rd,re,rf,rg,rh,sc,sf,sh W:qb,qc,qd,qe,qf,qg,qh,qi,rb,ri,sb,se,si",
       "toPlay": "W",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "Two eyes"
       ],

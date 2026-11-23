@@ -4,7 +4,7 @@
       "id": "life & death/Square four/Side, enclosed",
       "stones": "B:qc,qd,qe,qf,rc,rf,sc,sf W:pb,pc,pd,pe,pf,pg,qb,qg,rb,rg,sb,sg",
       "toPlay": "B",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "Four points in a 2×2 block. Dead even if {{Black}} plays first: any move inside leaves a bent three, and {{White}} kills it at the bend.",
         "{{SQ:T15,T16,S15,S16|The square}} is a single eye. {{Black}} has no move that splits it.",
@@ -40,7 +40,7 @@
       "id": "life & death/Square four/Side, enclosed/Black S16",
       "stones": "B:qc,qd,qe,qf,rc,rd,rf,sc,sf W:pb,pc,pd,pe,pf,pg,qb,qg,rb,rg,sb,sg",
       "toPlay": "W",
-      "free": "horizontal",
+      "free": "side",
       "tags": {
         "name": [
           "Black S16"
@@ -53,7 +53,7 @@
       "id": "life & death/Square four/Side, enclosed/Black S16:2",
       "stones": "B:qc,qd,qe,qf,rc,rd,rf,sc,sf W:pb,pc,pd,pe,pf,pg,qb,qg,rb,rg,sb,se,sg",
       "toPlay": "B",
-      "free": "horizontal",
+      "free": "side",
       "comments": [
         "One eye"
       ],

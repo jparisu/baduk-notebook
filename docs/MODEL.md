@@ -14,7 +14,7 @@ A position is the stones on a local area of the board plus **who plays next**.
 | `id` | **Unique identifier** of the position, used by the moves (§4). Example: `joseki/4-4 point/3-3 invasion` for the start of a sequence, `joseki/4-4 point/3-3 invasion:4` for a later position. |
 | `stones` | Black and white stones, in the upper-right corner frame (`B:pd,qf W:qc`). |
 | `toPlay` | `B` or `W`. The same stones with the other player to move is a **different** position. |
-| `free` | Placement, only when it is not `corner`: `horizontal`, `vertical` or `anywhere` (§5). |
+| `free` | Placement, only when it is not `corner`: `side` or `anywhere` (§5). |
 | `comments` | Optional. The texts shown for the position, in order (with board references, §3.2). |
 | `tags` | Optional. Any keys and values (§3). |
 
@@ -171,8 +171,7 @@ The board shows every position in the **upper-right corner** by default.
 | `free` | The stones may be found… | Example |
 |---|---|---|
 | `corner` | only at that distance from both edges | joseki, corner life & death |
-| `horizontal` | anywhere along the top edge, same distance from it | a 2nd-line side shape (2nd and 3rd line differ) |
-| `vertical` | anywhere along the right edge, same distance from it | the same, along the other side |
+| `side` | anywhere along any edge, at the same distance from it: it slides along the edge it is closest to | side life & death, a 2nd-line side shape (2nd and 3rd line differ) |
 | `anywhere` | anywhere | a centre shape (tiger's mouth, ponnuki) |
 
 Find matches a position by sliding its stones along the free directions, for all 8 symmetries.
@@ -180,6 +179,9 @@ Find matches a position by sliding its stones along the free directions, for all
 ## 6. Finding positions
 
 - **By stones:** place stones (Find) and the app lists the matching positions with their ids and topics.
+  You also say who plays next (Black, White or either; placing stones alternately sets it for you):
+  the same stones with the other player to move are a different position, so only positions with
+  that player to move are listed.
   Every orientation is tried, and also the colors swapped: a match found with Black and White swapped
   says so, comes after the same match with the colors as stored, and opens with Swap colors on.
   Every position of the databases can be found, including ones after a named variation that kept the

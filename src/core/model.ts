@@ -7,8 +7,13 @@ import GoBoard from '@sabaki/go-board'
 import type { Tags } from './tags'
 import { SIZE, SYMMETRIES, parseSgfPt, transformMap, type Pt, type Sign, type SignMap } from './geometry'
 
-export type Free = 'corner' | 'horizontal' | 'vertical' | 'anywhere'
-export const FREE_VALUES: Free[] = ['corner', 'horizontal', 'vertical', 'anywhere']
+/**
+ * Placement (docs/MODEL.md §5): fixed in the corner, sliding along the edge the stones sit on (`side`),
+ * or anywhere. Older files said `horizontal` / `vertical`; both read as `side`.
+ */
+export type Free = 'corner' | 'side' | 'anywhere'
+export const FREE_VALUES: Free[] = ['corner', 'side', 'anywhere']
+export const FREE_LABELS: [Free, string][] = [['corner', 'Fixed in the corner'], ['side', 'Slides along its edge'], ['anywhere', 'Anywhere']]
 
 /** What positions and moves have in common: comments and tags. */
 export interface Rec {
@@ -157,7 +162,7 @@ export function positionToJson(p: PosRec): Json {
 export const moveToJson = (from: string, m: MoveRec): Json => recToJson(m, { from, to: m.to })
 
 export function positionFromJson(j: Json): PosRec {
-  const free = FREE_VALUES.includes(j.free as Free) ? (j.free as Free) : 'corner'
+  const free = j.free === 'horizontal' || j.free === 'vertical' ? 'side' : FREE_VALUES.includes(j.free as Free) ? (j.free as Free) : 'corner'
   return { id: String(j.id), stones: String(j.stones ?? ''), toPlay: j.toPlay === 'W' ? 'W' : 'B', free, comments: texts(j.comments), tags: tagsOf(j.tags), moves: [] }
 }
 

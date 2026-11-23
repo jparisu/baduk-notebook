@@ -4,7 +4,7 @@
  * Every orientation is tried, also with the colors swapped; such matches say so and come after the
  * same match with the colors as stored.
  */
-import { SIZE, SYMMETRIES, compose, cornerWindow, inverse, transformMap, userTransform, type Corner, type DisplayOptions, type Sign, type SignMap, type Transform } from './geometry'
+import { SIZE, SYMMETRIES, applySign, compose, cornerWindow, inverse, transformMap, userTransform, type Corner, type DisplayOptions, type Sign, type SignMap, type Transform } from './geometry'
 import { freeOf, labelsAt, type Graph } from './graph'
 import { canonical } from './hash'
 
@@ -95,7 +95,13 @@ function compare(node: SignMap, user: SignMap, region?: [number, number, number,
   return { missing, extra, stones }
 }
 
-export function search(g: Graph, active: Set<string>, user: SignMap, maxNear = 2): Match[] {
+/**
+ * `toPlay` is who plays next on the user's board (0: either). The same stones with the other player to
+ * move are a different position, so only positions with that player to move are listed.
+ */
+export function search(g: Graph, active: Set<string>, user: SignMap, toPlay: Sign = 0, maxNear = 2): Match[] {
+  /** The user's player to move, seen in the position's canonical frame (colors may be swapped). */
+  const playerFits = (t: Transform, nodeToMove: Sign) => !toPlay || applySign(t, toPlay) === nodeToMove
   const lines = indexLines(g, active)
   const best = new Map<string, Match>() // one result per entry+position
   const keep = (m: Match) => {
@@ -114,7 +120,7 @@ export function search(g: Graph, active: Set<string>, user: SignMap, maxNear = 2
       for (const [key, owners] of lines) {
         const node = g.nodes.get(key)!
         for (const o of owners) {
-          if (freeOf(node) !== 'corner') continue
+          if (freeOf(node) !== 'corner' || !playerFits(t, node.toMove)) continue
           const { missing, extra, stones } = compare(node.board, u)
           if (!stones) continue
           const kind: MatchKind | null = !missing && !extra ? 'exact' : !missing ? 'contained' : missing + extra <= maxNear && stones >= 3 ? 'near' : null
@@ -132,17 +138,17 @@ export function search(g: Graph, active: Set<string>, user: SignMap, maxNear = 2
         const node = g.nodes.get(key)!
         const free = freeOf(node)
         if (free === 'corner') continue
-        // The free direction is given in the stored frame; find it in the canonical frame.
-        const T = node.contribs[0].toCanon
-        const storedX = T.a !== 0 // the stored x axis stays the x axis
-        const freeX = free === 'anywhere' || (free === 'horizontal' ? storedX : !storedX)
-        const freeY = free === 'anywhere' || (free === 'horizontal' ? !storedX : storedX)
         const st = stonesOf(node.board)
         if (!st.length) continue
         const xs = st.map((s) => s[0]), ys = st.map((s) => s[1])
         const [minx, maxx, miny, maxy] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]
+        // A side shape slides along the edge it sits on (the closest one), keeping its distance from it.
+        const toLeftRight = Math.min(minx, SIZE - 1 - maxx), toTopBottom = Math.min(miny, SIZE - 1 - maxy)
+        const freeX = free === 'anywhere' || toTopBottom < toLeftRight
+        const freeY = free === 'anywhere' || toLeftRight <= toTopBottom
         const range = (lo: number, hi: number, free: boolean) => (free ? Array.from({ length: SIZE - (hi - lo) }, (_, i) => i - lo) : [0])
         for (const t of ALL) {
+          if (!playerFits(t, node.toMove)) continue
           const u = transformMap(t, user)
           for (const dx of range(minx, maxx, freeX))
             for (const dy of range(miny, maxy, freeY)) {
@@ -161,7 +167,8 @@ export function search(g: Graph, active: Set<string>, user: SignMap, maxNear = 2
         }
       }
 
-  return sameStones(g, dedupe([...best.values()]))
+  // Without a player to move, the same stones before and after a tenuki would both be listed.
+  return toPlay ? dedupe([...best.values()]) : sameStones(g, dedupe([...best.values()]))
 }
 
 /**

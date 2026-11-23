@@ -15,7 +15,7 @@ import { RANK } from '../core/validate'
 import { compose } from '../core/geometry'
 import { locate, nameSequence, renameTag, setComments, setTags, type Location, type On } from '../edit/ops'
 import { updateRegistry } from '../edit/workspace'
-import { isStartId, seqOf } from '../core/model'
+import { FREE_LABELS, isStartId, seqOf } from '../core/model'
 import type { Workspace } from '../edit/workspace'
 import { apply, ptName } from '../core/geometry'
 import { candidates, entryFields, frame, inBook, isInherited, lineFields, mainMove, moveOf, primaryLabel, rootStep, type Ctx, type Step } from '../view'
@@ -342,7 +342,7 @@ export function EditPanel(p: EditApi) {
                   setTags(p.ws, here!, 'pos', {})
                   p.commit()
                 }}>
-                  {[['corner', 'Fixed in the corner'], ['horizontal', 'Slides along the top edge'], ['vertical', 'Slides along the right edge'], ['anywhere', 'Anywhere']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                  {FREE_LABELS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select>
               </span>
             </label>
