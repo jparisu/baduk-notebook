@@ -259,11 +259,11 @@ tabs; each part is a box, and each tag a row of its own:
 - **Position:**
   - **Comments:** one box each; add as many as you like, empty one or press × to remove it. Other
     databases' comments are shown above, read only, with **Edit in …** to switch to that database.
-  - **Tags:** the tags the position has, the ones other databases set here and inherited values. A
-    value from another database or an earlier position is shown with where it comes from: setting it
-    stores your own value; **Edit in …** switches to the database that has it, to change or remove it
-    there. Hovering a tag's name or one of its options shows what it means (`description` in
-    `db/tags.json`).
+  - **Tags:** each tag is a card: the tags the position has, the ones other databases set here and
+    inherited values. A value from another database or an earlier position carries a badge with where
+    it comes from: setting it stores your own value; clicking a database's badge switches the edits to
+    that database; × removes a value, from the database that stores it. Hovering a tag's name or one
+    of its options shows what it means (`description` in `db/tags.json`).
   - **Add:** every key the interface knows, and every key used elsewhere in the databases, is a chip:
     one click adds it with its control ready (a yes/no tag is set at once). **+ New key…** creates one: a
     plain key (text, list, number, yes/no) only lives in the data; a key whose type cannot be told from
@@ -272,7 +272,8 @@ tabs; each part is a box, and each tag a row of its own:
   - **Next moves:** the moves from here in their order; ↑ and ↓ reorder them, and the first is the main
     move (§1).
   - **Name:** at the start of a sequence, its names, id and placement; elsewhere, naming the position
-    starts a new sequence there.
+    starts a new sequence there (the name offered is the sequence it comes from and a number).
+- Explanations stay out of the way: they are in the ⓘ icons and in tooltips.
 - **Move into it:** the move from the previous position of your line, with its kind (buttons), comments
   and tags, in the same boxes. The same position can be reached by other moves, and each keeps its own
   data, so this belongs to the move, not to the position. It can only be described once the previous

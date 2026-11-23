@@ -44,7 +44,10 @@
 - **Values from other databases** are shown with "from general" (or the earlier move they are inherited from) instead of an empty field. Setting one stores your own value; **Edit in general** switches the edits to the database that has it, where it can be changed or removed. Other databases' comments are shown too, read only.
 - **Descriptions:** hovering a tag's name or an option shows what it means ("Alternative: an unusual but valid play", "Reduce: to reduce the opponent's territory…"). Every known tag and option has one, editable in Known tags.
 - **Main move = the first move.** The `main` tag is gone. The editor lists the next moves in order with ↑ ↓; the first is the main move. A personal database decides the order only when it stores every move from the position (reordering from it copies them in). The moves in the data were put in the order they were shown before (good moves first), so nothing changes until you reorder.
-- Explore panels also show a line between tags, and descriptions on hover.
+- Each tag is a raised card of its own, in the editor and in the Explore panels, clear on light and dark themes.
+- × removes any tag shown, also one another database stores (it is removed from that database). Clicking a database's badge switches the edits to it.
+- Naming a position offers the name of the sequence it comes from and a number ("3-3 invasion 1"), with no explanation around it.
+- Explanations moved out of the way: ⓘ icons (Comments, Next moves, Find's search and "next to play") and tooltips replace the help sentences.
 
 ### Find results
 - Each match says who plays next (in the colors of your board) instead of the corner you placed it in.

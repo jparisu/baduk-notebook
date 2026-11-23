@@ -6,6 +6,7 @@ import * as sgf from '@sabaki/sgf'
 import { Workbench } from './Workbench'
 import { Board } from './Board'
 import { StoneIcon } from './Panels'
+import { Info } from './EditPanel'
 import { search, userViewFor, type Match } from '../core/search'
 import { parseSgfPt, parseSgfPtList, type DisplayOptions, type Pt, type Sign, type SignMap } from '../core/geometry'
 import { candidates, rootStep, type Ctx, type Step } from '../view'
@@ -183,14 +184,13 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
         ))}
       </div>
       <div class="f to-play">
-        <span class="fl">Next to play</span>
+        <span class="fl">Next to play<Info text="The same stones with the other player to move are a different position. Alternate placement sets it for you." /></span>
         <span class="seg" role="group" aria-label="Next to play">
           {([[1, 'Black'], [-1, 'White'], [0, 'Either']] as [Sign, string][]).map(([v, l]) => (
             <button key={v} class={toPlay === v ? 'on' : ''} aria-pressed={toPlay === v} onClick={() => setToPlay(v)}>{l}</button>
           ))}
         </span>
       </div>
-      <p class="hint small">The same stones with the other player to move are a different position. Alternate placement sets it for you.</p>
       <div class="grp">
         <label class="file-btn">
           Load SGF file…
@@ -219,14 +219,12 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
           }} />
         </div>
       )}
-      <h2>How it searches</h2>
-      <p class="hint">Each 10×10 corner is compared with every position fixed in the corner, in all 8 orientations, and also with the colors swapped (those matches say so and open with Swap colors on). Positions that may slide, such as side and centre shapes, are also found where you placed them. Exact matches come first, then positions contained in yours, then positions that differ by up to 2 stones.</p>
     </div>
   )
 
   const list = (
     <div class="results">
-      <h2>Matches ({results.length})</h2>
+      <h2>Matches ({results.length})<Info text="Each 10×10 corner is compared with every position fixed in the corner, in all 8 orientations and also with the colors swapped. Side and centre shapes are found wherever they may slide. Exact matches first, then positions contained in yours, then positions that differ by up to 2 stones." /></h2>
       {!board.some((r) => r.some(Boolean)) && <p class="hint">Place stones on the board, or load a game, to search.</p>}
       {board.some((r) => r.some(Boolean)) && results.length === 0 && <p class="hint">No joseki or shape matches these stones.</p>}
       {results.map((m, i) => {

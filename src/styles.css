@@ -980,9 +980,15 @@ body.dragging-y, body.dragging-y * { cursor: row-resize !important; user-select:
 .edit-box { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--panel-solid, var(--panel)); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
 .edit-box-h { margin: 0; padding: 0; border: none; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .edit-box-hint { margin: -4px 0 0; font-size: 12px; }
-.tag-list { display: flex; flex-direction: column; }
-.tag-row { display: flex; flex-direction: column; gap: 4px; padding: 8px 0; border-top: 1px solid var(--line); }
-.tag-list .tag-row:first-child, .edit-box > .tag-row:first-of-type { border-top: none; padding-top: 0; }
+/* Each tag is a raised card of its own, clear on light and dark themes. */
+:root { --tag-card: color-mix(in srgb, var(--fg) 5%, var(--panel-solid, var(--panel))); --tag-edge: color-mix(in srgb, var(--fg) 18%, transparent); }
+.tag-list { display: flex; flex-direction: column; gap: 8px; }
+.tag-row, .kvs > .f, .pos-values > .f {
+  background: var(--tag-card); border: 1px solid var(--tag-edge); border-radius: 8px;
+  box-shadow: 0 1px 0 color-mix(in srgb, #fff 10%, transparent) inset, 0 3px 8px -4px rgba(0, 0, 0, .45);
+}
+.tag-row { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; }
+.edit-box.single .tag-row { background: none; border: none; box-shadow: none; padding: 0; }
 .tag-row-head { display: flex; align-items: center; gap: 6px; min-height: 22px; }
 .tag-row-head .spacer { flex: 1; }
 .tag-name { font-size: 13px; font-weight: 600; color: var(--fg); cursor: help; }
@@ -991,7 +997,11 @@ body.dragging-y, body.dragging-y * { cursor: row-resize !important; user-select:
 .tag-row .tag-control > input, .tag-row .tag-control > select, .tag-row .tag-control > textarea, .tag-row > input, .tag-row > select { width: 100%; }
 .tag-row.from-other .tag-control, .tag-row.from-inherited .tag-control { opacity: .7; }
 .cat-btn.from-other { border-style: dashed !important; }
-.src-badge { font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 1px 6px; border-radius: 6px; background: var(--chip); color: var(--chip-fg); }
+.src-badge { font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 1px 6px; border-radius: 6px; background: var(--chip); color: var(--chip-fg); border: none !important; min-height: 0; line-height: 1.5; box-shadow: none; }
+button.src-badge { cursor: pointer; }
+button.src-badge:hover { background: var(--accent); color: #fff; }
+.info-i { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; margin-left: 6px; border-radius: 50%; border: 1px solid var(--muted); color: var(--muted); font: italic 700 10px/1 Georgia, serif; text-transform: none; letter-spacing: 0; cursor: help; vertical-align: middle; }
+.info-i:hover, .info-i:focus { color: var(--accent); border-color: var(--accent); outline: none; }
 .add-tag { display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed var(--line); padding-top: 8px; }
 .add-tag-chips { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .add-label { font-size: 12px; color: var(--muted); margin-right: 2px; }
@@ -1015,7 +1025,7 @@ body.dragging-y, body.dragging-y * { cursor: row-resize !important; user-select:
 .order-row .icon { padding: 2px 6px; }
 .move-in-head { margin: 4px 0; }
 
-/* Explore panels: a line between tags, so each one stands apart. */
-.kvs > .f + .f, .pos-values > .f + .f { border-top: 1px solid var(--line); padding-top: 6px; margin-top: 6px; }
+/* Explore panels: each tag a card of its own (see the tag cards above). */
+.kvs > .f, .pos-values > .f { padding: 6px 8px; margin-top: 6px; }
 .opt-row .o-desc { flex: 1 1 100%; font-size: 12px; }
 .edit-box.single .tag-name { display: none; }

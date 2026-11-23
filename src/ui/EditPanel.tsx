@@ -47,19 +47,24 @@ export interface EditApi {
 const OWN_PLACE = new Set(['name'])
 
 /** A box with a title: one part of the editor. */
-function Box({ title, hint, children, class: cls }: { title: string; hint?: ComponentChildren; children: ComponentChildren; class?: string }) {
+function Box({ title, info, children, class: cls }: { title: string; info?: string; children: ComponentChildren; class?: string }) {
   return (
     <section class={`edit-box ${cls ?? ''}`} aria-label={title}>
-      <h3 class="edit-box-h">{title}</h3>
-      {hint && <p class="hint edit-box-hint">{hint}</p>}
+      <h3 class="edit-box-h">{title}{info && <Info text={info} />}</h3>
       {children}
     </section>
   )
 }
 
+/** Help that stays out of the way: an (i) that shows its text on hover or focus. */
+export function Info({ text }: { text: string }) {
+  return <span class="info-i" tabIndex={0} role="img" aria-label={text} title={text}>i</span>
+}
+
 export function EditPanel(p: EditApi) {
   const { ctx, path } = p
-  const [naming, setNaming] = useState('')
+  /** The name typed for a new sequence (null: the suggested one). */
+  const [naming, setNaming] = useState<string | null>(null)
   /** Keys added that have no value yet, per record, with their type. */
   const [added, setAdded] = useState<Record<On, Record<string, TagType>>>({ pos: {}, move: {} })
   const step = path[path.length - 1]
@@ -88,6 +93,26 @@ export function EditPanel(p: EditApi) {
     setTags(p.ws, loc, on, { [real]: value !== null && sw && swapsValue(real) ? swapValue(real, value) : value })
     if (value === null) setAdded((a) => ({ ...a, [on]: Object.fromEntries(Object.entries(a[on]).filter(([k]) => k !== key)) }))
     p.commit(msg)
+  }
+
+  /**
+   * Removes a tag: this database's value; when only other databases have it, from those databases
+   * (their value would otherwise stay on screen with no way to remove it here).
+   */
+  const removeTag = (on: On, key: string, own: boolean) => {
+    if (own) return write(on, key, null, `${labelOf(key)} removed`)
+    const dbs = [...new Set(contribsOf(on).filter((c) => c.db !== p.target && ctx.active.has(c.db)).map((c) => c.db))]
+    const done: string[] = []
+    for (const db of dbs) {
+      const loc = locate(p.ws, ctx, path, db, label, false)
+      const r = loc ? recOf(loc, on) : null
+      if (!loc || !r) continue
+      const real = swapped(loc) ? swapKeyOf(key) : key
+      if (r.tags[real] === undefined) continue
+      setTags(p.ws, loc, on, { [real]: null })
+      done.push(db)
+    }
+    p.commit(done.length ? `${labelOf(key)} removed from ${done.join(', ')}` : undefined)
   }
 
   /** What other databases store on this position or move (as the display sees it). */
@@ -202,17 +227,16 @@ export function EditPanel(p: EditApi) {
       <div class={`tag-row ${from ? 'from-' + from : ''} ${d ? '' : 'free-key'}`} key={id + JSON.stringify(v ?? null) + p.target}>
         <div class="tag-row-head">
           <label class="tag-name" for={id} title={describe(key)}>{labelOf(key)}</label>
-          {from === 'other' && <span class="src-badge" title={`Stored in ${other!.db}`}>from {other!.db}</span>}
-          {from === 'inherited' && <span class="src-badge">from {fromText(inh!.from)}</span>}
+          {from === 'other' && (
+            <button class="src-badge" onClick={() => p.onTarget(other!.db)} title={`Stored in ${other!.db}. Changing it here stores your own value in ${p.target}; click to edit into ${other!.db} instead.`}>{other!.db}</button>
+          )}
+          {from === 'inherited' && <span class="src-badge" title="Inherited from an earlier position of the line; setting it here changes it from this move on">{fromText(inh!.from)}</span>}
           <span class="spacer" />
-          {from === 'other' && <button class="link small" onClick={() => p.onTarget(other!.db)} title={`Edit into ${other!.db} to change or remove it there`}>Edit in {other!.db}</button>}
-          {own !== undefined && (
-            <button class="icon ghost tag-x" title={`Remove ${labelOf(key)}`} aria-label={`Remove ${labelOf(key)}`} onClick={() => write(on, key, null, `${labelOf(key)} removed`)}>×</button>
+          {(own !== undefined || from === 'other') && (
+            <button class="icon ghost tag-x" title={own !== undefined ? `Remove ${labelOf(key)}` : `Remove ${labelOf(key)} from ${other!.db}`} aria-label={`Remove ${labelOf(key)}`} onClick={() => removeTag(on, key, own !== undefined)}>×</button>
           )}
         </div>
         <div class="tag-control">{control}</div>
-        {from === 'other' && <small class="hint">Setting it here stores your own value in {p.target}.</small>}
-        {from === 'inherited' && <small class="hint">Set it here to change it from this move on.</small>}
       </div>
     )
   }
@@ -228,7 +252,7 @@ export function EditPanel(p: EditApi) {
   }
 
   /** Comments: other databases' (read only, with a way to edit them there), then this database's, one box each. */
-  const comments = (on: On, hint: string) => {
+  const comments = (on: On) => {
     const own = recOf(where(false), on)?.comments ?? []
     const firstId = `f-${on}-comment`
     const save = (list: string[]) => {
@@ -240,7 +264,7 @@ export function EditPanel(p: EditApi) {
       <div class="comments-edit" key={on + own.join('\u0001') + p.target}>
         {theirs.map((t, i) => (
           <div class="comment-item from-other" key={'o' + i}>
-            <div class="tag-row-head"><span class="src-badge">from {t.db}</span><span class="spacer" /><button class="link small" onClick={() => p.onTarget(t.db)}>Edit in {t.db}</button></div>
+            <div class="tag-row-head"><button class="src-badge" onClick={() => p.onTarget(t.db)} title={`Stored in ${t.db}; click to edit into ${t.db}`}>{t.db}</button></div>
             <div class="comment-ro"><Rich segments={t.segments} h={{ hovered: null, pinned: null, colors: null, onHover: () => {}, onPin: () => {} }} /></div>
           </div>
         ))}
@@ -251,7 +275,7 @@ export function EditPanel(p: EditApi) {
           </div>
         ))}
         <div class="comment-item new">
-          <textarea id={own.length ? `${firstId}-new` : firstId} placeholder={own.length ? 'Add another comment…' : hint} onFocus={(e) => p.onFocusText(e.currentTarget)} onBlur={(e) => e.currentTarget.value.trim() && save([...own, e.currentTarget.value])} />
+          <textarea id={own.length ? `${firstId}-new` : firstId} placeholder={own.length ? 'Add another comment…' : 'Add a comment…'} onFocus={(e) => p.onFocusText(e.currentTarget)} onBlur={(e) => e.currentTarget.value.trim() && save([...own, e.currentTarget.value])} />
         </div>
       </div>
     )
@@ -282,13 +306,27 @@ export function EditPanel(p: EditApi) {
   const targetOwnsMove = step.edge?.contribs.some((c) => c.db === p.target)
   const here = where(false)
   const definesHere = !!here && isStartId(here.pos.id)
-  const curSeq = here ? seqOf(here.pos.id) : label ?? 'joseki'
+  // The sequence the position belongs to: its own, else the last named one on the line (where it comes from).
+  const fromLabel = (() => {
+    for (let i = path.length; i > 0; i--) {
+      const l = primaryLabel(ctx, path.slice(0, i))
+      if (l) return l
+    }
+    return null
+  })()
+  const curSeq = here ? seqOf(here.pos.id) : fromLabel ?? 'joseki'
   const rename = (seq: string) => {
     const err = nameSequence(p.ws, ctx, path, p.target, seq, null)
     if (err) return p.commit(err)
     p.commit(`This sequence is now ${seq}`)
   }
   const names = asList(read('pos', 'name'))
+  const baseName = (fromLabel ? entryFields(ctx, fromLabel, rootStep(ctx, fromLabel)).text('name') || fromLabel : curSeq).split(' · ').pop()!.split('/').pop()!.trim()
+  let defaultName = baseName
+  for (let n = 1; ; n++) {
+    defaultName = `${baseName} ${n}`
+    if (!ctx.graph.entries.has(`${curSeq}/${defaultName}`)) break
+  }
   const next = candidates(ctx, step)
   const move = (i: number, d: number) => {
     const j = i + d
@@ -310,18 +348,18 @@ export function EditPanel(p: EditApi) {
     <div class="edit-panel">
       <div class="seg edit-tabs" role="tablist" aria-label="What to edit">
         <button role="tab" aria-selected={tab === 'pos'} class={tab === 'pos' ? 'on' : ''} onClick={() => p.onTab('pos')}>Position</button>
-        <button role="tab" aria-selected={tab === 'move'} class={tab === 'move' ? 'on' : ''} disabled={!prev} onClick={() => p.onTab('move')} title={prev ? `The move into this position: ${moveName}` : 'The start of the line has no move into it'}>Move into it{moveName ? ` · ${moveName}` : ''}</button>
+        <button role="tab" aria-selected={tab === 'move'} class={tab === 'move' ? 'on' : ''} disabled={!prev} onClick={() => p.onTab('move')} title={prev ? `${moveName}, from the previous position of your line. Other moves can reach this position too; each keeps its own kind, comments and tags.` : 'The start of the line has no move into it'}>Move into it{moveName ? ` · ${moveName}` : ''}</button>
       </div>
 
       {tab === 'pos' && (
         <>
-          <Box title="Comments">{comments('pos', 'What this position means: the result, what tenuki gives, what to watch out for… {{Player}} = who plays next.')}</Box>
+          <Box title="Comments" info="What this position means: the result, what tenuki gives, what to watch out for. {{Player}} = who plays next, {{Opponent}} = the other; {{TR:Q16|words}} points at the board.">{comments('pos')}</Box>
           <Box title="Tags">
             <div class="tag-list">{posKeys.map((k) => tagRow('pos', k))}</div>
             {addTag('pos', posKeys)}
           </Box>
           {next.length > 0 && (
-            <Box title="Next moves" hint="In order: the first is the main move, the one the tree and → follow. Use the arrows to reorder them.">
+            <Box title="Next moves" info="The first is the main move: the one the tree and → follow. The arrows reorder them.">
               <ol class="order-list">
                 {next.map((c, i) => (
                   <li key={c.step.key} class="order-row">
@@ -341,14 +379,12 @@ export function EditPanel(p: EditApi) {
             {definesHere ? (
               <>
                 <label class="tag-row" key={'name' + names.join('|')}>
-                  <span class="tag-name">Names</span>
+                  <span class="tag-name" title="The first is the title; the others are other names (comma separated)">Names</span>
                   <input id="f-pos-name" type="text" defaultValue={names.join(', ')} onBlur={(e) => e.currentTarget.value !== names.join(', ') && write('pos', 'name', toValue('name', e.currentTarget.value, 'list'))} onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()} />
-                  <small class="hint">The first is the title; the others are other names (comma separated).</small>
                 </label>
                 <label class="tag-row" key={'seq' + here!.pos.id}>
-                  <span class="tag-name">Sequence id</span>
+                  <span class="tag-name" title={'Nested with "/". Moves after this position that are in the same sequence move with it.'}>Sequence id</span>
                   <input id="f-seq" type="text" defaultValue={here!.pos.id} onBlur={(e) => e.currentTarget.value.trim() !== here!.pos.id && rename(e.currentTarget.value)} onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()} />
-                  <small class="hint">Nested with "/". Moves after this position that are in the same sequence move with it.</small>
                 </label>
                 <label class="tag-row">
                   <span class="tag-name">Placement</span>
@@ -362,19 +398,18 @@ export function EditPanel(p: EditApi) {
                 </label>
               </>
             ) : (
-              <form class="name-form" onSubmit={(e) => {
+              <form class="name-form" title={`Starts ${curSeq}/<name> here; the moves after it move to the new sequence`} onSubmit={(e) => {
                 e.preventDefault()
-                const name = naming.trim()
+                const name = (naming ?? defaultName).trim()
                 if (!name) return
                 const seq = name.includes('/') ? name : `${curSeq}/${name.split('/').pop()}`
                 const err = nameSequence(p.ws, ctx, path, p.target, seq, name.split('/').pop()!.trim())
-                setNaming('')
+                setNaming(null)
                 p.commit(err ?? `Named this position "${name}"`)
               }}>
-                <p class="hint">Part of <b>{curSeq}</b>. Name it to start <b>{curSeq}/name</b> here: the moves after it move to the new sequence.</p>
                 <div class="grp">
-                  <input id="f-name-new" type="text" value={naming} placeholder="e.g. 3-3 invasion, hane variation" onInput={(e) => setNaming((e.target as HTMLInputElement).value)} />
-                  <button class="on" type="submit" disabled={!naming.trim()}>Name this position</button>
+                  <input id="f-name-new" type="text" value={naming ?? defaultName} onFocus={(e) => e.currentTarget.select()} onInput={(e) => setNaming((e.target as HTMLInputElement).value)} />
+                  <button class="on" type="submit" disabled={!(naming ?? defaultName).trim()}>Name this position</button>
                 </div>
               </form>
             )}
@@ -384,13 +419,11 @@ export function EditPanel(p: EditApi) {
 
       {tab === 'move' && prev && (
         <>
-          <p class="hint move-in-head">
-            <b>{moveName}</b>, from {prevName ? <b>{prevName}</b> : 'the previous position'} (the one before it on your line). Other moves can reach this position too; each keeps its own kind, comments and tags.
-          </p>
+          <p class="move-in-head"><b>{moveName}</b>{prevName ? <> · from {prevName}</> : null}</p>
           {inBook(ctx, prev) ? (
             <>
               {moveKeys.filter(isButtons).map((k) => <Box key={k} title={labelOf(k)} class="single">{tagRow('move', k)}</Box>)}
-              <Box title="Comments">{comments('move', 'Why this move is good or bad. {{Player}} = who played it, {{Opponent}} = the other.')}</Box>
+              <Box title="Comments" info="Why this move is good or bad. {{Player}} = who played it, {{Opponent}} = the other.">{comments('move')}</Box>
               <Box title="Tags">
                 <div class="tag-list">{moveKeys.filter((k) => !isButtons(k)).map((k) => tagRow('move', k))}</div>
                 {addTag('move', moveKeys)}
@@ -398,7 +431,7 @@ export function EditPanel(p: EditApi) {
               {targetOwnsMove && <button class="danger" onClick={p.onDeleteMove}>Delete this move and what follows from {p.target}</button>}
             </>
           ) : (
-            <p class="hint">The previous position is not in a database yet. Store it first (annotate it, or Save lines); then this move can be described.</p>
+            <p class="hint">Store the previous position first.</p>
           )}
         </>
       )}
@@ -473,7 +506,7 @@ function AddTag({ on, exclude, used, onAdd, onRename, own }: {
       {creating && (
         <form class="new-key" onSubmit={create}>
           <div class="grp">
-            <input id={`add-tag-key-${on}`} value={key} placeholder="Key, e.g. joseki-era, my-note" aria-label="Tag key" onInput={(e) => setKey((e.target as HTMLInputElement).value)} />
+            <input id={`add-tag-key-${on}`} value={key} placeholder="New key" aria-label="Tag key" onInput={(e) => setKey((e.target as HTMLInputElement).value)} />
             {isNew && (
               <select aria-label="Type of the new tag" value={type} onChange={(e) => setType((e.target as HTMLSelectElement).value as TagType)}>
                 {NEW_KEY_TYPES.map(([t, l]) => <option key={t} value={t}>{l}</option>)}
@@ -481,9 +514,7 @@ function AddTag({ on, exclude, used, onAdd, onRename, own }: {
             )}
             <button class="on" type="submit" disabled={!k || exclude.has(k) || (isNew && needsOptions && !options.trim())}>Add</button>
           </div>
-          {isNew && needsOptions && <input value={options} placeholder="Options, comma separated: aggressive, defensive, solid" aria-label="Options" onInput={(e) => setOptions((e.target as HTMLInputElement).value)} />}
-          {k && !isNew && <small class="hint">{defOf(k) ? describe(k) : 'Used elsewhere in the databases.'}</small>}
-          {isNew && <small class="hint">A new key. {needsOptions ? 'Its options are saved in db/tags.json.' : 'It is saved with its first value.'}</small>}
+          {isNew && needsOptions && <input value={options} placeholder="Options, comma separated" aria-label="Options" onInput={(e) => setOptions((e.target as HTMLInputElement).value)} />}
         </form>
       )}
       {own.length > 0 && (

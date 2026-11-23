@@ -92,7 +92,7 @@ test('position fields show the value inherited from earlier moves until you writ
   await clickPoint(page, 'S12') // a new move: the position has no explanation of its own
   await page.locator('.design-info').getByRole('tab', { name: 'Position' }).click()
   // The 4-4 stone (move 1: the line starts at the empty corner) sets values this position inherits.
-  await expect(page.locator('.design-info .tag-row.from-inherited .src-badge').first()).toContainText('from move 1')
+  await expect(page.locator('.design-info .tag-row.from-inherited .src-badge').first()).toHaveText('move 1')
 })
 
 test('the next moves are ordered in the editor; the first is the main move, and the tree and → follow it', async ({ page }) => {
@@ -112,17 +112,19 @@ test('the next moves are ordered in the editor; the first is the main move, and 
   await expect(page.locator('.design-board .status')).toContainText(`Move 5: Black ${second}`)
 })
 
-test('values from another database are shown with it, and can be changed or removed there', async ({ page }) => {
+test('values from another database are shown with it, and can be removed', async ({ page }) => {
   await openDesign(page, './?open=joseki/4-4+point/3-3+invasion')
   await page.locator('.design-info').getByRole('tab', { name: 'Position' }).click()
   const status = page.locator('.design-info .tag-row', { has: page.locator('#f-pos-status') })
-  await expect(status.locator('.src-badge')).toHaveText('from general') // edits go into jparisu; the value is in general
+  await expect(status.locator('.src-badge')).toHaveText('general') // edits go into jparisu; the value is in general
   await expect(page.locator('#f-pos-status')).toHaveValue('progress')
-  await expect(status.getByRole('button', { name: 'Remove Status' })).toHaveCount(0)
-  await status.getByRole('button', { name: 'Edit in general' }).click()
-  await expect(page.locator('.toast')).toContainText('Editing into general')
   await status.getByRole('button', { name: 'Remove Status' }).click()
+  await expect(page.locator('.toast')).toContainText('Status removed from general')
   await expect(page.locator('#f-pos-status')).toHaveCount(0)
+  // The badge switches the edits to the database that stores a value.
+  const evaluation = page.locator('.design-info .tag-row', { has: page.locator('#f-pos-evaluation') })
+  await evaluation.getByRole('button', { name: 'general' }).click()
+  await expect(page.locator('.toast')).toContainText('Editing into general')
   // Options explain themselves on hover.
   await page.locator('.design-info').getByRole('tab', { name: /Move into it/ }).click()
   await expect(page.locator('.cat-btn', { hasText: 'Alternative' })).toHaveAttribute('title', /unusual but valid play/)
