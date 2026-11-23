@@ -254,3 +254,9 @@ test('the current name in the line of names opens its sequence at its first move
   await expect(page.locator('.status')).toContainText('Move 2: White R17')
   await expect(page.locator('.position-info .go-first')).toHaveCount(0)
 })
+
+test('the evaluation is a meter with levels in words', async ({ page }) => {
+  await openEntry(page, '3-3 invasion')
+  await expect(page.locator('.position-info .eval-words')).toHaveText('Even')
+  await expect(page.locator('.position-info .balance-bar .tick')).toHaveCount(8)
+})

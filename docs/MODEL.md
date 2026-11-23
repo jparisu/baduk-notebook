@@ -72,7 +72,7 @@ or a list, from its value. The descriptions are data too: they can be changed in
 | Property | Meaning |
 |---|---|
 | `key`, `label`, `icon`, `hint` | Its name in the files, how it is shown, a symbol or emoji, a help text. |
-| `type` | `choice` (dropdown, or buttons with `control: "buttons"`), `multi` (several options), `slider` (a bar between two `ends`, from -1 to 1, shown without numbers), `number`, `flag` (yes/no), `color` (B / W / none), `rank` (15k, 2d, 1p), `text`, `list`, `board` (§3.2). |
+| `type` | `choice` (dropdown, or buttons with `control: "buttons"`), `multi` (several options), `slider` (a bar between two `ends`, from -1 to 1, shown as a meter with levels: even, slightly better, better, much better, winning for one side), `number`, `flag` (yes/no), `color` (B / W / none), `rank` (15k, 2d, 1p), `text`, `list`, `board` (§3.2). |
 | `options` | For choices: `value`, `label`, `icon`, `color`, and `swap`: the option it becomes with Swap colors ("B-alive" ⇄ "W-alive"). Move kinds also say `good` and `ring`. |
 | `for` | `move` or `position`: where the editor offers it first. Optional; any key can go anywhere. |
 | `suggest` | Always offered in the editor, even before it has a value (the move `kind` buttons). |
@@ -271,11 +271,13 @@ tabs; each part is a box, and each tag a row of its own:
     key…** renames a key that is not described, keeping its value.
   - **Next moves:** the moves from here in their order; ↑ and ↓ reorder them, and the first is the main
     move (§1).
-  - **Name:** at the start of a sequence, its names, id and placement; elsewhere, naming the position
-    starts a new sequence there (the name offered is the sequence it comes from and a number).
+  - **Name:** the sequence id as its parts: the **parents** (chips, the current ones by default: remove
+    any, add any) and its own **name** (the position's move number by default). They are stored joined
+    with "/". Elsewhere than the start of a sequence, this starts a new sequence there; at the start it
+    renames it (with its names and placement).
 - Explanations stay out of the way: they are in the ⓘ icons and in tooltips.
-- **Move into it:** the move from the previous position of your line, with its kind (buttons), comments
-  and tags, in the same boxes. The same position can be reached by other moves, and each keeps its own
+- **Move into it:** the move from the previous position of your line, with its comments and tags, in
+  the same boxes and the same way as the position (its kind is one of its tags, with buttons). The same position can be reached by other moves, and each keeps its own
   data, so this belongs to the move, not to the position. It can only be described once the previous
   position is in a database.
 

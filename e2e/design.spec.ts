@@ -129,3 +129,42 @@ test('values from another database are shown with it, and can be removed', async
   await page.locator('.design-info').getByRole('tab', { name: /Move into it/ }).click()
   await expect(page.locator('.cat-btn', { hasText: 'Alternative' })).toHaveAttribute('title', /unusual but valid play/)
 })
+
+test('a tag can be removed right after it is added, on the position and on the move alike', async ({ page }) => {
+  await openDesign(page, './?open=joseki/4-4+point/3-3+invasion')
+  await page.keyboard.press('ArrowRight')
+  const info = page.locator('.design-info')
+  for (const [tab, on] of [['Position', 'pos'], [/Move into it/, 'move']] as const) {
+    await info.getByRole('tab', { name: tab }).click()
+    const chip = info.locator('.add-chip:not(.new):not(.free)').first()
+    const name = (await chip.textContent())!.replace('+ ', '')
+    await chip.click()
+    const row = info.locator('.tag-row', { has: page.locator('.tag-name', { hasText: name }) })
+    await expect(row).toHaveCount(1)
+    await row.getByRole('button', { name: `Remove ${name}` }).click()
+    await expect(row).toHaveCount(0)
+    // A new key, with a value, then removed.
+    await info.locator(`#add-tag-${on}`).click()
+    await info.locator(`#add-tag-key-${on}`).fill('my key')
+    await info.locator('.new-key').getByRole('button', { name: 'Add' }).click()
+    await info.locator(`#f-${on}-my-key`).fill('x')
+    await info.locator(`#f-${on}-my-key`).blur()
+    await info.getByRole('button', { name: 'Remove My key' }).click()
+    await expect(info.locator(`#f-${on}-my-key`)).toHaveCount(0)
+  }
+})
+
+test('naming a position: parents (current ones by default) can be removed and added', async ({ page }) => {
+  await openDesign(page, './?open=joseki/3-3+point')
+  await clickPoint(page, 'S18')
+  await page.locator('.design-info').getByRole('tab', { name: 'Position' }).click()
+  await expect(page.locator('.seq-preview')).toHaveText('joseki/3-3 point/2')
+  await page.getByRole('button', { name: 'Remove parent 3-3 point' }).click()
+  await page.getByLabel('Add a parent').fill('mistakes')
+  await page.getByLabel('Add a parent').press('Enter')
+  await page.locator('#f-name-new').fill('2-2 invasion')
+  await expect(page.locator('.seq-preview')).toHaveText('joseki/mistakes/2-2 invasion')
+  await page.getByRole('button', { name: 'Name this position' }).click()
+  await expect(page.locator('.toast')).toContainText('Named this position "2-2 invasion"')
+  await expect(page.locator('.design-board .status')).toContainText('2-2 invasion')
+})

@@ -10,7 +10,7 @@
 import type { ComponentChildren } from 'preact'
 import { useState } from 'preact/hooks'
 import {
-  NEW_KEY_TYPES, asList, asText, defOf, describe, getRegistry, isListType, labelOf, sortKeys, swapKeyOf, swapValue, swapsValue, toValue, typeOf, valueLabel,
+  BALANCE_LEVELS, NEW_KEY_TYPES, asList, balanceText, asText, defOf, describe, getRegistry, isListType, labelOf, sortKeys, swapKeyOf, swapValue, swapsValue, toValue, typeOf, valueLabel,
   type TagDef, type TagType, type TagValue,
 } from '../core/tags'
 import { CATEGORIES } from '../core/kinds'
@@ -63,8 +63,6 @@ export function Info({ text }: { text: string }) {
 
 export function EditPanel(p: EditApi) {
   const { ctx, path } = p
-  /** The name typed for a new sequence (null: the suggested one). */
-  const [naming, setNaming] = useState<string | null>(null)
   /** Keys added that have no value yet, per record, with their type. */
   const [added, setAdded] = useState<Record<On, Record<string, TagType>>>({ pos: {}, move: {} })
   const step = path[path.length - 1]
@@ -100,7 +98,9 @@ export function EditPanel(p: EditApi) {
    * (their value would otherwise stay on screen with no way to remove it here).
    */
   const removeTag = (on: On, key: string, own: boolean) => {
+    const drop = () => setAdded((a) => ({ ...a, [on]: Object.fromEntries(Object.entries(a[on]).filter(([k]) => k !== key)) }))
     if (own) return write(on, key, null, `${labelOf(key)} removed`)
+    if (!others(on).get(key)) return drop() // added, no value yet
     const dbs = [...new Set(contribsOf(on).filter((c) => c.db !== p.target && ctx.active.has(c.db)).map((c) => c.db))]
     const done: string[] = []
     for (const db of dbs) {
@@ -184,10 +184,14 @@ export function EditPanel(p: EditApi) {
       }
       case 'slider':
         control = (
+          <span class="slider-col">
           <span class="slider-row">
             <span class="bar-end">{d?.ends?.[0] ?? ''}</span>
-            <input id={id} type="range" min="-1" max="1" step="0.05" class={v === undefined ? 'unset' : ''} value={typeof v === 'number' ? v : 0} aria-label={labelOf(key)} onChange={(e) => set(Number((e.target as HTMLInputElement).value))} />
+            <input id={id} type="range" min="-1" max="1" step="0.05" list="balance-levels" class={v === undefined ? 'unset' : ''} value={typeof v === 'number' ? v : 0} aria-label={labelOf(key)} onInput={(e) => { const w = e.currentTarget.parentElement?.nextElementSibling; if (w) w.textContent = balanceText(key, Number(e.currentTarget.value)) }} onChange={(e) => set(Number((e.target as HTMLInputElement).value))} />
             <span class="bar-end">{d?.ends?.[1] ?? ''}</span>
+            <datalist id="balance-levels">{[0, ...BALANCE_LEVELS.flatMap(([x]) => [-x, x])].map((x) => <option key={x} value={x} />)}</datalist>
+          </span>
+          <span class="eval-words">{typeof v === 'number' ? balanceText(key, v) : 'Not set'}</span>
           </span>
         )
         break
@@ -232,8 +236,8 @@ export function EditPanel(p: EditApi) {
           )}
           {from === 'inherited' && <span class="src-badge" title="Inherited from an earlier position of the line; setting it here changes it from this move on">{fromText(inh!.from)}</span>}
           <span class="spacer" />
-          {(own !== undefined || from === 'other') && (
-            <button class="icon ghost tag-x" title={own !== undefined ? `Remove ${labelOf(key)}` : `Remove ${labelOf(key)} from ${other!.db}`} aria-label={`Remove ${labelOf(key)}`} onClick={() => removeTag(on, key, own !== undefined)}>×</button>
+          {(own !== undefined || from === 'other' || (v === undefined && key in added[on])) && (
+            <button class="icon ghost tag-x" title={own !== undefined || from !== 'other' ? `Remove ${labelOf(key)}` : `Remove ${labelOf(key)} from ${other!.db}`} aria-label={`Remove ${labelOf(key)}`} onClick={() => removeTag(on, key, own !== undefined)}>×</button>
           )}
         </div>
         <div class="tag-control">{control}</div>
@@ -301,7 +305,6 @@ export function EditPanel(p: EditApi) {
       own={Object.keys(recOf(where(false), on)?.tags ?? {}).filter((k) => !defOf(k))}
     />
   )
-  const isButtons = (k: string) => defOf(k)?.control === 'buttons'
 
   const targetOwnsMove = step.edge?.contribs.some((c) => c.db === p.target)
   const here = where(false)
@@ -321,12 +324,10 @@ export function EditPanel(p: EditApi) {
     p.commit(`This sequence is now ${seq}`)
   }
   const names = asList(read('pos', 'name'))
-  const baseName = (fromLabel ? entryFields(ctx, fromLabel, rootStep(ctx, fromLabel)).text('name') || fromLabel : curSeq).split(' · ').pop()!.split('/').pop()!.trim()
-  let defaultName = baseName
-  for (let n = 1; ; n++) {
-    defaultName = `${baseName} ${n}`
-    if (!ctx.graph.entries.has(`${curSeq}/${defaultName}`)) break
-  }
+  // A new sequence's name: the position's move number by default (with a letter when that is taken).
+  let defaultName = String(path.length - 1)
+  for (let i = 1; ctx.graph.entries.has(`${curSeq}/${defaultName}`); i++) defaultName = `${path.length - 1}${String.fromCharCode(97 + i)}`
+  const knownParts = [...new Set([...ctx.graph.entries.keys()].flatMap((id) => id.split('/')))].sort()
   const next = candidates(ctx, step)
   const move = (i: number, d: number) => {
     const j = i + d
@@ -382,10 +383,14 @@ export function EditPanel(p: EditApi) {
                   <span class="tag-name" title="The first is the title; the others are other names (comma separated)">Names</span>
                   <input id="f-pos-name" type="text" defaultValue={names.join(', ')} onBlur={(e) => e.currentTarget.value !== names.join(', ') && write('pos', 'name', toValue('name', e.currentTarget.value, 'list'))} onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()} />
                 </label>
-                <label class="tag-row" key={'seq' + here!.pos.id}>
-                  <span class="tag-name" title={'Nested with "/". Moves after this position that are in the same sequence move with it.'}>Sequence id</span>
-                  <input id="f-seq" type="text" defaultValue={here!.pos.id} onBlur={(e) => e.currentTarget.value.trim() !== here!.pos.id && rename(e.currentTarget.value)} onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()} />
-                </label>
+                <SequenceEditor
+                  key={'seq' + here!.pos.id}
+                  parents={seqOf(here!.pos.id).split('/').slice(0, -1)}
+                  name={seqOf(here!.pos.id).split('/').pop()!}
+                  known={knownParts}
+                  action="Save"
+                  submit={(seq) => seq !== here!.pos.id && rename(seq)}
+                />
                 <label class="tag-row">
                   <span class="tag-name">Placement</span>
                   <select id="f-free" value={here!.pos.free} onChange={(e) => {
@@ -398,20 +403,18 @@ export function EditPanel(p: EditApi) {
                 </label>
               </>
             ) : (
-              <form class="name-form" title={`Starts ${curSeq}/<name> here; the moves after it move to the new sequence`} onSubmit={(e) => {
-                e.preventDefault()
-                const name = (naming ?? defaultName).trim()
-                if (!name) return
-                const seq = name.includes('/') ? name : `${curSeq}/${name.split('/').pop()}`
-                const err = nameSequence(p.ws, ctx, path, p.target, seq, name.split('/').pop()!.trim())
-                setNaming(null)
-                p.commit(err ?? `Named this position "${name}"`)
-              }}>
-                <div class="grp">
-                  <input id="f-name-new" type="text" value={naming ?? defaultName} onFocus={(e) => e.currentTarget.select()} onInput={(e) => setNaming((e.target as HTMLInputElement).value)} />
-                  <button class="on" type="submit" disabled={!(naming ?? defaultName).trim()}>Name this position</button>
-                </div>
-              </form>
+              <SequenceEditor
+                key={'new' + step.key + curSeq}
+                parents={curSeq.split('/')}
+                name={defaultName}
+                known={knownParts}
+                action="Name this position"
+                submit={(seq) => {
+                  const name = seq.split('/').pop()!
+                  const err = nameSequence(p.ws, ctx, path, p.target, seq, name)
+                  p.commit(err ?? `Named this position "${name}"`)
+                }}
+              />
             )}
           </Box>
         </>
@@ -422,10 +425,9 @@ export function EditPanel(p: EditApi) {
           <p class="move-in-head"><b>{moveName}</b>{prevName ? <> · from {prevName}</> : null}</p>
           {inBook(ctx, prev) ? (
             <>
-              {moveKeys.filter(isButtons).map((k) => <Box key={k} title={labelOf(k)} class="single">{tagRow('move', k)}</Box>)}
               <Box title="Comments" info="Why this move is good or bad. {{Player}} = who played it, {{Opponent}} = the other.">{comments('move')}</Box>
               <Box title="Tags">
-                <div class="tag-list">{moveKeys.filter((k) => !isButtons(k)).map((k) => tagRow('move', k))}</div>
+                <div class="tag-list">{moveKeys.map((k) => tagRow('move', k))}</div>
                 {addTag('move', moveKeys)}
               </Box>
               {targetOwnsMove && <button class="danger" onClick={p.onDeleteMove}>Delete this move and what follows from {p.target}</button>}
@@ -436,6 +438,60 @@ export function EditPanel(p: EditApi) {
         </>
       )}
     </div>
+  )
+}
+
+/**
+ * A sequence id as its parts: the parent sequences (chips: remove any, add any) and its own name.
+ * Stored joined with "/", e.g. joseki/4-4 point/3-3 invasion/5.
+ */
+function SequenceEditor({ parents: initial, name: initialName, known, action, submit }: {
+  parents: string[]
+  name: string
+  known: string[]
+  action: string
+  submit: (seq: string) => void
+}) {
+  const [parents, setParents] = useState(initial.filter(Boolean))
+  const [name, setName] = useState(initialName)
+  const [adding, setAdding] = useState('')
+  const clean = (x: string) => x.replace(/[/:]/g, ' ').replace(/\s+/g, ' ').trim()
+  const addParent = () => {
+    const x = clean(adding)
+    if (x) setParents([...parents, x])
+    setAdding('')
+  }
+  const seq = [...parents, clean(name)].filter(Boolean).join('/')
+  return (
+    <form class="seq-edit" onSubmit={(e) => {
+      e.preventDefault()
+      if (clean(name)) submit(seq)
+    }}>
+      <div class="tag-row">
+        <span class="tag-name" title="The sequences this one is part of, from the widest">Parents</span>
+        <div class="parent-chips">
+          {parents.map((x, i) => (
+            <span key={i + x} class="parent-chip">
+              {i > 0 && <span class="sep">›</span>}
+              <span class="chip">{x}<button type="button" class="chip-x" aria-label={`Remove parent ${x}`} onClick={() => setParents(parents.filter((_, j) => j !== i))}>×</button></span>
+            </span>
+          ))}
+          <input class="parent-add" list="seq-parts" value={adding} placeholder="+ parent" aria-label="Add a parent"
+            onInput={(e) => setAdding((e.target as HTMLInputElement).value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addParent() } }}
+            onBlur={addParent} />
+          <datalist id="seq-parts">{known.map((x) => <option key={x} value={x} />)}</datalist>
+        </div>
+      </div>
+      <div class="tag-row">
+        <label class="tag-name" for="f-name-new">Name</label>
+        <input id="f-name-new" type="text" value={name} onFocus={(e) => e.currentTarget.select()} onInput={(e) => setName((e.target as HTMLInputElement).value)} />
+      </div>
+      <div class="grp seq-actions">
+        <code class="seq-preview" title="The id it is stored with">{seq}</code>
+        <button class="on" type="submit" disabled={!clean(name)}>{action}</button>
+      </div>
+    </form>
   )
 }
 

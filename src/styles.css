@@ -1029,3 +1029,22 @@ button.src-badge:hover { background: var(--accent); color: #fff; }
 .kvs > .f, .pos-values > .f { padding: 6px 8px; margin-top: 6px; }
 .opt-row .o-desc { flex: 1 1 100%; font-size: 12px; }
 .edit-box.single .tag-name { display: none; }
+
+/* Balance meter: level marks on the bar and the level in words. */
+.eval-meter { margin: 2px 0 10px; }
+.eval-meter .eval-bar-row { margin: 0; }
+.balance-bar .tick { position: absolute; top: 1px; bottom: 1px; width: 1px; margin-left: -.5px; background: #8a8a8a; }
+.eval-words { text-align: center; font-size: 13px; font-weight: 600; margin-top: 4px; color: var(--fg); }
+.tag-row .eval-words { text-align: left; margin-top: 0; }
+
+/* Sequence id as parents (chips) and a name. */
+.seq-edit { display: flex; flex-direction: column; gap: 8px; }
+.parent-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.parent-chip { display: inline-flex; align-items: center; gap: 4px; }
+.parent-chip .sep { color: var(--muted); }
+.parent-chip .chip { display: inline-flex; align-items: center; gap: 4px; padding-right: 4px; }
+.chip-x { border: none !important; background: transparent; box-shadow: none; padding: 0 2px; min-height: 0; color: var(--muted); cursor: pointer; }
+.chip-x:hover { color: #d33232; }
+.parent-add { flex: 1 1 90px; min-width: 80px; font-size: 12px; }
+.seq-actions { align-items: center; flex-wrap: wrap; }
+.seq-preview { flex: 1; min-width: 0; font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

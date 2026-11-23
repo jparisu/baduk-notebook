@@ -66,3 +66,15 @@ describe('names along the line', () => {
     expect(shortAfter('3-4 point · low', '3-4 point · high · hane')).toBe('3-4 point · high · hane')
   })
 })
+
+import { balanceText } from './core/tags'
+describe('balance in words', () => {
+  it('has levels on each side', () => {
+    expect(balanceText('evaluation', 0)).toBe('Even')
+    expect(balanceText('evaluation', 0.15)).toBe('Slightly better for Black')
+    expect(balanceText('evaluation', -0.4)).toBe('Better for White')
+    expect(balanceText('evaluation', 0.6)).toBe('Much better for Black')
+    expect(balanceText('evaluation', -1)).toBe('Winning for White')
+  })
+})
+

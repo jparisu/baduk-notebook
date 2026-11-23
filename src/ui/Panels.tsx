@@ -7,7 +7,7 @@ import type { ComponentChildren } from 'preact'
 import { useState } from 'preact/hooks'
 import { Link2 } from 'lucide-preact'
 import { CATEGORIES, type Category } from '../core/kinds'
-import { defOf, describe, labelOf, typeOf, valueLabel, asList } from '../core/tags'
+import { BALANCE_LEVELS, balanceText, defOf, describe, labelOf, typeOf, valueLabel, asList } from '../core/tags'
 import { apply, ptName } from '../core/geometry'
 import { labelsAt } from '../core/graph'
 import type { Msg } from '../messages'
@@ -117,6 +117,29 @@ export function crumbsOf(ctx: Ctx, path: Step[]): string[] {
 
 /* ---------- Tags ---------- */
 
+/**
+ * A balance between two players as a meter: a bar with the levels marked on it (even, slightly better,
+ * better, much better, winning, on each side) and the level in words.
+ */
+export function BalanceMeter({ k, v }: { k: string; v: number }) {
+  const d = defOf(k)
+  const at = (x: number) => `${50 + Math.max(-1, Math.min(1, x)) * 50}%`
+  const words = balanceText(k, v)
+  return (
+    <div class="eval-meter" title={describe(k)}>
+      <div class="eval-bar-row">
+        <span class="bar-end">{d?.ends?.[0] ?? ''}</span>
+        <div class="balance-bar" role="meter" aria-valuemin={-1} aria-valuemax={1} aria-valuenow={v} aria-label={`${labelOf(k)}: ${words}`}>
+          {BALANCE_LEVELS.flatMap(([x]) => [-x, x]).map((x) => <b key={x} class="tick" style={{ left: at(x) }} />)}
+          <i style={{ left: at(v) }} />
+        </div>
+        <span class="bar-end">{d?.ends?.[1] ?? ''}</span>
+      </div>
+      <div class="eval-words">{words}</div>
+    </div>
+  )
+}
+
 /** Keys shown in "This joseki" (db/tags.json `panel: "sequence"`), read from the start of the sequence. */
 export const isSequenceKey = (k: string) => defOf(k)?.panel === 'sequence'
 
@@ -133,13 +156,7 @@ export function TagRows({ keys, f, icons, only, hidden = [] }: { keys: string[];
     if (type === 'slider') {
       if (only === 'rows' || typeof r.value !== 'number') return []
       const v = r.value
-      return [
-        <div key={key} class="eval-bar-row" title={labelOf(key)}>
-          <span class="bar-end">{d?.ends?.[0] ?? ''}</span>
-          <div class="balance-bar" role="img" aria-label={`${labelOf(key)}: ${v > 0.15 ? d?.ends?.[1] : v < -0.15 ? d?.ends?.[0] : 'even'}`}><i style={{ left: `${50 + Math.max(-1, Math.min(1, v)) * 50}%` }} /></div>
-          <span class="bar-end">{d?.ends?.[1] ?? ''}</span>
-        </div>,
-      ]
+      return [<BalanceMeter key={key} k={key} v={v} />]
     }
     if (only === 'bars') return []
     const icon = icons && d?.icon ? <span class="ico" aria-hidden>{d.icon}</span> : null

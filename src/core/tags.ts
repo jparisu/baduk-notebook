@@ -170,6 +170,21 @@ export function describe(key: string, value?: string): string {
   return o?.description ? `${o.label}: ${o.description}` : valueLabel(key, value)
 }
 
+/**
+ * Levels of a balance (a slider from -1 to 1 between two players): where each level starts, and its words.
+ * |v| below the first is even.
+ */
+export const BALANCE_LEVELS: [number, string][] = [[0.1, 'Slightly better for'], [0.3, 'Better for'], [0.55, 'Much better for'], [0.85, 'Winning for']]
+
+/** "Better for Black", "Even"…: a balance value in words; the player comes from the slider's ends ("White better"). */
+export function balanceText(key: string, v: number): string {
+  const ends = defOf(key)?.ends ?? ['Left', 'Right']
+  const level = [...BALANCE_LEVELS].reverse().find(([at]) => Math.abs(v) >= at - 1e-9)
+  if (!level) return 'Even'
+  const side = (v > 0 ? ends[1] : ends[0]).split(' ')[0]
+  return `${level[1]} ${side}`
+}
+
 /** Display text of one stored value. */
 export function valueLabel(key: string, v: string): string {
   const d = defOf(key)

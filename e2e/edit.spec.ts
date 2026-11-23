@@ -36,7 +36,8 @@ test('names a position, and the moves after it carry the name', async ({ page })
   await clickPoint(page, 'R13') // an approach that is not in the databases
   await page.getByRole('button', { name: 'Edit' }).click()
   await page.getByRole('tab', { name: 'Position' }).click()
-  await expect(page.locator('#f-name-new')).toHaveValue('4-4 point 1') // the name it comes from, and a number
+  await expect(page.locator('#f-name-new')).toHaveValue('2') // the position's move number
+  await expect(page.locator('.parent-chips .chip')).toHaveText(['joseki×', '4-4 point×']) // the current parents
   await page.locator('#f-name-new').fill('Low approach')
   await page.getByRole('button', { name: 'Name this position' }).click()
   await expect(page.locator('.status')).toContainText('Low approach')

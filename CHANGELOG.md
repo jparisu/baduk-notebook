@@ -44,6 +44,10 @@
 - **Values from other databases** are shown with "from general" (or the earlier move they are inherited from) instead of an empty field. Setting one stores your own value; **Edit in general** switches the edits to the database that has it, where it can be changed or removed. Other databases' comments are shown too, read only.
 - **Descriptions:** hovering a tag's name or an option shows what it means ("Alternative: an unusual but valid play", "Reduce: to reduce the opponent's territory…"). Every known tag and option has one, editable in Known tags.
 - **Main move = the first move.** The `main` tag is gone. The editor lists the next moves in order with ↑ ↓; the first is the main move. A personal database decides the order only when it stores every move from the position (reordering from it copies them in). The moves in the data were put in the order they were shown before (good moves first), so nothing changes until you reorder.
+- A tag can be removed right after it is added, before it has a value (it had no ×).
+- The move tab works like the position tab: Comments, then Tags with the same Add chips; the kind is one of its tags.
+- **Naming a position:** its parents are chips (the current ones by default; remove any, add any) and its name is the position's move number by default. Stored joined as the id; renaming a sequence works the same way.
+- **Evaluation meter:** the bar has level marks and says the level in words: Even, Slightly better / Better / Much better / Winning for Black or White.
 - Each tag is a raised card of its own, in the editor and in the Explore panels, clear on light and dark themes.
 - × removes any tag shown, also one another database stores (it is removed from that database). Clicking a database's badge switches the edits to it.
 - Naming a position offers the name of the sequence it comes from and a number ("3-3 invasion 1"), with no explanation around it.
