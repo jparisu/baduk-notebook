@@ -103,10 +103,6 @@
     },
     {
       "from": "life & death/Bulky five/Side, enclosed",
-      "to": "life & death/Bulky five/Side, enclosed/White first"
-    },
-    {
-      "from": "life & death/Bulky five/Side, enclosed",
       "to": "life & death/Bulky five/Side, enclosed/Black S14",
       "comments": [
         "Fills the extra point and leaves {{SQ:T15,T16,S15,S16|a square four}}, which is dead."
@@ -114,6 +110,10 @@
       "tags": {
         "kind": "mistake"
       }
+    },
+    {
+      "from": "life & death/Bulky five/Side, enclosed",
+      "to": "life & death/Bulky five/Side, enclosed/White first"
     },
     {
       "from": "life & death/Bulky five/Side, enclosed/White first",

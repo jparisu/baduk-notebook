@@ -6,7 +6,8 @@
       "for": "position",
       "type": "list",
       "panel": "sequence",
-      "hint": "The first name is the title; the others are other names."
+      "hint": "The first name is the title; the others are other names.",
+      "description": "Names of the sequence that starts here: the first is the title, the others are other names."
     },
     {
       "key": "kind",
@@ -20,45 +21,52 @@
           "label": "Main move",
           "icon": "●",
           "color": "#1e9e4a",
-          "good": true
+          "good": true,
+          "description": "The standard, recommended move here."
         },
         {
           "value": "alt",
           "label": "Alternative",
           "icon": "●",
           "color": "#138f8c",
-          "good": true
+          "good": true,
+          "description": "An unusual but valid play: it works as well, or nearly."
         },
         {
           "value": "situational",
           "label": "Situational",
           "icon": "◆",
           "color": "#e0b000",
-          "good": true
+          "good": true,
+          "description": "Good only in some whole-board situations (ladders, nearby stones…)."
         },
         {
           "value": "slack",
           "label": "Slack / passive",
           "icon": "▼",
-          "color": "#7d858f"
+          "color": "#7d858f",
+          "description": "Too passive: it works, but gives the opponent an easy game."
         },
         {
           "value": "mistake",
           "label": "Mistake",
           "icon": "✕",
-          "color": "#d33232"
+          "color": "#d33232",
+          "description": "A clear error that loses points or safety."
         },
         {
           "value": "overplay",
           "label": "Overplay",
           "icon": "!",
-          "color": "#e8741c"
+          "color": "#e8741c",
+          "description": "Too greedy or too severe: it can be punished."
         },
         {
           "value": "trick",
           "label": "Trick play",
           "icon": "?",
-          "color": "#8b47d6"
+          "color": "#8b47d6",
+          "description": "A trap that works if the opponent answers naturally, but fails against the right answer."
         },
         {
           "value": "punish",
@@ -66,10 +74,12 @@
           "icon": "○",
           "color": "#2563eb",
           "good": true,
-          "ring": true
+          "ring": true,
+          "description": "The answer that punishes the previous mistake, overplay or trick."
         }
       ],
-      "suggest": true
+      "suggest": true,
+      "description": "What kind of move this is: how good it is and how it is used."
     },
     {
       "key": "intention",
@@ -80,19 +90,23 @@
         {
           "value": "aggressive",
           "label": "Aggressive",
-          "icon": "⚔"
+          "icon": "⚔",
+          "description": "Seeks a fight or puts pressure on the opponent."
         },
         {
           "value": "balanced",
           "label": "Balanced",
-          "icon": "⚖"
+          "icon": "⚖",
+          "description": "Neither aggressive nor passive: keeps options open."
         },
         {
           "value": "solid",
           "label": "Solid",
-          "icon": "🛡"
+          "icon": "🛡",
+          "description": "Safe and thick: avoids weaknesses, gives up a little speed."
         }
-      ]
+      ],
+      "description": "The spirit of the move."
     },
     {
       "key": "purpose",
@@ -102,60 +116,74 @@
       "options": [
         {
           "value": "territory",
-          "label": "Territory"
+          "label": "Territory",
+          "description": "To make or secure territory."
         },
         {
           "value": "influence",
-          "label": "Influence"
+          "label": "Influence",
+          "description": "To build outward strength (a wall, thickness)."
         },
         {
           "value": "sente",
-          "label": "Sente"
+          "label": "Sente",
+          "description": "To finish in sente and play elsewhere."
         },
         {
           "value": "attack",
-          "label": "Attack"
+          "label": "Attack",
+          "description": "To attack a weak group."
         },
         {
           "value": "defend",
-          "label": "Defend"
+          "label": "Defend",
+          "description": "To make one of your own groups safe."
         },
         {
           "value": "sabaki",
-          "label": "Sabaki"
+          "label": "Sabaki",
+          "description": "To settle a group lightly inside the opponent’s sphere."
         },
         {
           "value": "probe",
-          "label": "Probe"
+          "label": "Probe",
+          "description": "To ask the opponent a question and see how they answer."
         },
         {
           "value": "reduce",
-          "label": "Reduce"
+          "label": "Reduce",
+          "description": "To reduce the opponent’s territory or framework from outside."
         },
         {
           "value": "connect",
-          "label": "Connect"
+          "label": "Connect",
+          "description": "To connect two groups."
         },
         {
           "value": "cut",
-          "label": "Cut"
+          "label": "Cut",
+          "description": "To separate the opponent’s stones."
         },
         {
           "value": "eye",
-          "label": "Eye"
+          "label": "Eye",
+          "description": "To make an eye (or eye space)."
         },
         {
           "value": "kill",
-          "label": "Kill"
+          "label": "Kill",
+          "description": "To take away eyes and kill the group."
         }
-      ]
+      ],
+      "description": "What the move is played for."
     },
     {
       "key": "conditions",
       "label": "Conditions",
       "for": "move",
       "type": "list",
-      "hint": "ladder, needs support…"
+      "hint": "ladder, needs support…",
+      "description": "When the move works: ladders, nearby stones, the whole-board situation."
     },
     {
       "key": "evaluation",
@@ -167,7 +195,8 @@
         "Black better"
       ],
       "negate": true,
-      "inherit": true
+      "inherit": true,
+      "description": "Who is better after this position, from White (left) to Black (right)."
     },
     {
       "key": "status",
@@ -178,24 +207,29 @@
         {
           "value": "start",
           "label": "Start position",
-          "icon": "⚑"
+          "icon": "⚑",
+          "description": "The position a joseki starts from."
         },
         {
           "value": "progress",
           "label": "In progress",
-          "icon": "…"
+          "icon": "…",
+          "description": "The joseki goes on from here."
         },
         {
           "value": "end",
           "label": "Joseki end",
-          "icon": "■"
+          "icon": "■",
+          "description": "A normal end of the joseki: both can play elsewhere."
         },
         {
           "value": "end-mistake",
           "label": "End after a mistake",
-          "icon": "⚠"
+          "icon": "⚠",
+          "description": "Where the line ends after a mistake by one side."
         }
-      ]
+      ],
+      "description": "Where this position stands in the joseki."
     },
     {
       "key": "black-first",
@@ -207,44 +241,52 @@
           "value": "B-alive",
           "label": "Black lives",
           "icon": "♥",
-          "swap": "W-alive"
+          "swap": "W-alive",
+          "description": "Black makes life."
         },
         {
           "value": "B-dead",
           "label": "Black dies",
           "icon": "✕",
-          "swap": "W-dead"
+          "swap": "W-dead",
+          "description": "Black is killed."
         },
         {
           "value": "W-alive",
           "label": "White lives",
           "icon": "♥",
-          "swap": "B-alive"
+          "swap": "B-alive",
+          "description": "White makes life."
         },
         {
           "value": "W-dead",
           "label": "White dies",
           "icon": "✕",
-          "swap": "B-dead"
+          "swap": "B-dead",
+          "description": "White is killed."
         },
         {
           "value": "ko",
           "label": "Ko",
-          "icon": "⚡"
+          "icon": "⚡",
+          "description": "Life or death depends on a ko."
         },
         {
           "value": "seki",
           "label": "Seki",
-          "icon": "="
+          "icon": "=",
+          "description": "Neither can capture: both live without eyes (seki)."
         },
         {
           "value": "unsettled",
           "label": "Unsettled",
-          "icon": "?"
+          "icon": "?",
+          "description": "Not decided yet: the next move decides."
         }
       ],
       "swapKey": "white-first",
-      "inherit": true
+      "inherit": true,
+      "description": "The result if Black plays first here."
     },
     {
       "key": "white-first",
@@ -256,44 +298,52 @@
           "value": "B-alive",
           "label": "Black lives",
           "icon": "♥",
-          "swap": "W-alive"
+          "swap": "W-alive",
+          "description": "Black makes life."
         },
         {
           "value": "B-dead",
           "label": "Black dies",
           "icon": "✕",
-          "swap": "W-dead"
+          "swap": "W-dead",
+          "description": "Black is killed."
         },
         {
           "value": "W-alive",
           "label": "White lives",
           "icon": "♥",
-          "swap": "B-alive"
+          "swap": "B-alive",
+          "description": "White makes life."
         },
         {
           "value": "W-dead",
           "label": "White dies",
           "icon": "✕",
-          "swap": "B-dead"
+          "swap": "B-dead",
+          "description": "White is killed."
         },
         {
           "value": "ko",
           "label": "Ko",
-          "icon": "⚡"
+          "icon": "⚡",
+          "description": "Life or death depends on a ko."
         },
         {
           "value": "seki",
           "label": "Seki",
-          "icon": "="
+          "icon": "=",
+          "description": "Neither can capture: both live without eyes (seki)."
         },
         {
           "value": "unsettled",
           "label": "Unsettled",
-          "icon": "?"
+          "icon": "?",
+          "description": "Not decided yet: the next move decides."
         }
       ],
       "swapKey": "black-first",
-      "inherit": true
+      "inherit": true,
+      "description": "The result if White plays first here."
     },
     {
       "key": "sente",
@@ -301,14 +351,16 @@
       "for": "position",
       "type": "color",
       "inherit": true,
-      "hint": "Who can play elsewhere first"
+      "hint": "Who can play elsewhere first",
+      "description": "Who has sente: who can play elsewhere first after this position."
     },
     {
       "key": "ko",
       "label": "Ko",
       "for": "position",
       "type": "flag",
-      "icon": "⚡"
+      "icon": "⚡",
+      "description": "The result depends on a ko."
     },
     {
       "key": "topics",
@@ -316,7 +368,8 @@
       "for": "position",
       "type": "list",
       "hint": "Nested with /: eye shape, basic joseki…",
-      "panel": "sequence"
+      "panel": "sequence",
+      "description": "Words to find the sequence by (nested with \"/\", e.g. life & death/corner)."
     },
     {
       "key": "eye-space",
@@ -349,7 +402,8 @@
           "label": "7 points"
         }
       ],
-      "panel": "sequence"
+      "panel": "sequence",
+      "description": "How many points the eye space has."
     },
     {
       "key": "surrounded",
@@ -359,18 +413,22 @@
       "options": [
         {
           "value": "full",
-          "label": "Fully"
+          "label": "Fully",
+          "description": "Completely enclosed: no way out."
         },
         {
           "value": "partial",
-          "label": "Partly"
+          "label": "Partly",
+          "description": "Enclosed on some sides only."
         },
         {
           "value": "open",
-          "label": "Open"
+          "label": "Open",
+          "description": "Open to the outside."
         }
       ],
-      "panel": "sequence"
+      "panel": "sequence",
+      "description": "How far the group is enclosed from outside."
     },
     {
       "key": "outside-liberties",
@@ -395,7 +453,8 @@
           "label": "3+"
         }
       ],
-      "panel": "sequence"
+      "panel": "sequence",
+      "description": "Liberties of the surrounding stones (they matter for capturing races and shortage of liberties)."
     },
     {
       "key": "inside-stones",
@@ -416,7 +475,8 @@
           "label": "2+"
         }
       ],
-      "panel": "sequence"
+      "panel": "sequence",
+      "description": "Opponent stones already inside the eye space."
     },
     {
       "key": "arrangement",
@@ -426,14 +486,17 @@
       "options": [
         {
           "value": "connected",
-          "label": "Connected"
+          "label": "Connected",
+          "description": "All in one connected group."
         },
         {
           "value": "separated",
-          "label": "Separated"
+          "label": "Separated",
+          "description": "In separate pieces."
         }
       ],
-      "panel": "sequence"
+      "panel": "sequence",
+      "description": "How the stones of the eye space are placed."
     },
     {
       "key": "ko-type",
@@ -443,22 +506,27 @@
       "options": [
         {
           "value": "direct",
-          "label": "Direct"
+          "label": "Direct",
+          "description": "A direct ko: either side can take now."
         },
         {
           "value": "approach1",
-          "label": "One-step approach"
+          "label": "One-step approach",
+          "description": "One side needs one approach move before taking."
         },
         {
           "value": "approach2",
-          "label": "Two-step approach"
+          "label": "Two-step approach",
+          "description": "One side needs two approach moves before taking."
         },
         {
           "value": "10000year",
-          "label": "Ten-thousand-year"
+          "label": "Ten-thousand-year",
+          "description": "Neither side wants to start the ko: it can stay unresolved."
         }
       ],
-      "panel": "sequence"
+      "panel": "sequence",
+      "description": "What kind of ko it is."
     },
     {
       "key": "difficulty",
@@ -466,14 +534,16 @@
       "for": "position",
       "type": "rank",
       "hint": "15k, 2d…",
-      "panel": "sequence"
+      "panel": "sequence",
+      "description": "The rank a player should study this at (e.g. 15k, 2d)."
     },
     {
       "key": "sources",
       "label": "Sources",
       "for": "position",
       "type": "list",
-      "panel": "sequence"
+      "panel": "sequence",
+      "description": "Where the line comes from: books, pages, games."
     },
     {
       "key": "era",
@@ -483,24 +553,29 @@
       "options": [
         {
           "value": "classic",
-          "label": "Classic"
+          "label": "Classic",
+          "description": "Before modern opening theory."
         },
         {
           "value": "modern",
-          "label": "Modern"
+          "label": "Modern",
+          "description": "Modern professional play."
         },
         {
           "value": "ai",
-          "label": "AI era"
+          "label": "AI era",
+          "description": "Since AI changed joseki (2016 on)."
         }
       ],
-      "panel": "sequence"
+      "panel": "sequence",
+      "description": "When it was played."
     },
     {
       "key": "board",
       "label": "On the board",
       "type": "board",
-      "hint": "Shapes drawn on the board: TR:Q16, AR:Q16-R17, LB:Q16=A, EYE:S18…"
+      "hint": "Shapes drawn on the board: TR:Q16, AR:Q16-R17, LB:Q16=A, EYE:S18…",
+      "description": "Shapes drawn on the board: TR:Q16, AR:Q16-R14, LB:Q16=A, EYE:S18…"
     }
   ]
 }

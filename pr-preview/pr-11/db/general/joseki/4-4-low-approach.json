@@ -483,22 +483,6 @@
     },
     {
       "from": "joseki/4-4 point/Low approach",
-      "to": "joseki/4-4 point/Low approach/Kick",
-      "comments": [
-        "The kick (diagonal attachment): greedy and sente, but it leaves weaknesses behind."
-      ],
-      "tags": {
-        "kind": "situational",
-        "intention": [
-          "solid"
-        ],
-        "purpose": [
-          "territory"
-        ]
-      }
-    },
-    {
-      "from": "joseki/4-4 point/Low approach",
       "to": "joseki/4-4 point/Low approach/Attachment",
       "comments": [
         "Attaches on top of the approach stone. Leads to the attach-extend and attach-block joseki."
@@ -510,6 +494,35 @@
         ],
         "purpose": [
           "influence"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/Low approach",
+      "to": "joseki/4-4 point/Low approach:3b",
+      "comments": [
+        "Tenuki is a modern favorite: approaching or enclosing elsewhere is slightly bigger, if {{Black}} accepts a double approach later."
+      ],
+      "tags": {
+        "kind": "alt",
+        "intention": [
+          "balanced"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/Low approach",
+      "to": "joseki/4-4 point/Low approach/Kick",
+      "comments": [
+        "The kick (diagonal attachment): greedy and sente, but it leaves weaknesses behind."
+      ],
+      "tags": {
+        "kind": "situational",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "territory"
         ]
       }
     },
@@ -527,19 +540,6 @@
         "purpose": [
           "attack",
           "influence"
-        ]
-      }
-    },
-    {
-      "from": "joseki/4-4 point/Low approach",
-      "to": "joseki/4-4 point/Low approach:3b",
-      "comments": [
-        "Tenuki is a modern favorite: approaching or enclosing elsewhere is slightly bigger, if {{Black}} accepts a double approach later."
-      ],
-      "tags": {
-        "kind": "alt",
-        "intention": [
-          "balanced"
         ]
       }
     },
