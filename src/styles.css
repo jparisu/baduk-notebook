@@ -1105,3 +1105,10 @@ button.src-badge:hover { background: var(--accent); color: #fff; }
 .preview-card.off { opacity: .55; }
 .uses-line { margin: 0; font-size: 13px; }
 .examples { margin: 0; padding-left: 18px; font-size: 12px; }
+.dot.tone { border: 1px solid color-mix(in srgb, var(--fg) 40%, transparent); }
+.chips .chip .dot.tone { margin-right: 4px; vertical-align: -1px; }
+.link-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-radius: 8px; background: color-mix(in srgb, var(--accent) 10%, var(--tag-card)); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); font-size: 13px; }
+.te-link { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.te-link select { flex: 1; min-width: 0; }
+.used-by { margin: 0; }
+.why-card .tags .tag .dot.tone { margin-right: 5px; }

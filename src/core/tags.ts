@@ -62,9 +62,17 @@ export interface TagDef {
   max?: number
   step?: number
   unit?: string
+  /**
+   * Linked tag: the key of a tag whose settings this one uses (type, options, range, sides, how it is
+   * shown). They are read from that tag each time, so a change there applies here too.
+   */
+  like?: string
   /** Not stored: the database that defines the tag (set when the databases' tags are merged). */
   db?: string
 }
+
+/** The settings a linked tag takes from the tag it is linked to (`like`). Its name, meaning and where it applies stay its own. */
+export const LINKED: (keyof TagDef)[] = ['type', 'options', 'ends', 'negate', 'min', 'max', 'step', 'unit', 'control']
 
 export interface TagRegistry {
   tags: TagDef[]
@@ -127,7 +135,35 @@ export function mergeRegistries(list: DbTags[]): TagRegistry {
       const extra = (d.options ?? []).filter((o) => !cur.options?.some((x) => x.value === o.value)).map((o) => ({ ...o, db }))
       if (extra.length) cur.options = [...(cur.options ?? []), ...extra]
     }
-  return { tags: [...out.values()] }
+  return resolveLinks({ tags: [...out.values()] })
+}
+
+/**
+ * Linked tags (`like`) take the settings of the tag they are linked to, followed through chains of
+ * links. Options a linked tag has of its own come after the shared ones. A link to a missing tag, or a
+ * loop, leaves the tag as it is.
+ */
+export function resolveLinks(reg: TagRegistry): TagRegistry {
+  const byKey = new Map(reg.tags.map((d) => [d.key, d]))
+  const source = (d: TagDef, seen = new Set<string>()): TagDef | null => {
+    if (!d.like || seen.has(d.key)) return null
+    seen.add(d.key)
+    const s = byKey.get(d.like)
+    if (!s) return null
+    return s.like ? source(s, seen) ?? s : s
+  }
+  return {
+    tags: reg.tags.map((d) => {
+      const s = source(d)
+      if (!s) return d
+      const out: TagDef = { ...d }
+      const set = out as unknown as Record<string, unknown>
+      for (const k of LINKED) set[k] = (s as unknown as Record<string, unknown>)[k]
+      const own = (d.options ?? []).filter((o) => !s.options?.some((x) => x.value === o.value))
+      if (s.options || own.length) out.options = [...(s.options ?? []), ...own]
+      return out
+    }),
+  }
 }
 
 /** "eye-space" → "Eye space". */

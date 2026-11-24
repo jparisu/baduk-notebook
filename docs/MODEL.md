@@ -85,6 +85,7 @@ adds: a whole tag, or `{ "key", "label", "type", "options": [the options it adds
 | `suggest` | Always offered in the editor, even before it has a value (the move `kind` buttons). |
 | `panel` | `sequence`: shown in **This joseki**, read from the start of the sequence (name, topics, difficulty, sources, shape descriptors…), instead of the position panel. |
 | `inherit` | Later positions show its value until they set their own (§3.3). |
+| `like` | **Linked tag:** the key of another tag whose settings it uses (type, options, range, sides, how it is shown). They are read from that tag each time, so a change there applies to both ("White plays first" is linked to "Black plays first"). Its name, meaning and where it applies stay its own; options of its own come after the shared ones. The Tags tab can also copy the settings and disconnect. |
 | `negate` | Slider: Swap colors turns it around. |
 | `swapKey` | The key it trades places with under Swap colors ("black-first" ⇄ "white-first"). |
 
@@ -148,6 +149,8 @@ one back.
   about the whole sequence, kept by later positions, always offered in the editor.
   - Into the database that defines the tag, everything can change. Into another database, only new
     options can be added; the others are shown with their database.
+  - **Settings:** "Same settings as" links the tag to another one (`like`); a linked tag shows those
+    settings without editing them, and **Copy and disconnect** makes a copy of its own.
   - A key only used in the data can be described here; **New tag** makes one.
 - **Right:** how it looks in Explore, with a value from the data, and where it is used.
 

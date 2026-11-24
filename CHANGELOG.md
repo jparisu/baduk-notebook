@@ -7,6 +7,9 @@
 - New types: **number** with a range, a step and a unit (the editor and the validator keep to them), and **board point** (such as Q16, turning with the board).
 - **Tags per database:** `db/tags.json` became `db/general/tags.json`; each database may have its own `tags.json`. They are merged in the order of `index.json`: a later database adds tags of its own and options to the tags of an earlier one, without changing them. Export proposes each database's tags.json.
 - The Keys… dialog and the tag list in Settings are replaced by the tab.
+- **Linked tags:** a tag can use the settings of another one ("Same settings as…"): type, options, range, sides. They stay linked, so a change applies to both; **Copy and disconnect** keeps a copy of its own. "White plays first" is linked to "Black plays first".
+- Topics, Difficulty and Sources apply to positions and moves alike; Era applies to moves (the 6 positions that had one passed it to the move into them).
+- **Colors** for the options of Intention (aggressive red, balanced green, solid blue), Purpose (attack red, defend blue, territory brown, influence purple…), Status (in progress yellow, end green, end after a mistake red), the life & death results (white when good for White, black when good for Black, seki green, unsettled yellow, ko orange), Surrounded, Era and Ko type. Shown as dots in the panels, the editor and Last move.
 - Fix: exporting when only tags changed showed "No changes to export".
 
 ## v0.2.0

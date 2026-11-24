@@ -11,7 +11,7 @@
 import type { ComponentChildren } from 'preact'
 import { useMemo, useState } from 'preact/hooks'
 import { Eye, EyeOff, Plus, Search } from 'lucide-preact'
-import { asList, getRegistry, humanKey, labelOf, sortKeys, typeOf, type TagDef, type TagOption, type TagType, type TagValue } from '../core/tags'
+import { LINKED, asList, getRegistry, humanKey, labelOf, sortKeys, typeOf, type TagDef, type TagOption, type TagType, type TagValue } from '../core/tags'
 import { dropTagDef, putTagDef, type Workspace } from '../edit/workspace'
 import type { DatabaseInfo } from '../data/load'
 import type { Settings } from '../settings'
@@ -138,7 +138,7 @@ export function TagsMode(p: {
                 <span class="tag-icon" aria-hidden>{d?.icon ?? TYPES.find((x) => x.type === t)?.icon ?? '•'}</span>
                 <span class="tag-card-text">
                   <b>{labelOf(k)}</b>
-                  <small>{typeName(t)} · {DOMAIN_NAMES[domainOf(d)]}{d ? '' : ' · not described'}</small>
+                  <small>{typeName(t)} · {DOMAIN_NAMES[domainOf(d)]}{d ? '' : ' · not described'}{d?.like ? ` · like ${labelOf(d.like)}` : ''}</small>
                 </span>
                 {d?.db && <span class="db-dot" style={{ background: p.dbColor(d.db) }} title={`Defined in ${d.db}`} />}
                 {u && <small class="uses" title={`Used on ${u.positions} positions and ${u.moves} moves`}>{u.positions + u.moves}</small>}
@@ -155,6 +155,7 @@ export function TagsMode(p: {
   )
 
   const def = selected ? reg.find((d) => d.key === selected) : undefined
+  const open = (k: string) => { setSelected(k); setCreating(false) }
   // A tag opens in the database that defines it; "Into" can pick another one (to add options there).
   const [intoFor, setIntoFor] = useState<Record<string, string>>({})
   const into = (selected && !creating ? intoFor[selected] ?? def?.db : null) ?? p.target
@@ -163,13 +164,13 @@ export function TagsMode(p: {
   const editor = (
     <main class="pane center tag-editor-pane">
       {creating ? (
-        <TagEditor key={'new' + into} mode="new" base={{ key: '', label: '', type: 'text' }} {...ep} existing={allKeys}
+        <TagEditor key={'new' + into} mode="new" base={{ key: '', label: '', type: 'text' }} {...ep} existing={allKeys} onOpen={open}
           onSaved={(k) => { setCreating(false); setSelected(k) }} />
       ) : selected && def ? (
-        <TagEditor key={selected + into + p.version} mode={def.db === into ? 'own' : 'extend'} base={def} {...ep} existing={allKeys} onSaved={setSelected}
+        <TagEditor key={selected + into + p.version} mode={def.db === into ? 'own' : 'extend'} base={def} {...ep} existing={allKeys} onSaved={setSelected} onOpen={open}
           onDeleted={() => setSelected(null)} />
       ) : selected ? (
-        <TagEditor key={selected + into} mode="describe" base={{ key: selected, label: humanKey(selected), type: typeOf(selected, usage.get(selected)?.sample) }} {...ep} existing={allKeys} onSaved={setSelected} />
+        <TagEditor key={selected + into} mode="describe" base={{ key: selected, label: humanKey(selected), type: typeOf(selected, usage.get(selected)?.sample) }} {...ep} existing={allKeys} onSaved={setSelected} onOpen={open} />
       ) : (
         <p class="hint">Pick a tag on the left, or make a new one.</p>
       )}
@@ -232,7 +233,7 @@ function Preview({ def, k, sample, hidden }: { def: TagDef | undefined; k: strin
       const vals = sample !== undefined ? asList(sample) : (def?.options ?? []).slice(0, t === 'multi' ? 2 : 1).map((o) => o.value)
       value = vals.map((v) => {
         const o = def?.options?.find((x) => x.value === v)
-        return <span key={v} class="value">{o?.color && <span class="dot" style={{ background: o.color, borderColor: o.color }} />}{o?.icon && !o.color && <span class="ico">{o.icon}</span>}{o?.label ?? v}</span>
+        return <span key={v} class="value">{o?.color && <span class="dot tone" style={{ background: o.color }} />}{o?.icon && !o.color && <span class="ico">{o.icon}</span>}{o?.label ?? v}</span>
       })
       break
     }
@@ -285,6 +286,8 @@ function TagEditor(p: {
   existing: string[]
   onSaved: (key: string) => void
   onDeleted?: () => void
+  /** Opens another tag in the editor (the one a linked tag uses). */
+  onOpen: (key: string) => void
 }) {
   const [d, setD] = useState<TagDef>(() => JSON.parse(JSON.stringify(p.base)))
   const [error, setError] = useState<string | null>(null)
@@ -292,7 +295,7 @@ function TagEditor(p: {
   const upd = (patch: Partial<TagDef>) => setD({ ...d, ...patch })
   const opts = d.options ?? []
   /** Options this database stores (the others come from other databases and stay as they are). */
-  const mine = (o: TagOption) => !o.db || o.db === p.target
+  const mine = (o: TagOption) => !d.like && (!o.db || o.db === p.target)
   const updOpt = (i: number, patch: Partial<TagOption>) => upd({ options: opts.map((o, j) => (j === i ? { ...o, ...patch } : o)) })
   const moveOpt = (i: number, by: number) => {
     const j = i + by
@@ -303,13 +306,27 @@ function TagEditor(p: {
   }
   const domain = domainOf(d)
   const hasOptions = d.type === 'choice' || d.type === 'multi'
+  // A linked tag takes its settings from another tag (`like`): they are shown, not edited, here.
+  const all = getRegistry().tags
+  const source = d.like ? all.find((x) => x.key === d.like) : undefined
+  const fixed = locked || !!d.like
+  const usedBy = all.filter((x) => x.like === d.key && x.key !== d.key)
+  /** Tags whose settings this one can use: not itself, and not one that is linked to it. */
+  const linkable = all.filter((x) => x.key !== d.key && x.like !== d.key && x.type !== 'board')
+  const link = (key: string) => {
+    if (!key) return upd({ like: undefined })
+    const src = all.find((x) => x.key === key)!
+    const copy: Partial<TagDef> = { like: key }
+    for (const k of LINKED) (copy as Record<string, unknown>)[k] = (src as unknown as Record<string, unknown>)[k]
+    upd(copy)
+  }
 
   const save = () => {
     const key = p.mode === 'new' ? (d.key || slug(d.label)) : d.key
     if (!d.label.trim()) return setError('Give the tag a name.')
     if (!KEY_RE.test(key)) return setError('The key uses lowercase letters, digits and hyphens.')
     if (p.mode === 'new' && p.existing.includes(key)) return setError(`There is already a tag "${key}".`)
-    if (hasOptions && !opts.length) return setError('Add at least one option.')
+    if (hasOptions && !opts.length && !d.like) return setError('Add at least one option.')
     const values = opts.map((o) => o.value)
     if (opts.some((o) => !o.value || !o.label)) return setError('Every option needs a name.')
     if (new Set(values).size !== values.length) return setError('Two options have the same value.')
@@ -327,6 +344,8 @@ function TagEditor(p: {
       if (out.type !== 'number') for (const k of ['min', 'max', 'step', 'unit'] as const) delete out[k]
       if (out.type !== 'slider') { delete out.ends; delete out.negate }
       if (out.type !== 'choice') delete out.control
+      // A linked tag stores only the link; its settings are read from the other tag.
+      if (out.like) for (const k of LINKED) if (k !== 'type') delete out[k]
       putTagDef(p.ws, p.target, out)
     }
     setError(null)
@@ -385,10 +404,33 @@ function TagEditor(p: {
       </section>
 
       <section class="edit-box">
+        <h3 class="edit-box-h">Settings<Info text="A tag can use the settings of another one (type, options, range, sides). They stay linked: changing them there changes both. Copy and disconnect makes them this tag's own." /></h3>
+        {source ? (
+          <div class="link-card">
+            <span>Same settings as <button class="link" onClick={() => p.onOpen(source.key)}>{source.label}</button>. Changes there apply here too.</span>
+            {!locked && (
+              <span class="grp">
+                <button id="te-unlink" onClick={() => upd({ like: undefined, options: d.options?.map(({ db: _db, ...o }) => (void _db, o)) })} title="Keep a copy of the settings, no longer linked">Copy and disconnect</button>
+              </span>
+            )}
+          </div>
+        ) : (
+          <label class="te-link">
+            <span>Same settings as</span>
+            <select id="te-like" value="" disabled={locked} onChange={(e) => link((e.target as HTMLSelectElement).value)}>
+              <option value="">— its own —</option>
+              {linkable.map((x) => <option key={x.key} value={x.key}>{x.label} ({typeName(x.type)})</option>)}
+            </select>
+          </label>
+        )}
+        {usedBy.length > 0 && <p class="hint used-by">Also used by: {usedBy.map((x, i) => <span key={x.key}>{i > 0 && ', '}<button class="link" onClick={() => p.onOpen(x.key)}>{x.label}</button></span>)}</p>}
+      </section>
+
+      <section class="edit-box">
         <h3 class="edit-box-h">Type</h3>
         <div class="type-grid" role="radiogroup" aria-label="Type">
           {TYPES.map((t) => (
-            <button key={t.type} role="radio" aria-checked={d.type === t.type} class={`type-card ${d.type === t.type ? 'picked' : ''}`} disabled={locked} title={t.about} onClick={() => upd({ type: t.type, options: t.type === 'choice' || t.type === 'multi' ? d.options ?? [] : d.options })}>
+            <button key={t.type} role="radio" aria-checked={d.type === t.type} class={`type-card ${d.type === t.type ? 'picked' : ''}`} disabled={fixed} title={t.about} onClick={() => upd({ type: t.type, options: t.type === 'choice' || t.type === 'multi' ? d.options ?? [] : d.options })}>
               <span class="tag-icon" aria-hidden>{t.icon}</span>
               <b>{t.name}</b>
               <small>{t.about}</small>
@@ -401,10 +443,10 @@ function TagEditor(p: {
         <section class="edit-box">
           <h3 class="edit-box-h">Range</h3>
           <div class="te-grid">
-            <Field label="From"><input id="te-min" type="number" step="any" value={d.min ?? ''} disabled={locked} onInput={(e) => upd({ min: num((e.target as HTMLInputElement).value) })} /></Field>
-            <Field label="To"><input id="te-max" type="number" step="any" value={d.max ?? ''} disabled={locked} onInput={(e) => upd({ max: num((e.target as HTMLInputElement).value) })} /></Field>
-            <Field label="Step"><input id="te-step" type="number" step="any" min="0" value={d.step ?? ''} disabled={locked} onInput={(e) => upd({ step: num((e.target as HTMLInputElement).value) })} /></Field>
-            <Field label="Unit"><input id="te-unit" value={d.unit ?? ''} disabled={locked} placeholder="points" onInput={(e) => upd({ unit: (e.target as HTMLInputElement).value || undefined })} /></Field>
+            <Field label="From"><input id="te-min" type="number" step="any" value={d.min ?? ''} disabled={fixed} onInput={(e) => upd({ min: num((e.target as HTMLInputElement).value) })} /></Field>
+            <Field label="To"><input id="te-max" type="number" step="any" value={d.max ?? ''} disabled={fixed} onInput={(e) => upd({ max: num((e.target as HTMLInputElement).value) })} /></Field>
+            <Field label="Step"><input id="te-step" type="number" step="any" min="0" value={d.step ?? ''} disabled={fixed} onInput={(e) => upd({ step: num((e.target as HTMLInputElement).value) })} /></Field>
+            <Field label="Unit"><input id="te-unit" value={d.unit ?? ''} disabled={fixed} placeholder="points" onInput={(e) => upd({ unit: (e.target as HTMLInputElement).value || undefined })} /></Field>
           </div>
         </section>
       )}
@@ -413,10 +455,10 @@ function TagEditor(p: {
         <section class="edit-box">
           <h3 class="edit-box-h">Sides</h3>
           <div class="te-grid">
-            <Field label="Left"><input value={d.ends?.[0] ?? ''} disabled={locked} placeholder="White better" onInput={(e) => upd({ ends: [(e.target as HTMLInputElement).value, d.ends?.[1] ?? ''] })} /></Field>
-            <Field label="Right"><input value={d.ends?.[1] ?? ''} disabled={locked} placeholder="Black better" onInput={(e) => upd({ ends: [d.ends?.[0] ?? '', (e.target as HTMLInputElement).value] })} /></Field>
+            <Field label="Left"><input value={d.ends?.[0] ?? ''} disabled={fixed} placeholder="White better" onInput={(e) => upd({ ends: [(e.target as HTMLInputElement).value, d.ends?.[1] ?? ''] })} /></Field>
+            <Field label="Right"><input value={d.ends?.[1] ?? ''} disabled={fixed} placeholder="Black better" onInput={(e) => upd({ ends: [d.ends?.[0] ?? '', (e.target as HTMLInputElement).value] })} /></Field>
           </div>
-          <label class="te-check"><input type="checkbox" checked={!!d.negate} disabled={locked} onChange={(e) => upd({ negate: (e.target as HTMLInputElement).checked || undefined })} /> Swap colors turns it around</label>
+          <label class="te-check"><input type="checkbox" checked={!!d.negate} disabled={fixed} onChange={(e) => upd({ negate: (e.target as HTMLInputElement).checked || undefined })} /> Swap colors turns it around</label>
         </section>
       )}
 
@@ -426,7 +468,7 @@ function TagEditor(p: {
           {d.type === 'choice' && (
             <div class="seg" role="group" aria-label="Shown as">
               {(['dropdown', 'buttons'] as const).map((c) => (
-                <button key={c} class={(d.control ?? 'dropdown') === c ? 'on' : ''} disabled={locked} onClick={() => upd({ control: c === 'dropdown' ? undefined : c })}>{c === 'dropdown' ? 'A list' : 'Buttons'}</button>
+                <button key={c} class={(d.control ?? 'dropdown') === c ? 'on' : ''} disabled={fixed} onClick={() => upd({ control: c === 'dropdown' ? undefined : c })}>{c === 'dropdown' ? 'A list' : 'Buttons'}</button>
               ))}
             </div>
           )}
@@ -443,8 +485,8 @@ function TagEditor(p: {
                   {o.color && mine(o) && <button class="icon ghost" aria-label="No color" title="No color" onClick={() => updOpt(i, { color: undefined })}>⊘</button>}
                   {!mine(o) && <span class="src-badge" title={`Defined in ${o.db}`}>{o.db}</span>}
                   <span class="spacer" />
-                  {!locked && <button class="icon ghost" aria-label={`Move ${o.label} up`} disabled={i === 0} onClick={() => moveOpt(i, -1)}>↑</button>}
-                  {!locked && <button class="icon ghost" aria-label={`Move ${o.label} down`} disabled={i === opts.length - 1} onClick={() => moveOpt(i, 1)}>↓</button>}
+                  {!fixed && <button class="icon ghost" aria-label={`Move ${o.label} up`} disabled={i === 0} onClick={() => moveOpt(i, -1)}>↑</button>}
+                  {!fixed && <button class="icon ghost" aria-label={`Move ${o.label} down`} disabled={i === opts.length - 1} onClick={() => moveOpt(i, 1)}>↓</button>}
                   {mine(o) && <button class="icon ghost" aria-label={`Remove ${o.label || 'option'}`} onClick={() => upd({ options: opts.filter((_, j) => j !== i) })}>×</button>}
                 </div>
                 <input class="o-desc" value={o.description ?? ''} placeholder="What it means" aria-label="Meaning" disabled={!mine(o)} onInput={(e) => updOpt(i, { description: (e.target as HTMLInputElement).value || undefined })} />
@@ -454,7 +496,7 @@ function TagEditor(p: {
               </li>
             ))}
           </ol>
-          <button class="add-option" onClick={() => upd({ options: [...opts, { value: '', label: '' }] })}><Plus size={14} /> Add an option</button>
+          {!d.like && <button class="add-option" onClick={() => upd({ options: [...opts, { value: '', label: '' }] })}><Plus size={14} /> Add an option</button>}
         </section>
       )}
 

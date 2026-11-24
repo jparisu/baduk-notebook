@@ -179,7 +179,7 @@ export function EditPanel(p: EditApi) {
         control = (
           <span class="chips">
             {opts.map((o) => (
-              <button key={o.value} class={`chip ${cur.includes(o.value) ? 'on' : ''}`} aria-pressed={cur.includes(o.value)} title={describe(key, o.value)} onClick={() => set(cur.includes(o.value) ? cur.filter((x) => x !== o.value) : [...cur, o.value])}>{o.icon ? o.icon + ' ' : ''}{o.label}</button>
+              <button key={o.value} class={`chip ${cur.includes(o.value) ? 'on' : ''}`} aria-pressed={cur.includes(o.value)} title={describe(key, o.value)} onClick={() => set(cur.includes(o.value) ? cur.filter((x) => x !== o.value) : [...cur, o.value])}>{o.color ? <span class="dot tone" style={{ background: o.color }} /> : o.icon ? o.icon + ' ' : ''}{o.label}</button>
             ))}
           </span>
         )

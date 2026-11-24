@@ -77,3 +77,33 @@ test('a database adds an option to a tag another database defines', async ({ pag
   await expect(page.locator('.file-list')).toContainText('db/jparisu/tags.json')
   await expect(page.locator('.file-list')).not.toContainText('db/general/tags.json')
 })
+
+test('a tag linked to another uses its settings, follows its changes, and can be copied and disconnected', async ({ page }) => {
+  await openTags(page)
+  // White plays first is linked to Black plays first.
+  await card(page, 'White plays first').locator('.tag-card-main').click()
+  await expect(page.locator('.link-card')).toContainText('Same settings as Black plays first')
+  // A new tag linked to Status.
+  await page.getByRole('button', { name: 'New tag' }).click()
+  await page.locator('#te-label').fill('Status after tenuki')
+  await page.locator('#te-like').selectOption('status')
+  await expect(page.locator('.link-card')).toContainText('Same settings as Status')
+  await expect(page.locator('.opt-card')).toHaveCount(4)
+  await page.locator('#te-save').click()
+  // Change Status: the linked tag follows.
+  await card(page, 'Status').locator('.tag-card-main').click()
+  await page.getByLabel('Database that receives the tag').selectOption('general')
+  await expect(page.locator('.used-by')).toContainText('Status after tenuki')
+  await page.getByRole('button', { name: 'Add an option' }).click()
+  await page.locator('.opt-card').last().getByLabel('Option name').fill('Abandoned')
+  await page.locator('#te-save').click()
+  await card(page, 'Status after tenuki').locator('.tag-card-main').click()
+  await expect(page.locator('.opt-card')).toHaveCount(5)
+  await expect(page.locator('.opt-card').last().getByLabel('Option name')).toHaveValue('Abandoned')
+  await expect(page.locator('.opt-card').last().getByLabel('Option name')).toBeDisabled()
+  // Copy and disconnect: the options become its own.
+  await page.locator('#te-unlink').click()
+  await expect(page.locator('.opt-card').last().getByLabel('Option name')).toBeEnabled()
+  await page.locator('#te-save').click()
+  await expect(card(page, 'Status after tenuki')).not.toContainText('like Status')
+})

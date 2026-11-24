@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { mergeRegistries, movePoint, setRegistry, getRegistry, type TagRegistry } from './tags'
+import { mergeRegistries, movePoint, resolveLinks, setRegistry, getRegistry, type TagRegistry } from './tags'
 import { checkTag } from './validate'
 import { SYMMETRIES } from './geometry'
 
@@ -40,3 +41,35 @@ describe('tag values', () => {
     expect(movePoint('Q16', SYMMETRIES[0])).toBe('Q16')
   })
 })
+
+describe('linked tags', () => {
+  const reg: TagRegistry = { tags: [
+    { key: 'black-first', label: 'Black plays first', type: 'choice', control: 'buttons', options: [{ value: 'B-alive', label: 'Black lives', color: '#151515' }] },
+    { key: 'white-first', label: 'White plays first', type: 'text', like: 'black-first', description: 'If White plays first' },
+    { key: 'third', label: 'Third', type: 'text', like: 'white-first', options: [{ value: 'extra', label: 'Extra' }] },
+    { key: 'lost', label: 'Lost', type: 'number', like: 'nowhere' },
+    { key: 'a', label: 'A', type: 'text', like: 'b' },
+    { key: 'b', label: 'B', type: 'text', like: 'a' },
+  ] }
+  const r = resolveLinks(reg).tags
+  const at = (k: string) => r.find((d) => d.key === k)!
+  it('use the settings of the tag they are linked to, keeping their own name and meaning', () => {
+    expect(at('white-first')).toMatchObject({ type: 'choice', control: 'buttons', label: 'White plays first', description: 'If White plays first' })
+    expect(at('white-first').options).toEqual(reg.tags[0].options)
+  })
+  it('follow chains, and add their own options after the shared ones', () => {
+    expect(at('third').type).toBe('choice')
+    expect(at('third').options!.map((o) => o.value)).toEqual(['B-alive', 'extra'])
+  })
+  it('a link to a missing tag, or a loop, leaves the tag as it is', () => {
+    expect(at('lost').type).toBe('number')
+    expect(at('a').type).toBe('text')
+  })
+  it('the data: White plays first uses the settings of Black plays first', () => {
+    const merged = mergeRegistries([{ db: 'general', registry: JSON.parse(readFileSync('db/general/tags.json', 'utf8')) }])
+    const w = merged.tags.find((d) => d.key === 'white-first')!, b = merged.tags.find((d) => d.key === 'black-first')!
+    expect(w.like).toBe('black-first')
+    expect(w.options).toEqual(b.options)
+  })
+})
+

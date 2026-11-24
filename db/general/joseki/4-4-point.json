@@ -41,6 +41,10 @@
         ],
         "conditions": [
           "Best when Black's wall would face White's strength"
+        ],
+        "era": [
+          "classic",
+          "ai"
         ]
       }
     },
@@ -48,7 +52,12 @@
       "from": "joseki/4-4 point",
       "to": "joseki/4-4 point/Low approach",
       "tags": {
-        "kind": "main"
+        "kind": "main",
+        "era": [
+          "classic",
+          "modern",
+          "ai"
+        ]
       }
     }
   ]
