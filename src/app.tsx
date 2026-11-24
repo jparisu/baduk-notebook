@@ -140,7 +140,7 @@ export function App() {
     setSessionState(l)
     saveSession(l)
   }
-  useEffect(() => applyTheme(settings), [settings.theme, settings.colorMode])
+  useEffect(() => applyTheme(settings), [settings.theme, settings.colorMode, settings.optionMarks])
 
   const databases: DatabaseInfo[] = ws.current?.databases ?? []
   const active = useMemo(

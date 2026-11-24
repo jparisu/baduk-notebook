@@ -9,6 +9,7 @@
  * - Right: how it looks in Explore, and where it is used.
  */
 import type { ComponentChildren } from 'preact'
+import { OptionMark } from './OptionMark'
 import { useMemo, useState } from 'preact/hooks'
 import { Eye, EyeOff, Plus, Search } from 'lucide-preact'
 import { LINKED, asList, getRegistry, humanKey, labelOf, sortKeys, typeOf, type TagDef, type TagOption, type TagType, type TagValue } from '../core/tags'
@@ -102,7 +103,8 @@ export function TagsMode(p: {
   const q = query.trim().toLowerCase()
   const shownInList = allKeys.filter((k) => {
     const d = reg.find((x) => x.key === k)
-    if (domain !== 'all' && domainOf(d) !== domain && domainOf(d) !== 'both') return false
+    // Positions and Moves include the tags for both; Both shows only those.
+    if (domain === 'both' ? domainOf(d) !== 'both' : domain !== 'all' && domainOf(d) !== domain && domainOf(d) !== 'both') return false
     return !q || k.includes(q) || labelOf(k).toLowerCase().includes(q)
   })
   const visibleCount = allKeys.filter((k) => !hidden.has(k)).length
@@ -122,7 +124,7 @@ export function TagsMode(p: {
       </div>
       <label class="tags-search"><Search size={14} /><input type="search" placeholder="Search tags" value={query} onInput={(e) => setQuery((e.target as HTMLInputElement).value)} aria-label="Search tags" /></label>
       <div class="seg" role="group" aria-label="Applies to">
-        {(['all', 'position', 'move'] as const).map((d) => (
+        {(['all', 'position', 'move', 'both'] as const).map((d) => (
           <button key={d} class={domain === d ? 'on' : ''} aria-pressed={domain === d} onClick={() => setDomain(d)}>{d === 'all' ? 'All' : DOMAIN_NAMES[d]}</button>
         ))}
       </div>
@@ -233,7 +235,7 @@ function Preview({ def, k, sample, hidden }: { def: TagDef | undefined; k: strin
       const vals = sample !== undefined ? asList(sample) : (def?.options ?? []).slice(0, t === 'multi' ? 2 : 1).map((o) => o.value)
       value = vals.map((v) => {
         const o = def?.options?.find((x) => x.value === v)
-        return <span key={v} class="value">{o?.color && <span class="dot tone" style={{ background: o.color }} />}{o?.icon && !o.color && <span class="ico">{o.icon}</span>}{o?.label ?? v}</span>
+        return <span key={v} class="value"><OptionMark o={o} />{o?.label ?? v}</span>
       })
       break
     }
@@ -476,6 +478,7 @@ function TagEditor(p: {
             {opts.map((o, i) => (
               <li key={i} class={`opt-card ${mine(o) ? '' : 'inherited'}`}>
                 <div class="opt-line">
+                  <span class="o-mark" title="How it is shown">{o.color || o.icon ? <OptionMark o={o} /> : <span class="hint">–</span>}</span>
                   <input class="o-icon" value={o.icon ?? ''} placeholder="◆" aria-label="Icon" disabled={!mine(o)} onInput={(e) => updOpt(i, { icon: (e.target as HTMLInputElement).value || undefined })} />
                   <input class="o-label" value={o.label} placeholder="Option" aria-label="Option name" disabled={!mine(o)} onInput={(e) => {
                     const label = (e.target as HTMLInputElement).value

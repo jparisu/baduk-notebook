@@ -107,3 +107,19 @@ test('a tag linked to another uses its settings, follows its changes, and can be
   await page.locator('#te-save').click()
   await expect(card(page, 'Status after tenuki')).not.toContainText('like Status')
 })
+
+test('the list filters tags for both positions and moves; options with a color and an icon show both', async ({ page }) => {
+  await openTags(page)
+  await page.locator('.tags-list').getByRole('button', { name: 'Both', exact: true }).click()
+  await expect(card(page, 'Topics')).toBeVisible()
+  await expect(card(page, 'Kind')).toHaveCount(0) // moves only
+  await expect(card(page, 'Status')).toHaveCount(0) // positions only
+  // Balanced (green, ⚖) on the 3-3 invasion's block: a circle with the icon inside, filled by default, a ring if set.
+  await page.goto('./?open=joseki/4-4+point/3-3+invasion&line=pc')
+  const mark = page.locator('.why-card .tag', { hasText: 'Balanced' }).locator('.omark')
+  await expect(mark).toHaveText('⚖')
+  await expect(page.locator('html')).toHaveAttribute('data-marks', 'filled')
+  await page.getByRole('button', { name: 'Settings' }).click()
+  await page.getByLabel('Options with a color and an icon').selectOption({ label: 'Ring and icon in the color' })
+  await expect(page.locator('html')).toHaveAttribute('data-marks', 'ring')
+})

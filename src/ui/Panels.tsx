@@ -4,6 +4,7 @@
  * right — position evaluation, last move (the "why"), next moves.
  */
 import type { ComponentChildren } from 'preact'
+import { OptionMark } from './OptionMark'
 import { useState } from 'preact/hooks'
 import { Link2 } from 'lucide-preact'
 import { CATEGORIES, type Category } from '../core/kinds'
@@ -170,8 +171,7 @@ export function TagRows({ keys, f, icons, only, hidden = [] }: { keys: string[];
       const o = d?.options?.find((x) => x.value === v)
       return (
         <span key={v} class="value" title={describe(key, v)}>
-          {o?.color && <span class="dot tone" style={{ background: o.color }} />}
-          {icons && o?.icon && !o.color && <span class="ico" aria-hidden>{o.icon}</span>}
+          <OptionMark o={o} icons={icons} />
           {/^https?:\/\/\S+$/.test(v) ? <a href={v} target="_blank" rel="noopener noreferrer" title={v}>{linkText(v)}</a> : valueLabel(key, v)}
         </span>
       )
@@ -314,7 +314,7 @@ export function LastMove(p: Common & { onGoTo: (n: number) => void }) {
               return mf.list(k).map((x) => {
                 const o = d?.options?.find((y) => y.value === x)
                 // Keys the interface knows show their value; others say which key it is.
-                return <span key={k + x} class="tag" title={d?.options ? describe(k, x) : describe(k)}>{o?.color ? <span class="dot tone" style={{ background: o.color }} /> : s.icons && o?.icon ? <span class="ico" aria-hidden>{o.icon}</span> : null}{d?.options ? valueLabel(k, x) : `${labelOf(k)}: ${valueLabel(k, x)}`}</span>
+                return <span key={k + x} class="tag" title={d?.options ? describe(k, x) : describe(k)}><OptionMark o={o} icons={s.icons} />{d?.options ? valueLabel(k, x) : `${labelOf(k)}: ${valueLabel(k, x)}`}</span>
               })
             })}
           </div>

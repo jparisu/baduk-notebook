@@ -8,6 +8,7 @@
  * Writing anything on a move played freely saves the line up to it.
  */
 import type { ComponentChildren } from 'preact'
+import { OptionMark } from './OptionMark'
 import { useState } from 'preact/hooks'
 import {
   BALANCE_LEVELS, NEW_KEY_TYPES, asList, balanceText, movePoint, asText, defOf, describe, getRegistry, isListType, labelOf, sortKeys, swapKeyOf, swapValue, swapsValue, toValue, typeOf, valueLabel,
@@ -162,7 +163,7 @@ export function EditPanel(p: EditApi) {
                 title={`${describe(key, o.value)}${key === 'kind' ? ` (key ${i + 1})` : ''}`}
                 onClick={() => set(own === o.value ? null : o.value, own === o.value ? `${labelOf(key)}: removed` : `Saved as ${o.label.toLowerCase()} in ${p.target}`)}
               >
-                {o.color ? <span class={`dot ${o.ring ? 'ring' : ''}`} style={{ background: o.color, borderColor: o.color }} /> : o.icon && <span aria-hidden>{o.icon}</span>}
+                {key === 'kind' ? <span class={`dot ${o.ring ? 'ring' : ''}`} style={{ background: o.color, borderColor: o.color }} /> : <OptionMark o={o} />}
                 {o.label}
               </button>
             ))}
@@ -179,7 +180,7 @@ export function EditPanel(p: EditApi) {
         control = (
           <span class="chips">
             {opts.map((o) => (
-              <button key={o.value} class={`chip ${cur.includes(o.value) ? 'on' : ''}`} aria-pressed={cur.includes(o.value)} title={describe(key, o.value)} onClick={() => set(cur.includes(o.value) ? cur.filter((x) => x !== o.value) : [...cur, o.value])}>{o.color ? <span class="dot tone" style={{ background: o.color }} /> : o.icon ? o.icon + ' ' : ''}{o.label}</button>
+              <button key={o.value} class={`chip ${cur.includes(o.value) ? 'on' : ''}`} aria-pressed={cur.includes(o.value)} title={describe(key, o.value)} onClick={() => set(cur.includes(o.value) ? cur.filter((x) => x !== o.value) : [...cur, o.value])}><OptionMark o={o} />{o.label}</button>
             ))}
           </span>
         )

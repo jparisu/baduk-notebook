@@ -80,7 +80,7 @@ adds: a whole tag, or `{ "key", "label", "type", "options": [the options it adds
 |---|---|
 | `key`, `label`, `icon`, `hint` | Its name in the files, how it is shown, a symbol or emoji, a help text. |
 | `type` | `choice` (dropdown, or buttons with `control: "buttons"`), `multi` (several options), `number` (with `min`, `max`, `step` and a `unit`), `point` (a board point such as `Q16`, in the record's stored frame: it turns with the board), `slider` (a bar between two `ends`, from -1 to 1, shown as a meter with levels: even, slightly better, better, much better, winning for one side), `number`, `flag` (yes/no), `color` (B / W / none), `rank` (15k, 2d, 1p), `text`, `list`, `board` (§3.2). |
-| `options` | For choices: `value`, `label`, `icon`, `color`, and `swap`: the option it becomes with Swap colors ("B-alive" ⇄ "W-alive"). Move kinds also say `good` and `ring`. |
+| `options` | For choices: `value`, `label`, `icon`, `color` (shown as a dot, the icon, or both as a circle with the icon inside: filled or a ring, as Settings say), and `swap`: the option it becomes with Swap colors ("B-alive" ⇄ "W-alive"). Move kinds also say `good` and `ring`. |
 | `for` | `move` or `position`: where the editor offers it first. Optional; any key can go anywhere. |
 | `suggest` | Always offered in the editor, even before it has a value (the move `kind` buttons). |
 | `panel` | `sequence`: shown in **This joseki**, read from the start of the sequence (name, topics, difficulty, sources, shape descriptors…), instead of the position panel. |
@@ -141,7 +141,7 @@ one back.
 
 - **Left:** every tag, described by a database or only used in the data, with its type, what it
   applies to, the database that defines it (a dot in its color), how often it is used, and an eye:
-  shown or hidden in Explore. **Show all** / **Show none**, a search and a Positions / Moves filter.
+  shown or hidden in Explore. **Show all** / **Show none**, a search and a Positions / Moves / Both filter.
 - **Middle:** the selected tag, opened in the database that defines it (**Into** picks another one):
   its name, key, meaning and icon; what it **applies to** (positions, moves or both: the editor only
   offers it there); its **type**, chosen from cards; and that type's settings: a number's range, step

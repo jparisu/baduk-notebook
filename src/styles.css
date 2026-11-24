@@ -1112,3 +1112,10 @@ button.src-badge:hover { background: var(--accent); color: #fff; }
 .te-link select { flex: 1; min-width: 0; }
 .used-by { margin: 0; }
 .why-card .tags .tag .dot.tone { margin-right: 5px; }
+
+/* Option marks (ui/OptionMark.tsx): a circle with the icon inside, filled (default) or a ring. */
+.omark { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 17px; height: 17px; border-radius: 50%; margin-right: 4px; vertical-align: -4px; font-size: 10px; line-height: 1; font-weight: 700; background: var(--c); color: var(--panel-solid, #fff); border: 1px solid color-mix(in srgb, var(--fg) 30%, transparent); }
+.omark > span { transform: translateY(.5px); }
+:root[data-marks="ring"] .omark { background: transparent; color: var(--c); border: 1.5px solid var(--c); }
+.o-mark { flex: none; width: 22px; display: inline-flex; justify-content: center; }
+.chip .omark, .chip .dot.tone, .tag .omark, .cat-btn .omark { margin-right: 5px; }

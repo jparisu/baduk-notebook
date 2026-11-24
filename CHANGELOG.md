@@ -9,7 +9,8 @@
 - The Keys… dialog and the tag list in Settings are replaced by the tab.
 - **Linked tags:** a tag can use the settings of another one ("Same settings as…"): type, options, range, sides. They stay linked, so a change applies to both; **Copy and disconnect** keeps a copy of its own. "White plays first" is linked to "Black plays first".
 - Topics, Difficulty and Sources apply to positions and moves alike; Era applies to moves (the 6 positions that had one passed it to the move into them).
-- **Colors** for the options of Intention (aggressive red, balanced green, solid blue), Purpose (attack red, defend blue, territory brown, influence purple…), Status (in progress yellow, end green, end after a mistake red), the life & death results (white when good for White, black when good for Black, seki green, unsettled yellow, ko orange), Surrounded, Era and Ko type. Shown as dots in the panels, the editor and Last move.
+- **Colors** for the options of Intention (aggressive red, balanced green, solid blue), Purpose (attack red, defend blue, territory brown, influence purple…), Status (in progress yellow, end green, end after a mistake red), the life & death results (white when good for White, black when good for Black, seki green, unsettled yellow, ko orange), Surrounded, Era and Ko type. Shown in the panels, the editor and Last move: an option with only a color is a dot, with only an icon the icon, with both a circle with the icon inside, either filled with the icon cut out or a ring with the icon in the color (**Settings › Options with a color and an icon**). The move kinds keep their own marks (the ones on the board).
+- The Tags tab's list also filters the tags for **Both** positions and moves.
 - Fix: exporting when only tags changed showed "No changes to export".
 
 ## v0.2.0
