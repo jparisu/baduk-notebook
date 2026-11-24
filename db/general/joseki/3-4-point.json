@@ -28,14 +28,24 @@
       "from": "joseki/3-4 point",
       "to": "joseki/3-4 point/High approach",
       "tags": {
-        "kind": "main"
+        "kind": "main",
+        "era": [
+          "classic",
+          "modern",
+          "ai"
+        ]
       }
     },
     {
       "from": "joseki/3-4 point",
       "to": "joseki/3-4 point/Low approach",
       "tags": {
-        "kind": "main"
+        "kind": "main",
+        "era": [
+          "classic",
+          "modern",
+          "ai"
+        ]
       }
     }
   ]

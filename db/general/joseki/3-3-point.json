@@ -28,14 +28,20 @@
       "from": "joseki/3-3 point",
       "to": "joseki/3-3 point/High approach",
       "tags": {
-        "kind": "main"
+        "kind": "main",
+        "era": [
+          "classic"
+        ]
       }
     },
     {
       "from": "joseki/3-3 point",
       "to": "joseki/3-3 point/Shoulder hit",
       "tags": {
-        "kind": "main"
+        "kind": "main",
+        "era": [
+          "classic"
+        ]
       }
     }
   ]
