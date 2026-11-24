@@ -4,7 +4,7 @@ import { edgeCategory, labelsAt, visibleEdges } from './core/graph'
 import type { Category } from './core/kinds'
 import GoBoard from '@sabaki/go-board'
 import { isStartId } from './core/model'
-import { asList, asText, defOf, sortKeys, swapValue, swapsValue, type TagValue } from './core/tags'
+import { asList, asText, defOf, movePoint, sortKeys, swapValue, swapsValue, typeOf, type TagValue } from './core/tags'
 import { canonical } from './core/hash'
 import { apply, applySign, compose, inverse, transformMap, type Pt, type Sign, type SignMap, type Transform } from './core/geometry'
 import { boardMarks, parseText, playerWords, transformMarks, type Mark, type Segment } from './core/refs'
@@ -225,7 +225,9 @@ export class Fields {
     const k = this.stored(c, key)
     const v = c.rec.tags[k]
     if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)) return undefined
-    return swapsValue(k) && this.swapped(c) ? swapValue(k, v) : v
+    const seen = swapsValue(k) && this.swapped(c) ? swapValue(k, v) : v
+    // A board point is stored in the record's frame and shown in the display's.
+    return typeOf(k, v) === 'point' ? movePoint(seen, fileToDisplay(this.F, c)) : seen
   }
 
   /** Keys with a value here, in display order. */
@@ -273,7 +275,7 @@ export class Fields {
   }
 }
 
-/** Tags that a position takes from the earlier positions of the line until it sets its own (db/tags.json `inherit`). */
+/** Tags that a position takes from the earlier positions of the line until it sets its own (the tags of the databases (db/<database>/tags.json) `inherit`). */
 export const isInherited = (key: string) => !!defOf(key)?.inherit
 
 const startsSequence = (ctx: Ctx, step: Step) => node(ctx, step).contribs.some((c) => ctx.active.has(c.db) && isStartId(c.pos.id))

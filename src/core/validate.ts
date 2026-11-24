@@ -32,7 +32,7 @@ function checkRefs(text: string, push: (m: string) => void) {
   for (const m of text.replace(/\{\{([A-Z]+):[^|}]*(?:\|[^}]*)?\}\}/g, '').matchAll(/\{\{[^}]*\}\}/g)) push(`"${m[0]}" is not a board reference: write it as {{TYPE:points|words}}, e.g. {{CR:Q16|Q16}}`)
 }
 
-/** A tag's value against its description in db/tags.json. Keys that are not described accept any plain value. */
+/** A tag's value against its description in the tags of the databases (db/<database>/tags.json). Keys that are not described accept any plain value. */
 export function checkTag(key: string, v: TagValue, err: (m: string) => void) {
   const ok = typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean' || (Array.isArray(v) && v.every((x) => typeof x === 'string'))
   if (!ok) return err(`${key}: a tag holds text, a number, true/false or a list of texts`)
@@ -53,6 +53,15 @@ export function checkTag(key: string, v: TagValue, err: (m: string) => void) {
       break
     case 'number':
       if (typeof v !== 'number') err(`${key}: ${v} must be a number`)
+      else {
+        if (d.min !== undefined && v < d.min) err(`${key}: ${v} is below ${d.min}`)
+        if (d.max !== undefined && v > d.max) err(`${key}: ${v} is above ${d.max}`)
+        // On the step's grid, counted from the smallest value (allowing for rounding).
+        if (d.step && Math.abs((v - (d.min ?? 0)) / d.step - Math.round((v - (d.min ?? 0)) / d.step)) > 1e-6) err(`${key}: ${v} is not a multiple of ${d.step}`)
+      }
+      break
+    case 'point':
+      if (typeof v !== 'string' || !parsePt(v)) err(`${key}: "${v}" must be a point such as Q16`)
       break
     case 'flag':
       if (typeof v !== 'boolean') err(`${key}: must be true or false`)

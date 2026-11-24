@@ -10,14 +10,14 @@
 import type { ComponentChildren } from 'preact'
 import { useState } from 'preact/hooks'
 import {
-  BALANCE_LEVELS, NEW_KEY_TYPES, asList, balanceText, asText, defOf, describe, getRegistry, isListType, labelOf, sortKeys, swapKeyOf, swapValue, swapsValue, toValue, typeOf, valueLabel,
+  BALANCE_LEVELS, NEW_KEY_TYPES, asList, balanceText, movePoint, asText, defOf, describe, getRegistry, isListType, labelOf, sortKeys, swapKeyOf, swapValue, swapsValue, toValue, typeOf, valueLabel,
   type TagDef, type TagType, type TagValue,
 } from '../core/tags'
 import { CATEGORIES } from '../core/kinds'
 import { RANK } from '../core/validate'
-import { apply, compose, ptName } from '../core/geometry'
+import { apply, compose, inverse, parsePt, ptName } from '../core/geometry'
 import { locate, nameSequence, renameTag, setComments, setTags, type Location, type On } from '../edit/ops'
-import { updateRegistry } from '../edit/workspace'
+import { putTagDef } from '../edit/workspace'
 import { FREE_LABELS, isStartId, seqOf } from '../core/model'
 import type { Workspace } from '../edit/workspace'
 import { Fields, candidates, entryFields, frame, inBook, isInherited, lineFields, moveOf, node, primaryLabel, rootStep, type Ctx, type Step } from '../view'
@@ -82,13 +82,16 @@ export function EditPanel(p: EditApi) {
     const sw = swapped(loc)
     const real = sw ? swapKeyOf(key) : key
     const v = r.tags[real]
-    return v !== undefined && sw && swapsValue(real) ? swapValue(real, v) : v
+    const seen = v !== undefined && sw && swapsValue(real) ? swapValue(real, v) : v
+    return seen !== undefined && typeOf(real, seen) === 'point' ? movePoint(seen, compose(F, loc.T)) : seen
   }
   const write = (on: On, key: string, value: TagValue | null, msg?: string) => {
     const loc = where(true)!
     const sw = swapped(loc)
     const real = sw ? swapKeyOf(key) : key
-    setTags(p.ws, loc, on, { [real]: value !== null && sw && swapsValue(real) ? swapValue(real, value) : value })
+    let stored = value !== null && sw && swapsValue(real) ? swapValue(real, value) : value
+    if (stored !== null && typeOf(real, stored) === 'point') stored = movePoint(stored, inverse(compose(F, loc.T)))
+    setTags(p.ws, loc, on, { [real]: stored })
     if (value === null) setAdded((a) => ({ ...a, [on]: Object.fromEntries(Object.entries(a[on]).filter(([k]) => k !== key)) }))
     p.commit(msg)
   }
@@ -212,15 +215,17 @@ export function EditPanel(p: EditApi) {
         break
       default: {
         const text = isListType(type) ? asList(v).join(', ') : v === undefined ? '' : String(v)
-        const bad = type === 'rank' && text && !RANK.test(text)
+        const bad = !!text && ((type === 'rank' && !RANK.test(text)) || (type === 'point' && !parsePt(text)))
         control = (
           <input
             id={id}
             type={type === 'number' ? 'number' : 'text'}
-            step="any"
+            step={type === 'number' && d?.step ? d.step : 'any'}
+            min={type === 'number' ? d?.min : undefined}
+            max={type === 'number' ? d?.max : undefined}
             defaultValue={text}
             class={bad ? 'invalid' : ''}
-            placeholder={type === 'list' ? 'comma separated' : type === 'rank' ? 'e.g. 15k, 2d' : d?.hint}
+            placeholder={type === 'list' ? 'comma separated' : type === 'rank' ? 'e.g. 15k, 2d' : type === 'point' ? 'e.g. Q16' : type === 'number' && d?.unit ? d.unit : d?.hint}
             onBlur={(e) => e.currentTarget.value !== text && set(e.currentTarget.value)}
             onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
           />
@@ -250,7 +255,7 @@ export function EditPanel(p: EditApi) {
     const loc = where(false)
     const own = Object.keys(recOf(loc, on)?.tags ?? {}).map((k) => (loc && swapped(loc) ? swapKeyOf(k) : k))
     const inh = on === 'pos' ? lf.keys().filter((k) => inherited(k)) : []
-    // Keys db/tags.json always offers (the kind buttons of a move).
+    // Keys the tags of the databases (db/<database>/tags.json) always offers (the kind buttons of a move).
     const suggested = getRegistry().tags.filter((d) => d.suggest && (!d.for || (d.for === 'move') === (on === 'move'))).map((d) => d.key)
     return sortKeys([...own, ...suggested, ...others(on).keys(), ...inh, ...Object.keys(added[on])]).filter((k) => !OWN_PLACE.has(k))
   }
@@ -291,11 +296,11 @@ export function EditPanel(p: EditApi) {
       exclude={new Set([...exclude, ...OWN_PLACE])}
       used={usedKeys(p.ws)}
       onAdd={(key, type, def) => {
-        if (def) updateRegistry(p.ws, { tags: [...getRegistry().tags, def] })
+        if (def) putTagDef(p.ws, p.target, def)
         // Yes/no tags are set at once; the others get their row and the cursor.
         if (type === 'flag') return write(on, key, true, `${labelOf(key)} set`)
         setAdded((a) => ({ ...a, [on]: { ...a[on], [key]: type } }))
-        if (def) p.commit(`New tag "${def.label}" described in db/tags.json (saved in this browser; Export proposes it)`)
+        if (def) p.commit(`New tag "${def.label}" described in ${p.target}'s tags (saved in this browser; Export proposes it)`)
         setTimeout(() => (document.getElementById(`f-${on}-${key}`) as HTMLElement | null)?.focus(), 30)
       }}
       onRename={(from, to) => {
@@ -509,7 +514,7 @@ function usedKeys(ws: Workspace): string[] {
  * Adding a tag in one click: every key the interface knows (and every key used elsewhere) is a chip;
  * a click adds it with its control ready (a yes/no tag is set at once). "New key" creates one: a plain
  * key (text, list, number, yes/no) only lives in the data; one whose type cannot be told from its value
- * (options, a color, a rank, a balance) is also described in db/tags.json.
+ * (options, a color, a rank, a balance) is also described in the tags of the databases (db/<database>/tags.json).
  */
 function AddTag({ on, exclude, used, onAdd, onRename, own }: {
   on: On

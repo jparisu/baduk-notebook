@@ -1,5 +1,5 @@
 /**
- * Move kinds: the options of the `kind` tag (db/tags.json) — main move, alternative, mistake… They color
+ * Move kinds: the options of the `kind` tag (the tags of the databases (db/<database>/tags.json)) — main move, alternative, mistake… They color
  * the board marks and the tree, and decide which moves count as right answers.
  */
 import { asText, defOf, onRegistry, type Tags } from './tags'

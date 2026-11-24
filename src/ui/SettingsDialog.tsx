@@ -1,5 +1,4 @@
 /** Settings dialog (SPEC §8.8). */
-import { labelOf } from '../core/tags'
 import { CATEGORIES, MOVE_CATEGORIES, type Category } from '../core/kinds'
 import { DEFAULT_SETTINGS, type Settings, type Theme } from '../settings'
 import type { DatabaseInfo } from '../data/load'
@@ -10,10 +9,8 @@ const THEMES: [Theme, string, string][] = [
   ['minimal', 'Minimalist', 'Black and white, flat, square'],
 ]
 
-export function SettingsDialog({ s, set, close, databases, active, toggleDb, tagKeys }: {
+export function SettingsDialog({ s, set, close, databases, active, toggleDb }: {
   s: Settings
-  /** Every tag key described in db/tags.json or used in the databases, in display order. */
-  tagKeys: string[]
   set: (s: Settings) => void
   close: () => void
   databases: DatabaseInfo[]
@@ -74,15 +71,7 @@ export function SettingsDialog({ s, set, close, databases, active, toggleDb, tag
           ))}
         </div>
         <h3>Tags shown</h3>
-        <p class="hint">Tags of positions and moves shown in the panels: the ones described in db/tags.json and every key used in your databases. Hidden tags stay in the editor.</p>
-        <div class="cat-grid">
-          {tagKeys.filter((k) => k !== 'kind').map((k) => (
-            <label key={k} class="cat-row">
-              <input type="checkbox" checked={!(s.hiddenKeys ?? []).includes(k)} onChange={() => up('hiddenKeys', (s.hiddenKeys ?? []).includes(k) ? s.hiddenKeys.filter((x) => x !== k) : [...(s.hiddenKeys ?? []), k])} />
-              {labelOf(k)} {labelOf(k) !== k && <small class="hint">{k}</small>}
-            </label>
-          ))}
-        </div>
+        <p class="hint">Choose which tags Explore shows in the <b>Tags</b> tab.</p>
         <h3>Board</h3>
         {sel('view', 'Default view', [['corner', 'Corner (10×10)'], ['full', 'Full board']])}
         {sel('coordinates', 'Coordinates', [[true, 'Shown'], [false, 'Hidden']])}

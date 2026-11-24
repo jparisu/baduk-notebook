@@ -25,12 +25,12 @@ import { SettingsDialog } from './ui/SettingsDialog'
 import { Library } from './ui/Library'
 import { useMedia } from './ui/useMedia'
 import { EditPanel, type EditTab } from './ui/EditPanel'
-import { ExportDialog, TagsDialog, NewDatabaseDialog, NewEntryDialog, SaveLinesDialog, type SessionLineView } from './ui/Dialogs'
+import { ExportDialog, NewDatabaseDialog, NewEntryDialog, SaveLinesDialog, type SessionLineView } from './ui/Dialogs'
 import { FindMode } from './ui/FindMode'
 import { QuizMode } from './ui/QuizMode'
 import { download } from './edit/workspace'
 import { importSgf, toSgf } from './edit/sgfx'
-import { updateRegistry } from './edit/workspace'
+import { TagsMode } from './ui/TagsMode'
 import { changeCount, createWorkspace, discardDrafts, restoreDrafts, saveDrafts, type Workspace } from './edit/workspace'
 import { checkMove, createDatabase, createEntry, deleteMove, locate, orderMoves, setTags, type On } from './edit/ops'
 import { asList, sortKeys, type TagValue } from './core/tags'
@@ -43,7 +43,7 @@ import { erase, loadPosition, loadSession, loadTrail, record, remove, savePositi
 // Distinct colors for "always show" references (SPEC §11.2).
 const REF_PALETTE = ['#d81b60', '#1e88e5', '#00897b', '#f4511e', '#8e24aa', '#6d4c41', '#3949ab', '#c0ca33']
 
-type Mode = 'explore' | 'design' | 'find' | 'quiz'
+type Mode = 'explore' | 'design' | 'find' | 'quiz' | 'tags'
 type Tool = 'move' | MarkType | 'AB' | 'AW' | 'AE'
 /** Edit tools: id, button text, explanation (shown on hover and long-press). */
 const TOOLS: [Tool, string, string][] = [
@@ -71,7 +71,7 @@ const REF_TYPES: [string, string][] = [
 export function App() {
   const ws = useRef<Workspace | null>(null)
   const [graph, setGraph] = useState<Graph | null>(null)
-  const [, setVersion] = useState(0)
+  const [version, setVersion] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [settings, setSettingsState] = useState<Settings>(loadSettings)
   const [mode, setMode] = useState<Mode>('explore')
@@ -86,7 +86,7 @@ export function App() {
   const [hovered, setHovered] = useState<string | null>(null)
   const [pinned, setPinned] = useState<string | null>(null)
   const [highlighted, setHighlighted] = useState<string | null>(null)
-  const [dialog, setDialog] = useState<null | 'settings' | 'export' | 'new-start' | 'new-db' | 'save-lines' | 'keys'>(null)
+  const [dialog, setDialog] = useState<null | 'settings' | 'export' | 'new-start' | 'new-db' | 'save-lines'>(null)
   const [edit, setEdit] = useState(false)
   const [target, setTarget] = useState<string>('')
   const [tool, setTool] = useState<Tool>('move')
@@ -153,8 +153,8 @@ export function App() {
   // Load the databases, restore drafts, and reopen the last position.
   useEffect(() => {
     loadDatabases()
-      .then(async ({ databases, texts, tagsText }) => {
-        const w = createWorkspace(databases, texts, tagsText)
+      .then(async ({ databases, texts, tagTexts }) => {
+        const w = createWorkspace(databases, texts, tagTexts)
         const restored = await restoreDrafts(w)
         ws.current = w
         const g = buildGraph(w.files)
@@ -636,9 +636,9 @@ export function App() {
   )
   const modes = (
     <div class="seg modes" role="group" aria-label="Mode">
-      {(['explore', 'design', 'find', 'quiz'] as Mode[]).map((m) => (
-        <button key={m} class={mode === m ? 'on' : ''} title={m === 'design' ? 'Build and annotate trees of moves' : undefined} onClick={() => { setMode(m); setDrawer(false); setEdit(m === 'design'); setCtxMenu(null) }}>
-          {{ explore: 'Explore', design: 'Design', find: 'Find', quiz: 'Quiz' }[m]}
+      {(['explore', 'design', 'find', 'quiz', 'tags'] as Mode[]).map((m) => (
+        <button key={m} class={mode === m ? 'on' : ''} title={m === 'design' ? 'Build and annotate trees of moves' : m === 'tags' ? 'The tags of positions and moves: which Explore shows, and their types' : undefined} onClick={() => { setMode(m); setDrawer(false); setEdit(m === 'design'); setCtxMenu(null) }}>
+          {{ explore: 'Explore', design: 'Design', find: 'Find', quiz: 'Quiz', tags: 'Tags' }[m]}
         </button>
       ))}
     </div>
@@ -661,7 +661,6 @@ export function App() {
           </select>
         </label>
       )}
-      {edit && <button onClick={() => setDialog('keys')} title="Known tags (db/tags.json): how the interface shows and edits a key — type, options, icons, colors. Any other key still works, shown as key: value">Keys…</button>}
       {(edit || nChanges > 0) && (
         <button class={nChanges ? 'changes' : ''} onClick={() => setDialog('export')}>
           <Upload size={15} /> Export{nChanges ? ` (${nChanges})` : ''}
@@ -1079,7 +1078,6 @@ export function App() {
       <button onClick={() => download(`${(label ? entryName(label) : 'position').replace(/[^\w\- ]+/g, '').trim() || 'position'}.sgf`, toSgf(ctx, path[path.length - 1]), 'application/x-go-sgf')} title="Download this position and the moves after it as SGF">
         <FileDown size={15} /> SGF
       </button>
-      <button onClick={() => setDialog('keys')} title="Known tags (db/tags.json): how the interface shows and edits a key — type, options, icons, colors. Any other key still works, shown as key: value">Keys…</button>
       <button class={nChanges ? 'changes' : ''} onClick={() => setDialog('export')} title="Download a patch or propose the changes on GitHub">
         <Upload size={15} /> Export / pull request{nChanges ? ` (${nChanges})` : ''}
       </button>
@@ -1303,9 +1301,11 @@ export function App() {
         />
       )}
       {mode === 'quiz' && <QuizMode ctx={ctx} phone={phone} settings={settings} entryName={entryName} />}
+      {mode === 'tags' && (
+        <TagsMode ws={w} databases={databases} target={target} setTarget={setTarget} settings={settings} setSettings={setSettings} commit={commit} dbColor={dbColor} phone={phone} version={version} />
+      )}
 
-      {dialog === 'keys' && <TagsDialog registry={w.registry} close={() => setDialog(null)} save={(r) => { updateRegistry(w, r); commit('Tags saved in this browser; use Export to propose them') }} />}
-      {dialog === 'settings' && <SettingsDialog s={settings} tagKeys={sortKeys([...w.registry.tags.map((d) => d.key), ...w.files.flatMap((f) => f.positions.flatMap((p) => [...Object.keys(p.tags), ...p.moves.flatMap((m) => Object.keys(m.tags))]))])} set={setSettings} close={() => setDialog(null)} databases={databases} active={active} toggleDb={toggleDb} />}
+      {dialog === 'settings' && <SettingsDialog s={settings} set={setSettings} close={() => setDialog(null)} databases={databases} active={active} toggleDb={toggleDb} />}
       {dialog === 'export' && (
         <ExportDialog ws={w} close={() => setDialog(null)} onDiscard={async () => {
           await discardDrafts(w)

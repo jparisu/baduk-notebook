@@ -14,7 +14,7 @@ export interface Settings {
   moveNumbers: boolean
   showNext: boolean
   hiddenCategories: Category[]
-  /** Tag keys you do not want to see in the panels (described in db/tags.json or not). */
+  /** Tag keys you do not want to see in the panels (described in the tags of the databases (db/<database>/tags.json) or not). */
   hiddenKeys: string[]
   /** Your own colors for the databases (only in this browser; several may share one). */
   dbColors: Record<string, string>

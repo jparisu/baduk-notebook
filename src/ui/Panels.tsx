@@ -140,11 +140,11 @@ export function BalanceMeter({ k, v }: { k: string; v: number }) {
   )
 }
 
-/** Keys shown in "This joseki" (db/tags.json `panel: "sequence"`), read from the start of the sequence. */
+/** Keys shown in "This joseki" (the tags of the databases (db/<database>/tags.json) `panel: "sequence"`), read from the start of the sequence. */
 export const isSequenceKey = (k: string) => defOf(k)?.panel === 'sequence'
 
 /**
- * Tags as rows. Keys described in db/tags.json are shown their own way (a balance bar, a stone for a color,
+ * Tags as rows. Keys described in the tags of the databases (db/<database>/tags.json) are shown their own way (a balance bar, a stone for a color,
  * option icons and colors); any other key is shown as key: value.
  */
 export function TagRows({ keys, f, icons, only, hidden = [] }: { keys: string[]; f: Fields; icons: boolean; only?: 'bars' | 'rows'; hidden?: string[] }) {
@@ -165,7 +165,7 @@ export function TagRows({ keys, f, icons, only, hidden = [] }: { keys: string[];
       const v = String(r.value)
       return [<Row key={key} label={labelOf(key)} title={describe(key)}><span class="value">{v === 'B' || v === 'W' ? <StoneIcon sign={v === 'B' ? 1 : -1} size={14} /> : icon}{valueLabel(key, v)}</span></Row>]
     }
-    const vals = type === 'list' || type === 'multi' ? f.list(key) : asList(r.value)
+    const vals = type === 'list' || type === 'multi' ? f.list(key) : type === 'number' && d?.unit ? [`${r.value} ${d.unit}`] : asList(r.value)
     const show = (v: string) => {
       const o = d?.options?.find((x) => x.value === v)
       return (

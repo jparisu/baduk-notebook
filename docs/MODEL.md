@@ -62,17 +62,24 @@ only the ones you want. A value is plain JSON:
 | yes / no | `"ko": true` |
 | list of texts | `"name": ["3-4 point", "Komoku"]`, `"intention": ["aggressive"]` |
 
-### 3.1 Known tags (`db/tags.json`)
+### 3.1 Known tags (`db/<database>/tags.json`)
 
-Some keys are **known** by the interface: `db/tags.json` describes how to show and edit them. A key
-that is not described still works: it is shown as `key: value` and edited as text, a number, yes/no
-or a list, from its value. The descriptions are data too: they can be changed in the app
-(**Keys…**) and are exported like any other change.
+Some keys are **known** by the interface: a database's `tags.json` describes how to show and edit
+them. A key that is not described still works: it is shown as `key: value` and edited as text, a
+number, yes/no or a list, from its value. The descriptions are data too: they are made and changed in
+the **Tags** tab (§3.5) and exported like any other change.
+
+**Each database has its own tags.** The app merges them in the order of `db/index.json`: the first
+database to describe a key defines it (`general` defines the common ones); a later database may add
+tags of its own, and **add options** to a tag an earlier one defines, but does not change what that
+database defined. So every database inherits the tags of `general`, and a personal database can add,
+say, a "Tricky" intention without touching `general`. A database's `tags.json` only holds what it
+adds: a whole tag, or `{ "key", "label", "type", "options": [the options it adds] }`.
 
 | Property | Meaning |
 |---|---|
 | `key`, `label`, `icon`, `hint` | Its name in the files, how it is shown, a symbol or emoji, a help text. |
-| `type` | `choice` (dropdown, or buttons with `control: "buttons"`), `multi` (several options), `slider` (a bar between two `ends`, from -1 to 1, shown as a meter with levels: even, slightly better, better, much better, winning for one side), `number`, `flag` (yes/no), `color` (B / W / none), `rank` (15k, 2d, 1p), `text`, `list`, `board` (§3.2). |
+| `type` | `choice` (dropdown, or buttons with `control: "buttons"`), `multi` (several options), `number` (with `min`, `max`, `step` and a `unit`), `point` (a board point such as `Q16`, in the record's stored frame: it turns with the board), `slider` (a bar between two `ends`, from -1 to 1, shown as a meter with levels: even, slightly better, better, much better, winning for one side), `number`, `flag` (yes/no), `color` (B / W / none), `rank` (15k, 2d, 1p), `text`, `list`, `board` (§3.2). |
 | `options` | For choices: `value`, `label`, `icon`, `color`, and `swap`: the option it becomes with Swap colors ("B-alive" ⇄ "W-alive"). Move kinds also say `good` and `ring`. |
 | `for` | `move` or `position`: where the editor offers it first. Optional; any key can go anywhere. |
 | `suggest` | Always offered in the editor, even before it has a value (the move `kind` buttons). |
@@ -85,7 +92,7 @@ Keys the app itself relies on:
 
 | Key | On | Used for |
 |---|---|---|
-| `kind` | moves | Main move, alternative, mistake… Its options give the colors and symbols of the board marks, the tree and the lists, and which moves count as right answers. Required in `db/tags.json`. |
+| `kind` | moves | Main move, alternative, mistake… Its options give the colors and symbols of the board marks, the tree and the lists, and which moves count as right answers. Defined in `db/general/tags.json`. |
 | `name` | positions | A list: the first is the title of the sequence, the others are other names. Defaults to the last part of the id. |
 | `topics` | positions | Free nested words (`life & death/corner`, `ko`) used by the library to find sequences (§4). |
 | `difficulty` | positions | A rank; the library and the quiz filter by it. |
@@ -123,10 +130,26 @@ one back.
 
 ### 3.4 Showing tags
 
-- The panels show the tags a position or move has, in the order of `db/tags.json` and then the other
+- The panels show the tags a position or move has, in the order the tags are described and then the other
   keys alphabetically. Known keys have their own look (a balance bar, a stone for a color, option
   icons and colors); other keys are shown as `key: value`.
-- **Settings › Tags shown** hides any key, described or not. Hidden keys stay in the editor.
+- Which tags Explore shows is chosen in the **Tags** tab (all, none or each one). It is a setting of
+  this browser, not data. Hidden keys stay in the editor.
+
+### 3.5 The Tags tab
+
+- **Left:** every tag, described by a database or only used in the data, with its type, what it
+  applies to, the database that defines it (a dot in its color), how often it is used, and an eye:
+  shown or hidden in Explore. **Show all** / **Show none**, a search and a Positions / Moves filter.
+- **Middle:** the selected tag, opened in the database that defines it (**Into** picks another one):
+  its name, key, meaning and icon; what it **applies to** (positions, moves or both: the editor only
+  offers it there); its **type**, chosen from cards; and that type's settings: a number's range, step
+  and unit; a choice's options (name, icon, color, meaning, order); a balance's two sides. **Behavior**:
+  about the whole sequence, kept by later positions, always offered in the editor.
+  - Into the database that defines the tag, everything can change. Into another database, only new
+    options can be added; the others are shown with their database.
+  - A key only used in the data can be described here; **New tag** makes one.
+- **Right:** how it looks in Explore, with a value from the data, and where it is used.
 
 ## 4. Ids, sequences and topics
 
@@ -263,11 +286,11 @@ tabs; each part is a box, and each tag a row of its own:
     inherited values. A value from another database or an earlier position carries a badge with where
     it comes from: setting it stores your own value; clicking a database's badge switches the edits to
     that database; × removes a value, from the database that stores it. Hovering a tag's name or one
-    of its options shows what it means (`description` in `db/tags.json`).
+    of its options shows what it means (its `description`).
   - **Add:** every key the interface knows, and every key used elsewhere in the databases, is a chip:
     one click adds it with its control ready (a yes/no tag is set at once). **+ New key…** creates one: a
     plain key (text, list, number, yes/no) only lives in the data; a key whose type cannot be told from
-    its value (options, a color, a rank, a balance) is also described in `db/tags.json`. **Rename a
+    its value (options, a color, a rank, a balance) is also described in the database's `tags.json`. **Rename a
     key…** renames a key that is not described, keeping its value.
   - **Next moves:** the moves from here in their order; ↑ and ↓ reorder them, and the first is the main
     move (§1).
@@ -314,7 +337,8 @@ the moves that start from them.
   and every database's comments are shown (your own as cards in your database's color).
 - **Validation** (in the app before export, and in CI): ids, that every move goes from one position
   to the next by a single move, no two tenukis in a row, and each tag against its description in
-  `db/tags.json` (an option that does not exist, a rank like `15k`, a board shape like `TR:Q16`…).
+  the tags of the databases (an option that does not exist, a number out of its range or off its step, a
+  rank like `15k`, a point like `Q16`, a board shape like `TR:Q16`…).
   Keys that are not described accept any plain value.
 
 ## 10. SGF

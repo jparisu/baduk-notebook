@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Tags tab
+- A new **Tags** tab. On the left, every tag with an eye to show or hide it in Explore (Show all / Show none, search, Positions / Moves filter); which tags are shown is a setting of this browser. In the middle, the selected tag: name, key, meaning, icon, what it applies to (positions, moves or both), its type chosen from cards, and the type's settings. On the right, how it looks in Explore and where it is used.
+- New types: **number** with a range, a step and a unit (the editor and the validator keep to them), and **board point** (such as Q16, turning with the board).
+- **Tags per database:** `db/tags.json` became `db/general/tags.json`; each database may have its own `tags.json`. They are merged in the order of `index.json`: a later database adds tags of its own and options to the tags of an earlier one, without changing them. Export proposes each database's tags.json.
+- The Keys… dialog and the tag list in Settings are replaced by the tab.
+- Fix: exporting when only tags changed showed "No changes to export".
+
 ## v0.2.0
 
 ### Positions, moves, comments and tags (docs/MODEL.md)
