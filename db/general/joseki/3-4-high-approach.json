@@ -4,279 +4,286 @@
       "id": "joseki/3-4 point/High approach",
       "stones": "B:qd W:od",
       "toPlay": "B",
-      "name": "3-4 point · high approach",
-      "notes": [
+      "comments": [
+        "{{White}} approaches the 3-4 stone high, on the 5-4 point. The usual answer is the inside attachment, hane and draw back (tsuke-hiki), one of the first joseki beginners learn. {{White}} then protects with a solid or a hanging connection.",
         "{{TR:P16|{{White}}'s high approach}} to {{TR:R16|the 3-4 stone}}. High approach on the 5-4 point: faces the center more than the low approach and leaves the corner to {{Black}}."
       ],
-      "values": {
-        "evaluation": 0,
-        "status": "start",
-        "tags": [
-          "approach",
-          "basic joseki"
-        ],
-        "difficulty": "20k",
-        "summary": "{{White}} approaches the 3-4 stone high, on the 5-4 point. The usual answer is the inside attachment, hane and draw back (tsuke-hiki), one of the first joseki beginners learn. {{White}} then protects with a solid or a hanging connection. Sources: 34PointHighApproach, 34PointHighApproachInsideContact, 34PointHighApproachAttachDrawbackJoseki, 34PointHighApproachInsideContactHangingConnection.",
-        "aliases": [
+      "tags": {
+        "name": [
+          "3-4 point · high approach",
           "One-space high approach",
           "Ikken takagakari",
           "一間高ガカリ",
           "Attach-drawback",
           "Tsuke-hiki"
         ],
+        "evaluation": 0,
+        "status": "start",
+        "topics": [
+          "approach",
+          "basic joseki"
+        ],
+        "difficulty": "20k",
         "sources": [
-          "Sensei's Library (senseis.xmp.net), joseki pages listed in XSUM. Sequences copied from its diagrams and mirrored to the top-right corner."
+          "https://senseis.xmp.net/?34PointHighApproach",
+          "https://senseis.xmp.net/?34PointHighApproachInsideContact",
+          "https://senseis.xmp.net/?34PointHighApproachAttachDrawbackJoseki",
+          "https://senseis.xmp.net/?34PointHighApproachInsideContactHangingConnection"
         ],
         "era": [
           "classic",
           "modern",
           "ai"
         ]
-      },
-      "moves": [
-        {
-          "move": "oc",
-          "to": "joseki/3-4 point/High approach/Attach-drawback",
-          "notes": [
-            "Inside attachment underneath the approach stone: {{Black}} takes a large corner."
-          ],
-          "values": {
-            "category": "main",
-            "style": "solid",
-            "purpose": [
-              "territory"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/3-4 point/High approach/Attach-drawback",
       "stones": "B:oc,qd W:od",
       "toPlay": "W",
-      "name": "3-4 point · attach-drawback",
-      "values": {
+      "comments": [
+        "Inside attachment, hane and draw back: {{Black}} takes the corner, {{White}} protects the cut and extends along the top."
+      ],
+      "tags": {
+        "name": [
+          "3-4 point · attach-drawback",
+          "Tsuke-hiki"
+        ],
         "evaluation": 0,
         "status": "progress",
-        "difficulty": "20k",
-        "summary": "Inside attachment, hane and draw back: {{Black}} takes the corner, {{White}} protects the cut and extends along the top.",
-        "aliases": [
-          "Tsuke-hiki"
-        ]
-      },
-      "moves": [
-        {
-          "move": "nc",
-          "to": "joseki/3-4 point/High approach/Attach-drawback:4",
-          "notes": [
-            "Hane, stopping {{Black}} from moving along the top."
-          ],
-          "values": {
-            "category": "main",
-            "style": "balanced",
-            "purpose": [
-              "influence"
-            ]
-          }
-        }
-      ]
+        "difficulty": "20k"
+      }
     },
     {
       "id": "joseki/3-4 point/High approach/Attach-drawback:4",
       "stones": "B:oc,qd W:nc,od",
       "toPlay": "B",
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "pc",
-          "to": "joseki/3-4 point/High approach/Attach-drawback:5",
-          "notes": [
-            "Draws back, leaving {{White}} a cutting point at {{CUT:O16}}."
-          ],
-          "values": {
-            "category": "main",
-            "style": "solid",
-            "purpose": [
-              "connect",
-              "defend"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/3-4 point/High approach/Attach-drawback:5",
       "stones": "B:oc,pc,qd W:nc,od",
       "toPlay": "W",
-      "notes": [
+      "comments": [
         "{{White}} must protect the cutting point: a solid connection or a hanging connection."
       ],
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "nd",
-          "to": "joseki/3-4 point/High approach/Attach-drawback:6",
-          "notes": [
-            "Solid connection: the stronger move, slightly preferred by AI and modern professionals."
-          ],
-          "values": {
-            "category": "main",
-            "style": "solid",
-            "purpose": [
-              "connect"
-            ]
-          }
-        },
-        {
-          "move": "md",
-          "to": "joseki/3-4 point/High approach/Attach-drawback:6b",
-          "notes": [
-            "Hanging connection (tiger's mouth): lets {{White}} extend one space further, but leaves more weaknesses."
-          ],
-          "values": {
-            "category": "alt",
-            "style": "balanced",
-            "purpose": [
-              "connect"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/3-4 point/High approach/Attach-drawback:6",
       "stones": "B:oc,pc,qd W:nc,nd,od",
       "toPlay": "B",
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "qf",
-          "to": "joseki/3-4 point/High approach/Attach-drawback:7",
-          "notes": [
-            "Extends along the left side to complete the corner."
-          ],
-          "values": {
-            "category": "main",
-            "style": "balanced",
-            "purpose": [
-              "eye"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/3-4 point/High approach/Attach-drawback:7",
       "stones": "B:oc,pc,qd,qf W:nc,nd,od",
       "toPlay": "W",
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "jc",
-          "to": "joseki/3-4 point/High approach/Attach-drawback:8",
-          "notes": [
-            "Three-space extension along the top."
-          ],
-          "values": {
-            "category": "main",
-            "style": "balanced",
-            "purpose": [
-              "eye"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/3-4 point/High approach/Attach-drawback:8",
       "stones": "B:oc,pc,qd,qf W:jc,nc,nd,od",
       "toPlay": "B",
-      "notes": [
+      "comments": [
         "Outcome: {{Black}} has the corner and left side; {{White}} has a base on the top."
       ],
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "end",
         "sente": "B"
-      },
-      "moves": []
+      }
     },
     {
       "id": "joseki/3-4 point/High approach/Attach-drawback:6b",
       "stones": "B:oc,pc,qd W:md,nc,od",
       "toPlay": "B",
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "qf",
-          "to": "joseki/3-4 point/High approach/Attach-drawback:7b",
-          "notes": [
-            "Extends along the left side."
-          ],
-          "values": {
-            "category": "main",
-            "style": "balanced",
-            "purpose": [
-              "eye"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/3-4 point/High approach/Attach-drawback:7b",
       "stones": "B:oc,pc,qd,qf W:md,nc,od",
       "toPlay": "W",
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "ic",
-          "to": "joseki/3-4 point/High approach/Attach-drawback:8b",
-          "notes": [
-            "Extends one space further than after the solid connection."
-          ],
-          "values": {
-            "category": "main",
-            "style": "balanced",
-            "purpose": [
-              "eye"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/3-4 point/High approach/Attach-drawback:8b",
       "stones": "B:oc,pc,qd,qf W:ic,md,nc,od",
       "toPlay": "B",
-      "notes": [
+      "comments": [
         "Outcome: As after the solid connection, but {{White}}'s side is wider and thinner.",
         "Watch out: {{Black}} can later invade the top side, for example at {{CR:M17}}."
       ],
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "end",
         "sente": "B"
-      },
-      "moves": []
+      }
+    }
+  ],
+  "moves": [
+    {
+      "from": "joseki/3-4 point/High approach",
+      "to": "joseki/3-4 point/High approach/Attach-drawback",
+      "comments": [
+        "Inside attachment underneath the approach stone: {{Black}} takes a large corner."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "territory"
+        ]
+      }
+    },
+    {
+      "from": "joseki/3-4 point/High approach/Attach-drawback",
+      "to": "joseki/3-4 point/High approach/Attach-drawback:4",
+      "comments": [
+        "Hane, stopping {{Black}} from moving along the top."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "balanced"
+        ],
+        "purpose": [
+          "influence"
+        ]
+      }
+    },
+    {
+      "from": "joseki/3-4 point/High approach/Attach-drawback:4",
+      "to": "joseki/3-4 point/High approach/Attach-drawback:5",
+      "comments": [
+        "Draws back, leaving {{White}} a cutting point at {{CUT:O16}}."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "connect",
+          "defend"
+        ]
+      }
+    },
+    {
+      "from": "joseki/3-4 point/High approach/Attach-drawback:5",
+      "to": "joseki/3-4 point/High approach/Attach-drawback:6",
+      "comments": [
+        "Solid connection: the stronger move, slightly preferred by AI and modern professionals."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "connect"
+        ]
+      }
+    },
+    {
+      "from": "joseki/3-4 point/High approach/Attach-drawback:5",
+      "to": "joseki/3-4 point/High approach/Attach-drawback:6b",
+      "comments": [
+        "Hanging connection (tiger's mouth): lets {{White}} extend one space further, but leaves more weaknesses."
+      ],
+      "tags": {
+        "kind": "alt",
+        "intention": [
+          "balanced"
+        ],
+        "purpose": [
+          "connect"
+        ]
+      }
+    },
+    {
+      "from": "joseki/3-4 point/High approach/Attach-drawback:6",
+      "to": "joseki/3-4 point/High approach/Attach-drawback:7",
+      "comments": [
+        "Extends along the left side to complete the corner."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "balanced"
+        ],
+        "purpose": [
+          "eye"
+        ]
+      }
+    },
+    {
+      "from": "joseki/3-4 point/High approach/Attach-drawback:7",
+      "to": "joseki/3-4 point/High approach/Attach-drawback:8",
+      "comments": [
+        "Three-space extension along the top."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "balanced"
+        ],
+        "purpose": [
+          "eye"
+        ]
+      }
+    },
+    {
+      "from": "joseki/3-4 point/High approach/Attach-drawback:6b",
+      "to": "joseki/3-4 point/High approach/Attach-drawback:7b",
+      "comments": [
+        "Extends along the left side."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "balanced"
+        ],
+        "purpose": [
+          "eye"
+        ]
+      }
+    },
+    {
+      "from": "joseki/3-4 point/High approach/Attach-drawback:7b",
+      "to": "joseki/3-4 point/High approach/Attach-drawback:8b",
+      "comments": [
+        "Extends one space further than after the solid connection."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "balanced"
+        ],
+        "purpose": [
+          "eye"
+        ]
+      }
     }
   ]
 }

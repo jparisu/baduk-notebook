@@ -4,757 +4,784 @@
       "id": "joseki/4-4 point/3-3 invasion",
       "stones": "B:pd W:qc",
       "toPlay": "B",
-      "name": "4-4 point · 3-3 invasion",
-      "notes": [
+      "comments": [
+        "{{White}} takes the corner and {{Black}}'s base. {{Black}} chooses which side gets the wall, then picks a sente variation (extend, knight's move) or the territorial double hane.",
         "{{Black}} chooses the direction of the wall with the block."
       ],
-      "values": {
+      "tags": {
+        "name": [
+          "4-4 point · 3-3 invasion",
+          "San-san invasion",
+          "三々入り"
+        ],
         "evaluation": 0,
         "status": "progress",
-        "tags": [
+        "topics": [
           "invasion",
           "territory vs thickness"
         ],
         "difficulty": "15k",
-        "summary": "{{White}} takes the corner and {{Black}}'s base. {{Black}} chooses which side gets the wall, then picks a sente variation (extend, knight's move) or the territorial double hane. Sources: 33PointInvasion, 44Point33InvasionJoseki, 44Point33InvasionHaneExtend, 44Point33InvasionExtendSmallKnight, 44Point33InvasionDoubleHane.",
-        "aliases": [
-          "San-san invasion",
-          "三々入り"
-        ],
         "sources": [
-          "Sensei's Library (senseis.xmp.net), joseki pages listed in XSUM. Sequences copied from its diagrams and mirrored to the top-right corner."
+          "https://senseis.xmp.net/?33PointInvasion",
+          "https://senseis.xmp.net/?44Point33InvasionJoseki",
+          "https://senseis.xmp.net/?44Point33InvasionHaneExtend",
+          "https://senseis.xmp.net/?44Point33InvasionExtendSmallKnight",
+          "https://senseis.xmp.net/?44Point33InvasionDoubleHane"
         ],
         "era": [
           "classic",
           "ai"
         ]
-      },
-      "moves": [
-        {
-          "move": "pc",
-          "to": "joseki/4-4 point/3-3 invasion:3",
-          "notes": [
-            "Block from the top, so that {{WALL:Q17-Q16|the wall}} faces {{INF:Q16-Q10|down}}. Choose the side where the wall works with your other stones. Blocking from the side ({{R16}}) is the same joseki mirrored."
-          ],
-          "values": {
-            "category": "main",
-            "style": "balanced",
-            "purpose": [
-              "influence"
-            ]
-          }
-        },
-        {
-          "move": "tenuki",
-          "to": "joseki/4-4 point/3-3 invasion:3b",
-          "notes": [
-            "Tenuki here lets {{White}} live easily, and {{Black}}'s 4-4 stone loses its base."
-          ],
-          "values": {
-            "category": "slack",
-            "style": "balanced"
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion:3",
       "stones": "B:pc,pd W:qc",
       "toPlay": "W",
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "qd",
-          "to": "joseki/4-4 point/3-3 invasion:4",
-          "notes": [
-            "Crawls along the side to make room for eyes."
-          ],
-          "values": {
-            "category": "main",
-            "style": "solid",
-            "purpose": [
-              "eye"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion:4",
       "stones": "B:pc,pd W:qc,qd",
       "toPlay": "B",
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "qe",
-          "to": "joseki/4-4 point/3-3 invasion/Hane",
-          "notes": [
-            "Hane at the head of {{TR:R17,R16|{{White}}'s two stones}}."
-          ],
-          "values": {
-            "category": "main",
-            "style": "aggressive",
-            "purpose": [
-              "influence"
-            ]
-          }
-        },
-        {
-          "move": "pe",
-          "to": "joseki/4-4 point/3-3 invasion/Extend",
-          "notes": [
-            "Extends instead of the hane: the simplest way for {{Black}} to take sente."
-          ],
-          "values": {
-            "category": "alt",
-            "style": "solid",
-            "purpose": [
-              "influence",
-              "sente"
-            ]
-          }
-        },
-        {
-          "move": "qf",
-          "to": "joseki/4-4 point/3-3 invasion/Knight's move",
-          "notes": [
-            "Knight's move: puts more pressure on {{White}} than the extension and usually keeps sente. Continuations are not entered yet."
-          ],
-          "values": {
-            "category": "alt",
-            "style": "balanced",
-            "purpose": [
-              "influence",
-              "sente"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Hane",
       "stones": "B:pc,pd,qe W:qc,qd",
       "toPlay": "W",
-      "name": "4-4 point · 3-3 invasion · hane",
-      "values": {
+      "comments": [
+        "{{Black}} hanes at the head of the two stones. {{White}} hanes back, then {{Black}} chooses the hane-extend line or the double hane."
+      ],
+      "tags": {
+        "name": [
+          "4-4 point · 3-3 invasion · hane"
+        ],
         "evaluation": 0,
         "status": "progress",
-        "difficulty": "15k",
-        "summary": "{{Black}} hanes at the head of the two stones. {{White}} hanes back, then {{Black}} chooses the hane-extend line or the double hane."
-      },
-      "moves": [
-        {
-          "move": "re",
-          "to": "joseki/4-4 point/3-3 invasion/Hane:6",
-          "notes": [
-            "Hanes back on the second line."
-          ],
-          "values": {
-            "category": "main",
-            "style": "balanced",
-            "purpose": [
-              "eye"
-            ]
-          }
-        },
-        {
-          "move": "pb",
-          "to": "joseki/4-4 point/3-3 invasion/Hane:6b",
-          "notes": [
-            "Hane on the second line at once. The standard order crawls first at {{CR:S15}}. This line leaves a cutting point at {{CUT:R18}}."
-          ],
-          "values": {
-            "category": "situational",
-            "style": "balanced",
-            "purpose": [
-              "territory"
-            ]
-          }
-        }
-      ]
+        "difficulty": "15k"
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Hane:6",
       "stones": "B:pc,pd,qe W:qc,qd,re",
       "toPlay": "B",
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "qf",
-          "to": "joseki/4-4 point/3-3 invasion/Hane:7",
-          "notes": [
-            "Extends."
-          ],
-          "values": {
-            "category": "main",
-            "style": "solid",
-            "purpose": [
-              "influence"
-            ]
-          }
-        },
-        {
-          "move": "rf",
-          "to": "joseki/4-4 point/3-3 invasion/Double hane",
-          "notes": [
-            "Double hane: {{Black}} keeps the corner territory and lets {{White}} take the outside."
-          ],
-          "values": {
-            "category": "alt",
-            "style": "aggressive",
-            "purpose": [
-              "territory",
-              "kill"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Hane:7",
       "stones": "B:pc,pd,qe,qf W:qc,qd,re",
       "toPlay": "W",
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "rf",
-          "to": "joseki/4-4 point/3-3 invasion/Hane:8",
-          "notes": [
-            "Crawls once more."
-          ],
-          "values": {
-            "category": "main",
-            "style": "solid",
-            "purpose": [
-              "eye"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Hane:8",
       "stones": "B:pc,pd,qe,qf W:qc,qd,re,rf",
       "toPlay": "B",
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "qg",
-          "to": "joseki/4-4 point/3-3 invasion/Hane:9",
-          "notes": [
-            "Extends again. {{TR:Q17,Q16,R15,R14,R13|{{Black}}'s wall}} faces the bottom."
-          ],
-          "values": {
-            "category": "main",
-            "style": "solid",
-            "purpose": [
-              "influence"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Hane:9",
       "stones": "B:pc,pd,qe,qf,qg W:qc,qd,re,rf",
       "toPlay": "W",
-      "notes": [
+      "comments": [
         "The standard joseki. {{White}} often plays elsewhere now and finishes the corner later."
       ],
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "pb",
-          "to": "joseki/4-4 point/3-3 invasion/Hane:10",
-          "notes": [
-            "Hane on the second line to widen the corner (the old continuation)."
-          ],
-          "values": {
-            "category": "main",
-            "style": "balanced",
-            "purpose": [
-              "territory"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Hane:10",
       "stones": "B:pc,pd,qe,qf,qg W:pb,qc,qd,re,rf",
       "toPlay": "B",
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "ob",
-          "to": "joseki/4-4 point/3-3 invasion/Hane:11",
-          "notes": [
-            "Blocks."
-          ],
-          "values": {
-            "category": "main",
-            "style": "solid",
-            "purpose": [
-              "defend"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Hane:11",
       "stones": "B:ob,pc,pd,qe,qf,qg W:pb,qc,qd,re,rf",
       "toPlay": "W",
-      "notes": [
+      "comments": [
         "Watch out: {{White}} must take care of the cutting point at {{CUT:R18}}."
       ],
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "qb",
-          "to": "joseki/4-4 point/3-3 invasion/Hane:12",
-          "notes": [
-            "Connects."
-          ],
-          "values": {
-            "category": "main",
-            "style": "solid",
-            "purpose": [
-              "connect"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Hane:12",
       "stones": "B:ob,pc,pd,qe,qf,qg W:pb,qb,qc,qd,re,rf",
       "toPlay": "B",
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "nc",
-          "to": "joseki/4-4 point/3-3 invasion/Hane:13",
-          "notes": [
-            "Protects the cutting point in {{Black}}'s wall at {{CUT:P17}}."
-          ],
-          "values": {
-            "category": "main",
-            "style": "solid",
-            "purpose": [
-              "defend"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Hane:13",
       "stones": "B:nc,ob,pc,pd,qe,qf,qg W:pb,qb,qc,qd,re,rf",
       "toPlay": "W",
-      "notes": [
+      "comments": [
         "Outcome: {{White}} lives in the corner; {{Black}} has a solid wall facing the bottom."
       ],
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "end",
         "sente": "W"
-      },
-      "moves": []
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Double hane",
       "stones": "B:pc,pd,qe,rf W:qc,qd,re",
       "toPlay": "W",
-      "name": "4-4 point · 3-3 invasion · double hane",
-      "values": {
+      "comments": [
+        "{{Black}} keeps the corner in gote; {{White}} gets a ponnuki on the outside and sente."
+      ],
+      "tags": {
+        "name": [
+          "4-4 point · 3-3 invasion · double hane"
+        ],
         "evaluation": 0,
         "status": "progress",
-        "difficulty": "12k",
-        "summary": "{{Black}} keeps the corner in gote; {{White}} gets a ponnuki on the outside and sente."
-      },
-      "moves": [
-        {
-          "move": "qf",
-          "to": "joseki/4-4 point/3-3 invasion/Double hane:8",
-          "notes": [
-            "Cuts."
-          ],
-          "values": {
-            "category": "main",
-            "style": "aggressive",
-            "purpose": [
-              "cut"
-            ]
-          }
-        }
-      ]
+        "difficulty": "12k"
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Double hane:8",
       "stones": "B:pc,pd,qe,rf W:qc,qd,qf,re",
       "toPlay": "B",
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "pe",
-          "to": "joseki/4-4 point/3-3 invasion/Double hane:9",
-          "values": {
-            "category": "main",
-            "style": "solid",
-            "purpose": [
-              "connect"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Double hane:9",
       "stones": "B:pc,pd,pe,qe,rf W:qc,qd,qf,re",
       "toPlay": "W",
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "rg",
-          "to": "joseki/4-4 point/3-3 invasion/Double hane:10",
-          "values": {
-            "category": "main",
-            "style": "balanced",
-            "purpose": [
-              "attack"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Double hane:10",
       "stones": "B:pc,pd,pe,qe,rf W:qc,qd,qf,re,rg",
       "toPlay": "B",
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "rd",
-          "to": "joseki/4-4 point/3-3 invasion/Double hane:11",
-          "values": {
-            "category": "main",
-            "style": "aggressive",
-            "purpose": [
-              "kill"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Double hane:11",
       "stones": "B:pc,pd,pe,qe,rd,rf W:qc,qd,qf,re,rg",
       "toPlay": "W",
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "sf",
-          "to": "joseki/4-4 point/3-3 invasion/Double hane:12",
-          "notes": [
-            "Captures {{TR:S14|the double hane stone}}: a ponnuki on the outside."
-          ],
-          "values": {
-            "category": "main",
-            "style": "solid",
-            "purpose": [
-              "attack"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Double hane:12",
       "stones": "B:pc,pd,pe,qe,rd W:qc,qd,qf,re,rg,sf",
       "toPlay": "B",
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "rc",
-          "to": "joseki/4-4 point/3-3 invasion/Double hane:13",
-          "notes": [
-            "Atari on {{TR:R17,R16|the invading stones}}. They cannot escape, so the corner is {{Black}}'s."
-          ],
-          "values": {
-            "category": "main",
-            "style": "solid",
-            "purpose": [
-              "kill"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Double hane:13",
       "stones": "B:pc,pd,pe,qe,rc,rd W:qc,qd,qf,re,rg,sf",
       "toPlay": "W",
-      "notes": [
+      "comments": [
         "Outcome: {{Black}} keeps the corner in gote; {{White}} gets outside strength and sente."
       ],
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "end",
         "sente": "W"
-      },
-      "moves": []
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Hane:6b",
       "stones": "B:pc,pd,qe W:pb,qc,qd",
       "toPlay": "B",
-      "notes": [
+      "comments": [
         "Watch out: {{Black}} can cut at {{CUT:R18}} later."
       ],
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "ob",
-          "to": "joseki/4-4 point/3-3 invasion/Hane:7b",
-          "notes": [
-            "Blocks."
-          ],
-          "values": {
-            "category": "main",
-            "style": "solid",
-            "purpose": [
-              "influence"
-            ]
-          }
-        },
-        {
-          "move": "qb",
-          "to": "joseki/4-4 point/3-3 invasion/Hane:7c",
-          "notes": [
-            "Cuts at once instead of blocking. {{TR:R18|The cutting stone}} has only two liberties."
-          ],
-          "values": {
-            "category": "overplay",
-            "style": "aggressive",
-            "purpose": [
-              "cut"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Hane:7b",
       "stones": "B:ob,pc,pd,qe W:pb,qc,qd",
       "toPlay": "W",
-      "notes": [
+      "comments": [
         "{{White}} must take care of the cutting point before playing elsewhere. The connection is shown in the main line.",
         "Watch out: {{Black}} {{MA:R18}} would be atari on {{TR:Q18|the hane stone}}."
       ],
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "tenuki",
-          "to": "joseki/4-4 point/3-3 invasion/Hane:8b",
-          "notes": [
-            "Tenuki leaves the cut at {{CUT:R18}}."
-          ],
-          "values": {
-            "category": "mistake",
-            "style": "balanced"
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Hane:8b",
       "stones": "B:ob,pc,pd,qe W:pb,qc,qd",
       "toPlay": "B",
-      "values": {
+      "tags": {
         "evaluation": 0.5,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "qb",
-          "to": "joseki/4-4 point/3-3 invasion/Hane:9b",
-          "notes": [
-            "Atari on {{TR:Q18|the hane stone}}. It cannot escape, and {{White}}'s corner shrinks."
-          ],
-          "values": {
-            "category": "punish",
-            "style": "aggressive",
-            "purpose": [
-              "cut"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Hane:9b",
       "stones": "B:ob,pc,pd,qb,qe W:pb,qc,qd",
       "toPlay": "W",
-      "notes": [
+      "comments": [
         "Outcome: {{White}} loses the hane stone and the corner becomes small."
       ],
-      "values": {
+      "tags": {
         "evaluation": 0.5,
         "status": "end-mistake"
-      },
-      "moves": []
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Hane:7c",
       "stones": "B:pc,pd,qb,qe W:pb,qc,qd",
       "toPlay": "W",
-      "values": {
+      "tags": {
         "evaluation": -0.5,
         "status": "progress"
-      },
-      "moves": [
-        {
-          "move": "rb",
-          "to": "joseki/4-4 point/3-3 invasion/Hane:8c",
-          "notes": [
-            "Atari from the edge side. {{TR:R18|The cutting stone}} cannot escape."
-          ],
-          "values": {
-            "category": "punish",
-            "style": "solid",
-            "purpose": [
-              "attack"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Hane:8c",
       "stones": "B:pc,pd,qb,qe W:pb,qc,qd,rb",
       "toPlay": "B",
-      "notes": [
+      "comments": [
         "Outcome: {{Black}} loses the cutting stone and {{White}}'s corner is safe and bigger."
       ],
-      "values": {
+      "tags": {
         "evaluation": -0.5,
         "status": "end-mistake"
-      },
-      "moves": []
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Extend",
       "stones": "B:pc,pd,pe W:qc,qd",
       "toPlay": "W",
-      "name": "4-4 point · 3-3 invasion · extend",
-      "values": {
+      "comments": [
+        "The simplest way for {{Black}} to take sente: a three-stone wall with few weaknesses."
+      ],
+      "tags": {
+        "name": [
+          "4-4 point · 3-3 invasion · extend"
+        ],
         "evaluation": 0,
         "status": "progress",
-        "difficulty": "15k",
-        "summary": "The simplest way for {{Black}} to take sente: a three-stone wall with few weaknesses."
-      },
-      "moves": [
-        {
-          "move": "rf",
-          "to": "joseki/4-4 point/3-3 invasion/Extend:6",
-          "notes": [
-            "Small knight along the side to make room for eyes."
-          ],
-          "values": {
-            "category": "main",
-            "style": "balanced",
-            "purpose": [
-              "eye"
-            ]
-          }
-        }
-      ]
+        "difficulty": "15k"
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Extend:6",
       "stones": "B:pc,pd,pe W:qc,qd,rf",
       "toPlay": "B",
-      "notes": [
+      "comments": [
         "Outcome: {{White}} lives small; {{Black}} has a three-stone wall and sente."
       ],
-      "values": {
+      "tags": {
         "evaluation": 0,
         "status": "end",
         "sente": "B"
-      },
-      "moves": []
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion/Knight's move",
       "stones": "B:pc,pd,qf W:qc,qd",
       "toPlay": "W",
-      "name": "4-4 point · 3-3 invasion · knight's move",
-      "values": {
+      "comments": [
+        "More pressure on {{White}} than the extension; usually ends in sente for {{Black}}."
+      ],
+      "tags": {
+        "name": [
+          "4-4 point · 3-3 invasion · knight's move"
+        ],
         "evaluation": 0,
         "status": "progress",
-        "difficulty": "12k",
-        "summary": "More pressure on {{White}} than the extension; usually ends in sente for {{Black}}."
-      },
-      "moves": []
+        "difficulty": "12k"
+      }
     },
     {
       "id": "joseki/4-4 point/3-3 invasion:3b",
       "stones": "B:pd W:qc",
       "toPlay": "W",
-      "values": {
+      "tags": {
         "evaluation": -0.5,
         "status": "progress"
-      },
-      "moves": []
+      }
+    }
+  ],
+  "moves": [
+    {
+      "from": "joseki/4-4 point/3-3 invasion",
+      "to": "joseki/4-4 point/3-3 invasion:3",
+      "comments": [
+        "Block from the top, so that {{WALL:Q17-Q16|the wall}} faces {{INF:Q16-Q10|down}}. Choose the side where the wall works with your other stones. Blocking from the side ({{CR:R16|R16}}) is the same joseki mirrored."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "balanced"
+        ],
+        "purpose": [
+          "influence"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion",
+      "to": "joseki/4-4 point/3-3 invasion:3b",
+      "comments": [
+        "Tenuki here lets {{White}} live easily, and {{Black}}'s 4-4 stone loses its base."
+      ],
+      "tags": {
+        "kind": "slack",
+        "intention": [
+          "balanced"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion:3",
+      "to": "joseki/4-4 point/3-3 invasion:4",
+      "comments": [
+        "Crawls along the side to make room for eyes."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "eye"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion:4",
+      "to": "joseki/4-4 point/3-3 invasion/Hane",
+      "comments": [
+        "Hane at the head of {{TR:R17,R16|{{White}}'s two stones}}."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "aggressive"
+        ],
+        "purpose": [
+          "influence"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion:4",
+      "to": "joseki/4-4 point/3-3 invasion/Extend",
+      "comments": [
+        "Extends instead of the hane: the simplest way for {{Black}} to take sente."
+      ],
+      "tags": {
+        "kind": "alt",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "influence",
+          "sente"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion:4",
+      "to": "joseki/4-4 point/3-3 invasion/Knight's move",
+      "comments": [
+        "Knight's move: puts more pressure on {{White}} than the extension and usually keeps sente. Continuations are not entered yet."
+      ],
+      "tags": {
+        "kind": "alt",
+        "intention": [
+          "balanced"
+        ],
+        "purpose": [
+          "influence",
+          "sente"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Hane",
+      "to": "joseki/4-4 point/3-3 invasion/Hane:6",
+      "comments": [
+        "Hanes back on the second line."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "balanced"
+        ],
+        "purpose": [
+          "eye"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Hane",
+      "to": "joseki/4-4 point/3-3 invasion/Hane:6b",
+      "comments": [
+        "Hane on the second line at once. The standard order crawls first at {{CR:S15}}. This line leaves a cutting point at {{CUT:R18}}."
+      ],
+      "tags": {
+        "kind": "situational",
+        "intention": [
+          "balanced"
+        ],
+        "purpose": [
+          "territory"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Hane:6",
+      "to": "joseki/4-4 point/3-3 invasion/Hane:7",
+      "comments": [
+        "Extends."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "influence"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Hane:6",
+      "to": "joseki/4-4 point/3-3 invasion/Double hane",
+      "comments": [
+        "Double hane: {{Black}} keeps the corner territory and lets {{White}} take the outside."
+      ],
+      "tags": {
+        "kind": "alt",
+        "intention": [
+          "aggressive"
+        ],
+        "purpose": [
+          "territory",
+          "kill"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Hane:7",
+      "to": "joseki/4-4 point/3-3 invasion/Hane:8",
+      "comments": [
+        "Crawls once more."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "eye"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Hane:8",
+      "to": "joseki/4-4 point/3-3 invasion/Hane:9",
+      "comments": [
+        "Extends again. {{TR:Q17,Q16,R15,R14,R13|{{Black}}'s wall}} faces the bottom."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "influence"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Hane:9",
+      "to": "joseki/4-4 point/3-3 invasion/Hane:10",
+      "comments": [
+        "Hane on the second line to widen the corner (the old continuation)."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "balanced"
+        ],
+        "purpose": [
+          "territory"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Hane:10",
+      "to": "joseki/4-4 point/3-3 invasion/Hane:11",
+      "comments": [
+        "Blocks."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "defend"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Hane:11",
+      "to": "joseki/4-4 point/3-3 invasion/Hane:12",
+      "comments": [
+        "Connects."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "connect"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Hane:12",
+      "to": "joseki/4-4 point/3-3 invasion/Hane:13",
+      "comments": [
+        "Protects the cutting point in {{Black}}'s wall at {{CUT:P17}}."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "defend"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Double hane",
+      "to": "joseki/4-4 point/3-3 invasion/Double hane:8",
+      "comments": [
+        "Cuts."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "aggressive"
+        ],
+        "purpose": [
+          "cut"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Double hane:8",
+      "to": "joseki/4-4 point/3-3 invasion/Double hane:9",
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "connect"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Double hane:9",
+      "to": "joseki/4-4 point/3-3 invasion/Double hane:10",
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "balanced"
+        ],
+        "purpose": [
+          "attack"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Double hane:10",
+      "to": "joseki/4-4 point/3-3 invasion/Double hane:11",
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "aggressive"
+        ],
+        "purpose": [
+          "kill"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Double hane:11",
+      "to": "joseki/4-4 point/3-3 invasion/Double hane:12",
+      "comments": [
+        "Captures {{TR:S14|the double hane stone}}: a ponnuki on the outside."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "attack"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Double hane:12",
+      "to": "joseki/4-4 point/3-3 invasion/Double hane:13",
+      "comments": [
+        "Atari on {{TR:R17,R16|the invading stones}}. They cannot escape, so the corner is {{Black}}'s."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "kill"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Hane:6b",
+      "to": "joseki/4-4 point/3-3 invasion/Hane:7b",
+      "comments": [
+        "Blocks."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "influence"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Hane:6b",
+      "to": "joseki/4-4 point/3-3 invasion/Hane:7c",
+      "comments": [
+        "Cuts at once instead of blocking. {{TR:R18|The cutting stone}} has only two liberties."
+      ],
+      "tags": {
+        "kind": "overplay",
+        "intention": [
+          "aggressive"
+        ],
+        "purpose": [
+          "cut"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Hane:7b",
+      "to": "joseki/4-4 point/3-3 invasion/Hane:8b",
+      "comments": [
+        "Tenuki leaves the cut at {{CUT:R18}}."
+      ],
+      "tags": {
+        "kind": "mistake",
+        "intention": [
+          "balanced"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Hane:8b",
+      "to": "joseki/4-4 point/3-3 invasion/Hane:9b",
+      "comments": [
+        "Atari on {{TR:Q18|the hane stone}}. It cannot escape, and {{White}}'s corner shrinks."
+      ],
+      "tags": {
+        "kind": "punish",
+        "intention": [
+          "aggressive"
+        ],
+        "purpose": [
+          "cut"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Hane:7c",
+      "to": "joseki/4-4 point/3-3 invasion/Hane:8c",
+      "comments": [
+        "Atari from the edge side. {{TR:R18|The cutting stone}} cannot escape."
+      ],
+      "tags": {
+        "kind": "punish",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "attack"
+        ]
+      }
+    },
+    {
+      "from": "joseki/4-4 point/3-3 invasion/Extend",
+      "to": "joseki/4-4 point/3-3 invasion/Extend:6",
+      "comments": [
+        "Small knight along the side to make room for eyes."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "balanced"
+        ],
+        "purpose": [
+          "eye"
+        ]
+      }
     }
   ]
 }
