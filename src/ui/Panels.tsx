@@ -4,6 +4,7 @@
  * right — position evaluation, last move (the "why"), next moves.
  */
 import type { ComponentChildren } from 'preact'
+import { OptionMark } from './OptionMark'
 import { useState } from 'preact/hooks'
 import { Link2 } from 'lucide-preact'
 import { CATEGORIES, type Category } from '../core/kinds'
@@ -30,16 +31,10 @@ export function CategoryDot({ cat }: { cat: Category | null }) {
   return <span class={`dot ${k?.ring ? 'ring' : ''}`} style={{ background: k?.color ?? '#888', borderColor: k?.color ?? '#888' }} aria-hidden />
 }
 
-/** Marker used in lists: same shapes as on the board (solid, dashed ring for a new variation, ring for punishment). */
-export function MoveMark({ cat, variation }: { cat: Category | null; variation?: boolean }) {
+/** Marker used in lists: the same ring as on the board, in the color of the move's kind; solid for the main move, dashed for the others. */
+export function MoveMark({ cat, main }: { cat: Category | null; main?: boolean }) {
   const k = cat ? CATEGORIES[cat] : null
-  const color = k?.color ?? '#888'
-  const cls = variation ? 'mk dash' : k?.ring ? 'mk ring' : k && !k.good ? 'mk sym' : 'mk solid'
-  return (
-    <span class={cls} style={{ '--c': color } as never} aria-hidden>
-      {cls === 'mk sym' ? k!.symbol : ''}
-    </span>
-  )
+  return <span class={`mk ${main ? 'main' : ''}`} style={{ '--c': k?.color ?? '#888' } as never} title={k?.label} aria-hidden />
 }
 
 export const colorWord = (s: number) => (s === 1 ? 'Black' : s === -1 ? 'White' : 'Either')
@@ -140,11 +135,11 @@ export function BalanceMeter({ k, v }: { k: string; v: number }) {
   )
 }
 
-/** Keys shown in "This joseki" (db/tags.json `panel: "sequence"`), read from the start of the sequence. */
+/** Keys shown in "This joseki" (the tags of the databases (db/<database>/tags.json) `panel: "sequence"`), read from the start of the sequence. */
 export const isSequenceKey = (k: string) => defOf(k)?.panel === 'sequence'
 
 /**
- * Tags as rows. Keys described in db/tags.json are shown their own way (a balance bar, a stone for a color,
+ * Tags as rows. Keys described in the tags of the databases (db/<database>/tags.json) are shown their own way (a balance bar, a stone for a color,
  * option icons and colors); any other key is shown as key: value.
  */
 export function TagRows({ keys, f, icons, only, hidden = [] }: { keys: string[]; f: Fields; icons: boolean; only?: 'bars' | 'rows'; hidden?: string[] }) {
@@ -165,13 +160,12 @@ export function TagRows({ keys, f, icons, only, hidden = [] }: { keys: string[];
       const v = String(r.value)
       return [<Row key={key} label={labelOf(key)} title={describe(key)}><span class="value">{v === 'B' || v === 'W' ? <StoneIcon sign={v === 'B' ? 1 : -1} size={14} /> : icon}{valueLabel(key, v)}</span></Row>]
     }
-    const vals = type === 'list' || type === 'multi' ? f.list(key) : asList(r.value)
+    const vals = type === 'list' || type === 'multi' ? f.list(key) : type === 'number' && d?.unit ? [`${r.value} ${d.unit}`] : asList(r.value)
     const show = (v: string) => {
       const o = d?.options?.find((x) => x.value === v)
       return (
         <span key={v} class="value" title={describe(key, v)}>
-          {o?.color && <span class="dot" style={{ background: o.color, borderColor: o.color }} />}
-          {icons && o?.icon && !o.color && <span class="ico" aria-hidden>{o.icon}</span>}
+          <OptionMark o={o} icons={icons} />
           {/^https?:\/\/\S+$/.test(v) ? <a href={v} target="_blank" rel="noopener noreferrer" title={v}>{linkText(v)}</a> : valueLabel(key, v)}
         </span>
       )
@@ -314,7 +308,7 @@ export function LastMove(p: Common & { onGoTo: (n: number) => void }) {
               return mf.list(k).map((x) => {
                 const o = d?.options?.find((y) => y.value === x)
                 // Keys the interface knows show their value; others say which key it is.
-                return <span key={k + x} class="tag" title={d?.options ? describe(k, x) : describe(k)}>{s.icons && o?.icon ? <span class="ico" aria-hidden>{o.icon}</span> : null}{d?.options ? valueLabel(k, x) : `${labelOf(k)}: ${valueLabel(k, x)}`}</span>
+                return <span key={k + x} class="tag" title={d?.options ? describe(k, x) : describe(k)}><OptionMark o={o} icons={s.icons} />{d?.options ? valueLabel(k, x) : `${labelOf(k)}: ${valueLabel(k, x)}`}</span>
               })
             })}
           </div>
@@ -371,7 +365,7 @@ export function NextMoves(p: Common & {
         onPointerLeave={() => p.onHighlight(null)}
         onClick={() => p.onPlay(c)}
       >
-        <MoveMark cat={c.cat} variation={variation(c)} />
+        <MoveMark cat={c.cat} main={main?.edge === c.edge} />
         <b>{c.pt ? ptName(c.pt) : 'Tenuki'}</b>
         <span class="what">
           {main?.edge === c.edge && <span class="main-badge" title="Main move: the line the tree and → follow">main</span>}

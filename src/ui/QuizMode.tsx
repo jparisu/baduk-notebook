@@ -6,7 +6,7 @@ import { Message } from './Message'
 import { Rich, type RefHandlers } from './Rich'
 import { CATEGORIES } from '../core/kinds'
 import { SYMMETRIES, apply, applySign, cornerWindow, ptName, userTransform, withSwap, type Pt, type Transform } from '../core/geometry'
-import { candidates, displayBoard, entryFields, frame, moveFields, rootStep, type Ctx, type Step } from '../view'
+import { candidates, displayBoard, entryFields, frame, mainMove, moveFields, rootStep, type Ctx, type Step } from '../view'
 import { buildCards, loadProgress, queue, review, saveProgress, streak, type Card, type Progress, type Rating } from '../quiz/srs'
 import { download } from '../edit/workspace'
 import type { Settings } from '../settings'
@@ -243,7 +243,7 @@ export function QuizMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
             marks={marks}
             onPoint={answer || reveal ? undefined : check}
             pending={answer?.pt ? [answer.pt] : []}
-            markers={shown.filter((c) => c.pt).map((c) => ({ pt: c.pt!, sign: c.sign, showColor: false, cat: c.cat, title: c.cat ? CATEGORIES[c.cat].label : '', highlight: false, onClick: () => {} }))}
+            markers={shown.filter((c) => c.pt).map((c) => ({ pt: c.pt!, sign: c.sign, showColor: false, main: c.edge === mainMove(qctx, step)?.edge, cat: c.cat, title: c.cat ? CATEGORIES[c.cat].label : '', highlight: false, onClick: () => {} }))}
           />
         </div>
         {props.phone && panel}

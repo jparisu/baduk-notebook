@@ -1,5 +1,5 @@
 import { parseDbFile, type DbFile } from '../core/model'
-import { parseRegistry, setRegistry } from '../core/tags'
+import { mergeRegistries, parseRegistry, setRegistry } from '../core/tags'
 
 export interface DatabaseInfo {
   id: string
@@ -28,13 +28,29 @@ async function getJson<T>(url: string): Promise<T> {
   }
 }
 
-/** Loads db/index.json, db/tags.json, db/files.json and every JSON file of the listed databases. */
-export async function loadDatabases(): Promise<{ databases: DatabaseInfo[]; files: DbFile[]; texts: { db: string; path: string; text: string }[]; tagsText: string }> {
+/** Loads db/index.json, each database's tags.json, db/files.json and every JSON file of the listed databases. */
+export async function loadDatabases(): Promise<{ databases: DatabaseInfo[]; files: DbFile[]; texts: { db: string; path: string; text: string }[]; tagTexts: Record<string, string> }> {
   const { databases } = await getJson<{ databases: DatabaseInfo[] }>(`${base}db/index.json`)
-  // The tag descriptions first: the panels read the files through them.
-  const tres = await fetchFresh(`${base}db/tags.json`)
-  const tagsText = tres.ok ? await tres.text() : '{ "tags": [] }\n'
-  setRegistry(parseRegistry(tagsText))
+  // The tags first (docs/MODEL.md §3.1): each database may have its own, merged in the order of index.json.
+  const tagTexts: Record<string, string> = {}
+  await Promise.all(
+    databases.map(async (d) => {
+      const res = await fetchFresh(`${base}db/${d.id}/tags.json`)
+      if (!res.ok) return
+      const text = await res.text()
+      // A database without tags.json: some servers answer with the app's page instead of a 404.
+      if (text.trimStart().startsWith('<')) return
+      tagTexts[d.id] = text
+    }),
+  )
+  const parsed = databases.filter((d) => tagTexts[d.id]).map((d) => {
+    try {
+      return { db: d.id, registry: parseRegistry(tagTexts[d.id]) }
+    } catch (e) {
+      throw new Error(`db/${d.id}/tags.json is not valid JSON: ${(e as Error).message}`)
+    }
+  })
+  setRegistry(mergeRegistries(parsed))
   const list = await getJson<string[]>(`${base}db/files.json`)
   const known = new Set(databases.map((d) => d.id))
   const wanted = list.filter((path) => path.endsWith('.json') && known.has(path.split('/')[0]))
@@ -55,5 +71,5 @@ export async function loadDatabases(): Promise<{ databases: DatabaseInfo[]; file
       throw new Error(`db/${f.path} is not valid JSON: ${(e as Error).message}`)
     }
   })
-  return { databases, files, texts: loaded, tagsText }
+  return { databases, files, texts: loaded, tagTexts }
 }

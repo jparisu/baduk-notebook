@@ -14,7 +14,7 @@ export interface Settings {
   moveNumbers: boolean
   showNext: boolean
   hiddenCategories: Category[]
-  /** Tag keys you do not want to see in the panels (described in db/tags.json or not). */
+  /** Tag keys you do not want to see in the panels (described in the tags of the databases (db/<database>/tags.json) or not). */
   hiddenKeys: string[]
   /** Your own colors for the databases (only in this browser; several may share one). */
   dbColors: Record<string, string>
@@ -23,6 +23,8 @@ export interface Settings {
   aids: 'hover' | 'click' | 'always'
   moveMessage: 'board' | 'panel'
   icons: boolean
+  /** An option with both a color and an icon: a ring with the icon in the color, or a filled circle with the icon cut out. */
+  optionMarks: 'ring' | 'filled'
   rememberTransform: boolean
   quizRandom: boolean
   quizNewPerDay: number
@@ -50,6 +52,7 @@ export const DEFAULT_SETTINGS: Settings = {
   aids: 'hover',
   moveMessage: 'board',
   icons: true,
+  optionMarks: 'filled',
   rememberTransform: true,
   quizRandom: true,
   quizNewPerDay: 10,
@@ -88,4 +91,5 @@ export function applyTheme(s: Settings) {
   const root = document.documentElement
   root.dataset.style = s.theme
   root.dataset.mode = s.colorMode
+  root.dataset.marks = s.optionMarks
 }

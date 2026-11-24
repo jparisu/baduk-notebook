@@ -8,8 +8,8 @@ export interface BoardMarker {
   /** Move color, shown inside the marker when either side may play (shapes). */
   sign: number
   showColor: boolean
-  /** A good move that starts another named variation: drawn as a dashed ring. */
-  variation?: boolean
+  /** The main move of the position (the first of its moves): a solid ring; every other move a dashed one. */
+  main: boolean
   cat: Category | null
   title: string
   highlight: boolean
@@ -176,30 +176,16 @@ export function Board({ window: win, board, last, numbers, markers, marks, coord
         const same = all.filter((o) => o.pt[0] === m.pt[0] && o.pt[1] === m.pt[1])
         const shift = same.length > 1 ? (same.indexOf(m) === 0 ? -0.22 : 0.22) : 0
         const x = m.pt[0] + shift, y = m.pt[1]
-        if (m.showColor)
-          return (
-            <g key={`m${i}`} class="marker" onClick={m.onClick} role="button" aria-label={m.title}>
-              <title>{m.title}</title>
-              <circle cx={x} cy={y} r={same.length > 1 ? 0.24 : 0.3} fill={m.sign === 1 ? '#151515' : '#f5f5f2'} stroke={k.color} stroke-width={m.highlight ? 0.14 : 0.1} />
-            </g>
-          )
+        // Next moves are rings in the color of their kind, thin and unfilled, so they never look like the
+        // filled shapes of comments and drawings: solid for the main move, dashed for every other one.
+        const r = same.length > 1 ? 0.24 : 0.31
         return (
-          <g key={`m${i}`} class="marker" onClick={m.onClick} role="button" aria-label={m.title}>
+          <g key={`m${i}`} class={`marker ${m.main ? 'main' : ''}`} onClick={m.onClick} role="button" aria-label={m.title}>
             <title>{m.title}</title>
             <circle cx={x} cy={y} r=".48" fill="transparent" />
-            {m.variation ? (
-              <>
-                <circle cx={x} cy={y} r=".3" fill={`color-mix(in srgb, ${k.color} 22%, var(--board))`} stroke={k.color} stroke-width=".1" stroke-dasharray=".2 .13" />
-                {m.highlight && <circle cx={x} cy={y} r=".42" fill="none" stroke="var(--fg)" stroke-width=".04" />}
-              </>
-            ) : k.ring ? (
-              <circle cx={x} cy={y} r=".3" fill="var(--board)" stroke={k.color} stroke-width=".1" />
-            ) : (
-              <>
-                <circle cx={x} cy={y} r={m.highlight ? 0.38 : 0.31} fill={k.color} stroke={m.highlight ? 'var(--fg)' : 'none'} stroke-width=".05" />
-                <text x={x} y={y + 0.13} font-size=".34" text-anchor="middle" fill={k.ink}>{k.symbol}</text>
-              </>
-            )}
+            {m.showColor && <circle cx={x} cy={y} r={r - 0.08} fill={m.sign === 1 ? '#151515' : '#f5f5f2'} opacity=".85" />}
+            <circle cx={x} cy={y} r={r} fill="none" stroke={k.color} stroke-width={m.highlight ? 0.11 : 0.07} stroke-dasharray={m.main ? undefined : '.16 .1'} />
+            {m.highlight && <circle cx={x} cy={y} r=".43" fill="none" stroke="var(--fg)" stroke-width=".03" opacity=".7" />}
           </g>
         )
       })}

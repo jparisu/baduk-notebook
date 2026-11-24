@@ -12,7 +12,8 @@ function listFiles(root: string): string[] {
     for (const name of readdirSync(dir).sort()) {
       const full = join(dir, name)
       if (statSync(full).isDirectory()) walk(full)
-      else if (name.endsWith('.json') && dir !== root) out.push(relative(root, full).split(sep).join('/'))
+      // Each database's tags.json describes its tags; it is not a file of positions.
+      else if (name.endsWith('.json') && dir !== root && name !== 'tags.json') out.push(relative(root, full).split(sep).join('/'))
     }
   }
   walk(root)

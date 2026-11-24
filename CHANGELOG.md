@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Tags tab
+- A new **Tags** tab. On the left, every tag with an eye to show or hide it in Explore (Show all / Show none, search, Positions / Moves filter); which tags are shown is a setting of this browser. In the middle, the selected tag: name, key, meaning, icon, what it applies to (positions, moves or both), its type chosen from cards, and the type's settings. On the right, how it looks in Explore and where it is used.
+- New types: **number** with a range, a step and a unit (the editor and the validator keep to them), and **board point** (such as Q16, turning with the board).
+- **Tags per database:** `db/tags.json` became `db/general/tags.json`; each database may have its own `tags.json`. They are merged in the order of `index.json`: a later database adds tags of its own and options to the tags of an earlier one, without changing them. Export proposes each database's tags.json.
+- The Keys… dialog and the tag list in Settings are replaced by the tab.
+- **Linked tags:** a tag can use the settings of another one ("Same settings as…"): type, options, range, sides. They stay linked, so a change applies to both; **Copy and disconnect** keeps a copy of its own. "White plays first" is linked to "Black plays first".
+- Topics, Difficulty and Sources apply to positions and moves alike; Era applies to moves (the 6 positions that had one passed it to the move into them).
+- **Colors** for the options of Intention (aggressive red, balanced green, solid blue), Purpose (attack red, defend blue, territory brown, influence purple…), Status (in progress yellow, end green, end after a mistake red), the life & death results (white when good for White, black when good for Black, seki green, unsettled yellow, ko orange), Surrounded, Era and Ko type. Shown in the panels, the editor and Last move: an option with only a color is a dot, with only an icon the icon, with both a circle with the icon inside, either filled with the icon cut out or a ring with the icon in the color (**Settings › Options with a color and an icon**). The move kinds keep their own marks (the ones on the board).
+- The Tags tab's list also filters the tags for **Both** positions and moves.
+- **Next moves on the board are thin rings** in the color of their kind, never filled, so they no longer look like the filled shapes of comments and drawings: a solid ring for the main move (the first move of the position), dashed rings for every other move. The Next moves list, the tree legend and the editor's move order use the same rings.
+- Fix: exporting when only tags changed showed "No changes to export".
+
 ## v0.2.0
 
 ### Positions, moves, comments and tags (docs/MODEL.md)

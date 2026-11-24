@@ -2,14 +2,16 @@
  * Tags (docs/MODEL.md §3): every position and move carries a free dictionary of tags. Any key can be used
  * without declaring it; its value is plain JSON (text, number, yes/no or a list of texts).
  *
- * db/tags.json describes the keys the interface knows: how to show and edit them (type, options with
+ * the tags of the databases (db/<database>/tags.json) describes the keys the interface knows: how to show and edit them (type, options with
  * icons and colors, what Swap colors does). A key that is not described is shown as key: value.
  */
+
+import { apply, parsePt, ptName, type Transform } from './geometry'
 
 export type TagValue = string | number | boolean | string[]
 export type Tags = Record<string, TagValue>
 
-export type TagType = 'choice' | 'multi' | 'slider' | 'number' | 'flag' | 'color' | 'text' | 'list' | 'rank' | 'board'
+export type TagType = 'choice' | 'multi' | 'slider' | 'number' | 'flag' | 'color' | 'point' | 'text' | 'list' | 'rank' | 'board'
 export type TagFor = 'move' | 'position'
 
 export interface TagOption {
@@ -26,6 +28,8 @@ export interface TagOption {
   good?: boolean
   /** Move kinds: drawn as a ring instead of a filled dot. */
   ring?: boolean
+  /** Not stored: the database that adds this option (set when the databases' tags are merged). */
+  db?: string
 }
 
 export interface TagDef {
@@ -53,7 +57,22 @@ export interface TagDef {
   control?: 'buttons' | 'dropdown'
   icon?: string
   hint?: string
+  /** Number: the smallest and largest values, the step, and a unit shown after the value. */
+  min?: number
+  max?: number
+  step?: number
+  unit?: string
+  /**
+   * Linked tag: the key of a tag whose settings this one uses (type, options, range, sides, how it is
+   * shown). They are read from that tag each time, so a change there applies here too.
+   */
+  like?: string
+  /** Not stored: the database that defines the tag (set when the databases' tags are merged). */
+  db?: string
 }
+
+/** The settings a linked tag takes from the tag it is linked to (`like`). Its name, meaning and where it applies stay its own. */
+export const LINKED: (keyof TagDef)[] = ['type', 'options', 'ends', 'negate', 'min', 'max', 'step', 'unit', 'control']
 
 export interface TagRegistry {
   tags: TagDef[]
@@ -69,6 +88,7 @@ export const NEW_KEY_TYPES: [TagType, string][] = [
   ['multi', 'Several options'],
   ['color', 'Black / White'],
   ['rank', 'Rank (15k, 2d…)'],
+  ['point', 'A point on the board'],
   ['slider', 'Balance (White … Black)'],
 ]
 
@@ -88,6 +108,63 @@ export function parseRegistry(text: string): TagRegistry {
   return { tags: Array.isArray(j.tags) ? j.tags : [] }
 }
 export const writeRegistry = (r: TagRegistry) => JSON.stringify(r, null, 2) + '\n'
+
+/** The tags of one database, as stored in db/<database>/tags.json. */
+export interface DbTags {
+  db: string
+  registry: TagRegistry
+}
+
+/**
+ * The tags the app uses (docs/MODEL.md §3.1): every database's tags, in the order of db/index.json.
+ * The first database to describe a key defines it; a later database may add tags of its own and more
+ * options to a tag, but does not change what an earlier one defined (missing properties are filled in).
+ * Each tag and option records the database it comes from (`db`).
+ */
+export function mergeRegistries(list: DbTags[]): TagRegistry {
+  const out = new Map<string, TagDef>()
+  for (const { db, registry } of list)
+    for (const d of registry.tags) {
+      const cur = out.get(d.key)
+      if (!cur) {
+        out.set(d.key, { ...d, db, options: d.options?.map((o) => ({ ...o, db })) })
+        continue
+      }
+      const fill = cur as unknown as Record<string, unknown>
+      for (const [k, v] of Object.entries(d)) if (k !== 'options' && fill[k] === undefined) fill[k] = v
+      const extra = (d.options ?? []).filter((o) => !cur.options?.some((x) => x.value === o.value)).map((o) => ({ ...o, db }))
+      if (extra.length) cur.options = [...(cur.options ?? []), ...extra]
+    }
+  return resolveLinks({ tags: [...out.values()] })
+}
+
+/**
+ * Linked tags (`like`) take the settings of the tag they are linked to, followed through chains of
+ * links. Options a linked tag has of its own come after the shared ones. A link to a missing tag, or a
+ * loop, leaves the tag as it is.
+ */
+export function resolveLinks(reg: TagRegistry): TagRegistry {
+  const byKey = new Map(reg.tags.map((d) => [d.key, d]))
+  const source = (d: TagDef, seen = new Set<string>()): TagDef | null => {
+    if (!d.like || seen.has(d.key)) return null
+    seen.add(d.key)
+    const s = byKey.get(d.like)
+    if (!s) return null
+    return s.like ? source(s, seen) ?? s : s
+  }
+  return {
+    tags: reg.tags.map((d) => {
+      const s = source(d)
+      if (!s) return d
+      const out: TagDef = { ...d }
+      const set = out as unknown as Record<string, unknown>
+      for (const k of LINKED) set[k] = (s as unknown as Record<string, unknown>)[k]
+      const own = (d.options ?? []).filter((o) => !s.options?.some((x) => x.value === o.value))
+      if (s.options || own.length) out.options = [...(s.options ?? []), ...own]
+      return out
+    }),
+  }
+}
 
 /** "eye-space" → "Eye space". */
 export const humanKey = (key: string) => {
@@ -132,7 +209,7 @@ export function toValue(key: string, raw: string | string[] | number | boolean |
   return s ? s : null
 }
 
-/** Order of keys on screen: described keys in the order of db/tags.json, then the others alphabetically. */
+/** Order of keys on screen: described keys in the order of the tags of the databases (db/<database>/tags.json), then the others alphabetically. */
 export function sortKeys(keys: Iterable<string>): string[] {
   const order = current.tags.map((d) => d.key)
   return [...new Set(keys)].sort((a, b) => (order.indexOf(a) + 1 || 1e4) - (order.indexOf(b) + 1 || 1e4) || a.localeCompare(b))
@@ -161,6 +238,13 @@ function swapText(d: TagDef, v: string): string {
 
 /** The key shown in this place when colors are swapped ("black-first" ↔ "white-first"). */
 export const swapKeyOf = (key: string) => defOf(key)?.swapKey ?? key
+
+/** A board point value ("Q16") seen through a transform (stored frame → display frame, or back). */
+export function movePoint(v: TagValue, t: Transform): TagValue {
+  if (typeof v !== 'string') return v
+  const pt = parsePt(v)
+  return pt ? ptName(apply(t, pt)) : v
+}
 
 /** "Label: description" of a key or one of its values, for a tooltip. */
 export function describe(key: string, value?: string): string {
