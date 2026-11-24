@@ -31,16 +31,10 @@ export function CategoryDot({ cat }: { cat: Category | null }) {
   return <span class={`dot ${k?.ring ? 'ring' : ''}`} style={{ background: k?.color ?? '#888', borderColor: k?.color ?? '#888' }} aria-hidden />
 }
 
-/** Marker used in lists: same shapes as on the board (solid, dashed ring for a new variation, ring for punishment). */
-export function MoveMark({ cat, variation }: { cat: Category | null; variation?: boolean }) {
+/** Marker used in lists: the same ring as on the board, in the color of the move's kind; solid for the main move, dashed for the others. */
+export function MoveMark({ cat, main }: { cat: Category | null; main?: boolean }) {
   const k = cat ? CATEGORIES[cat] : null
-  const color = k?.color ?? '#888'
-  const cls = variation ? 'mk dash' : k?.ring ? 'mk ring' : k && !k.good ? 'mk sym' : 'mk solid'
-  return (
-    <span class={cls} style={{ '--c': color } as never} aria-hidden>
-      {cls === 'mk sym' ? k!.symbol : ''}
-    </span>
-  )
+  return <span class={`mk ${main ? 'main' : ''}`} style={{ '--c': k?.color ?? '#888' } as never} title={k?.label} aria-hidden />
 }
 
 export const colorWord = (s: number) => (s === 1 ? 'Black' : s === -1 ? 'White' : 'Either')
@@ -371,7 +365,7 @@ export function NextMoves(p: Common & {
         onPointerLeave={() => p.onHighlight(null)}
         onClick={() => p.onPlay(c)}
       >
-        <MoveMark cat={c.cat} variation={variation(c)} />
+        <MoveMark cat={c.cat} main={main?.edge === c.edge} />
         <b>{c.pt ? ptName(c.pt) : 'Tenuki'}</b>
         <span class="what">
           {main?.edge === c.edge && <span class="main-badge" title="Main move: the line the tree and → follow">main</span>}

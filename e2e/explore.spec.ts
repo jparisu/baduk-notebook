@@ -87,11 +87,15 @@ test('side panels can be hidden and folded', async ({ page }) => {
   await expect(page.locator('[data-card="search"] .card-body')).toHaveCount(0) // remembered
 })
 
-test('a good move that starts another variation is drawn dashed', async ({ page }) => {
-  for (const p of ['Q16', 'R17', 'Q17', 'R16', 'R15', 'S15']) await clickPoint(page, p)
-  await expect(page.locator('.next-moves .mv .mk.dash')).toHaveCount(1)
-  await expect(page.locator('.next-moves .mv', { hasText: 'S14' })).toContainText('→ double hane')
-  await expect(page.locator('svg.board circle[stroke-dasharray]')).toHaveCount(1)
+test('next moves are thin rings in the color of their kind: solid for the main move, dashed for the others', async ({ page }) => {
+  for (const p of ['Q16', 'R17', 'Q17', 'R16']) await clickPoint(page, p) // Black has three answers
+  const rings = page.locator('svg.board .marker circle[stroke]')
+  await expect(rings).toHaveCount(3)
+  await expect(page.locator('svg.board .marker.main circle[stroke]:not([stroke-dasharray])')).toHaveCount(1)
+  await expect(page.locator('svg.board .marker:not(.main) circle[stroke-dasharray]')).toHaveCount(2)
+  for (const fill of await rings.evaluateAll((els) => els.map((e) => e.getAttribute('fill')))) expect(fill).toBe('none') // never filled
+  await expect(page.locator('.next-moves .mv .mk.main')).toHaveCount(1) // the list marks them the same way
+  await expect(page.locator('.next-moves .mv .mk:not(.main)')).toHaveCount(2)
 })
 
 test('the library folds by family and filters by tag', async ({ page }) => {

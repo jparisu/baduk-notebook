@@ -18,7 +18,7 @@ import { collectMessages } from './messages'
 import { Board } from './ui/Board'
 import { Tree } from './ui/Tree'
 import { Stack, Workbench } from './ui/Workbench'
-import { CategoryDot, LastMove, MoveMark, NextMoves, PositionInfo, isVariation } from './ui/Panels'
+import { CategoryDot, LastMove, MoveMark, NextMoves, PositionInfo } from './ui/Panels'
 import { Card } from './ui/Card'
 import { type RefHandlers } from './ui/Rich'
 import { SettingsDialog } from './ui/SettingsDialog'
@@ -577,6 +577,7 @@ export function App() {
   const bothSides = allCands.some((c) => c.sign === 1) && allCands.some((c) => c.sign === -1)
   const cands = bothSides ? allCands.filter((c) => c.sign === side) : allCands
   const tenuki = cands.find((c) => !c.pt)
+  const mainEdge = mainMove(ctx, step)?.edge
 
   const messages = collectMessages(ctx, path, settings)
   const refMarks = new Map<string, Mark[]>()
@@ -828,7 +829,7 @@ export function App() {
   const treeView = treeFor({ root: 0, zoom: ZOOMS[zoomIdx] })
   const treeLegend = (
     <div class="legend">
-      <span><MoveMark cat="main" />main move</span>
+      <span><MoveMark cat="main" main />main move</span>
       <span><MoveMark cat="mistake" />mistake</span>
       <span>⚑ name starts</span>
       <span class="unsaved">◌ dashed: not stored yet</span>
@@ -929,7 +930,7 @@ export function App() {
           pt: c.pt!,
           sign: c.sign,
           showColor: false,
-          variation: isVariation(ctx, path, c, label),
+          main: c.edge === mainEdge,
           cat: c.cat,
           title: `${c.cat ? CATEGORIES[c.cat].label : 'Unclassified'}: ${c.label}`,
           highlight: highlighted === c.step.key,
@@ -1111,7 +1112,7 @@ export function App() {
         )}
         <div class="dtree-canvas">{designTree}</div>
         <div class="legend">
-          <span><MoveMark cat="main" />main move</span>
+          <span><MoveMark cat="main" main />main move</span>
           <span><MoveMark cat="mistake" />mistake</span>
           <span><MoveMark cat="punish" />punishment</span>
           <span>⚑ name starts</span>

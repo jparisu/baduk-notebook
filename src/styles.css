@@ -674,11 +674,8 @@ button.link { background: none; border: none !important; padding: 0; color: var(
 .mv b { font-size: 15px; }
 .mv .what { font-size: 13px; color: var(--muted); }
 .mv .to { color: var(--accent); font-weight: 700; }
-.mk { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; flex: none; font-size: 10px; font-weight: 900; color: #fff; }
-.mk.solid { background: var(--c); }
-.mk.dash { border: 2.5px dashed var(--c); background: color-mix(in srgb, var(--c) 18%, transparent); }
-.mk.ring { border: 3px solid var(--c); }
-.mk.sym { background: var(--c); }
+.mk { display: inline-block; width: 16px; height: 16px; border-radius: 50%; flex: none; border: 2px dashed var(--c); box-sizing: border-box; }
+.mk.main { border-style: solid; }
 .legend .mk { width: 12px; height: 12px; font-size: 7px; }
 .legend .mk.dash { border-width: 2px; }
 .legend .unsaved { color: var(--markup); }

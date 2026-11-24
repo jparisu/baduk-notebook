@@ -370,7 +370,7 @@ export function EditPanel(p: EditApi) {
               <ol class="order-list">
                 {next.map((c, i) => (
                   <li key={c.step.key} class="order-row">
-                    <MoveMark cat={c.cat} />
+                    <MoveMark cat={c.cat} main={i === 0} />
                     <b>{c.pt ? ptName(c.pt) : 'Tenuki'}</b>
                     {i === 0 && <span class="main-badge">main</span>}
                     <span class="what" title={c.cat ? describe('kind', c.cat) : ''}>{c.cat ? CATEGORIES[c.cat].label : 'Unclassified'}{c.label ? ` · ${c.label}` : ''}</span>
