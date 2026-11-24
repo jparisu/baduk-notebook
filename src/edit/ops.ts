@@ -1,10 +1,10 @@
-/** Edit operations on the workspace (docs/MODEL.md): positions with ids, and moves that point to ids. */
+/** Edit operations on the workspace (docs/MODEL.md): positions with ids, and moves from one id to another. */
 import GoBoard from '@sabaki/go-board'
 import { apply, applySign, inverse, transformMap, type Pt, type Sign, type SignMap, type Transform } from '../core/geometry'
 import { canonical } from '../core/hash'
-import { isMoveProp, type Props } from '../core/fields'
-import type { Graph } from '../core/graph'
-import { boardOf, colorOf, isStartId, moveText, nOf, nextId, seqOf, signOf, stonesOf, type PosRec, type MoveRec, type Free } from '../core/model'
+import { asText, type TagValue } from '../core/tags'
+import { buildGraph, type Graph } from '../core/graph'
+import { boardOf, colorOf, isStartId, moveText, nOf, nextId, seqOf, signOf, stonesOf, type PosRec, type MoveRec, type Free, type Rec } from '../core/model'
 import { displayBoard, frame, node as nodeOf, type Ctx, type Step } from '../view'
 import type { DatabaseInfo } from '../data/load'
 import type { WorkFile, Workspace } from './workspace'
@@ -16,9 +16,10 @@ export interface Location {
   move: MoveRec | null
   /** Maps the position's stored frame to the canonical frame. */
   T: Transform
-  /** Fields of the position and of the move into it, as one property bag: move fields (XCAT, XMW…) go to the move. */
-  node: { data: Props }
 }
+
+/** Which record of a location a write goes to: the position, or the move into it. */
+export type On = 'pos' | 'move'
 
 const fileOfPos = (ws: Workspace, db: string, pos: PosRec) => ws.files.find((f) => f.db === db && f.positions.includes(pos))!
 
@@ -32,31 +33,6 @@ const idsOf = (ws: Workspace, db: string) => new Set(ws.files.filter((f) => f.db
 const findPos = (ws: Workspace, db: string, id: string) => {
   for (const f of ws.files) if (f.db === db) for (const p of f.positions) if (p.id === id) return { file: f, pos: p }
   return null
-}
-
-/** A property bag that routes move fields to the move and the rest (plus XFREE) to the position. */
-function bag(pos: PosRec, move: MoveRec | null): { data: Props } {
-  const target = (k: string): Props | null => (isMoveProp(k) ? move?.data ?? null : pos.data)
-  const data = new Proxy({} as Props, {
-    get: (_, k: string) => (k === 'XFREE' ? [pos.free] : target(k)?.[k]),
-    set: (_, k: string, v: string[]) => {
-      if (k === 'XFREE') pos.free = (v[0] as Free) || 'corner'
-      else {
-        const t = target(k)
-        if (t) t[k] = v
-      }
-      return true
-    },
-    deleteProperty: (_, k: string) => {
-      const t = target(k)
-      if (t) delete t[k]
-      return true
-    },
-    has: (_, k: string) => !!target(k as string)?.[k as string],
-    ownKeys: () => [...new Set([...Object.keys(pos.data), ...Object.keys(move?.data ?? {})])],
-    getOwnPropertyDescriptor: (_, k: string) => ({ enumerable: true, configurable: true, value: target(k)?.[k] }),
-  })
-  return { data }
 }
 
 /** The target database's record of a step's position, if any. */
@@ -89,11 +65,11 @@ function link(ws: Workspace, ctx: Ctx, db: string, prev: { file: WorkFile; pos: 
     const taken = idsOf(ws, db)
     const reuse = others.find((id) => !taken.has(id))
     const id = reuse ?? nextId(seqOf(prev.pos.id), depthOf(ctx.graph, key, prev.pos) || nOf(prev.pos.id) + 1, (x) => taken.has(x) || x === seqOf(prev.pos.id))
-    const pos: PosRec = { id, stones: stonesOf(after), toPlay: colorOf(-sign as Sign), free: prev.pos.free, data: {}, moves: [] }
+    const pos: PosRec = { id, stones: stonesOf(after), toPlay: colorOf(-sign as Sign), free: prev.pos.free, comments: [], tags: {}, moves: [] }
     prev.file.positions.push(pos)
     child = { file: prev.file, pos }
   }
-  if (!move) prev.pos.moves.push((move = { move: text, to: child.pos.id, data: {} }))
+  if (!move) prev.pos.moves.push((move = { move: text, to: child.pos.id, comments: [], tags: {} }))
   else move.to = child.pos.id
   touch(ws, prev.file)
   if (child.file !== prev.file) touch(ws, child.file)
@@ -112,9 +88,9 @@ export function locate(ws: Workspace, ctx: Ctx, path: Step[], target: string, en
   const moveHere = (path.length > 1 && last.edge?.contribs.find((c) => c.db === target)?.move) || null
   if (here && (moveHere || path.length === 1)) {
     const file = fileOfPos(ws, target, here.pos)
-    return { file, pos: here.pos, move: moveHere, T: here.T, node: bag(here.pos, moveHere) }
+    return { file, pos: here.pos, move: moveHere, T: here.T }
   }
-  if (!create) return here ? { file: fileOfPos(ws, target, here.pos), pos: here.pos, move: null, T: here.T, node: bag(here.pos, null) } : null
+  if (!create) return here ? { file: fileOfPos(ws, target, here.pos), pos: here.pos, move: null, T: here.T } : null
 
   // The last position before the end that is in the target database; the line is added from there.
   let i = path.length - 2
@@ -133,10 +109,10 @@ export function locate(ws: Workspace, ctx: Ctx, path: Step[], target: string, en
     const taken = idsOf(ws, target)
     const seq = entryId ?? (others[0] ? seqOf(others[0]) : 'joseki')
     const id = others.find((x) => !taken.has(x)) ?? (taken.has(seq) ? nextId(seq, depthOf(ctx.graph, first.key), (x) => taken.has(x)) : seq)
-    const pos: PosRec = { id, stones: stonesOf(stored), toPlay: colorOf(applySign(first.D, n.toMove) || 1), free: n.contribs[0]?.pos.free ?? 'corner', data: {}, moves: [] }
+    const pos: PosRec = { id, stones: stonesOf(stored), toPlay: colorOf(applySign(first.D, n.toMove) || 1), free: n.contribs[0]?.pos.free ?? 'corner', comments: [], tags: {}, moves: [] }
     let name = `${target}/${seq.startsWith('joseki') ? 'joseki' : 'shapes'}/${slugify(seqOf(id).split('/').slice(1).join(' ') || 'lines')}.json`
     for (let k = 2; ws.files.some((f) => f.path === name); k++) name = name.replace(/(-\d+)?\.json$/, `-${k}.json`)
-    const file: WorkFile = { db: target, path: name, positions: [pos], original: null }
+    const file: WorkFile = { db: target, path: name, positions: [pos], loose: [], original: null }
     ws.files.push(file)
     touch(ws, file)
     cur = { file, pos, T: inverse(first.D), key: first.key }
@@ -150,15 +126,36 @@ export function locate(ws: Workspace, ctx: Ctx, path: Step[], target: string, en
     cur = { file: f, pos: r.pos, T: r.T, key: r.key }
     move = r.move
   }
-  return { file: cur.file, pos: cur.pos, move, T: cur.T, node: bag(cur.pos, move) }
+  return { file: cur.file, pos: cur.pos, move, T: cur.T }
 }
 
-/** Sets or clears properties. `null` or an empty list removes the property. */
-export function setProps(ws: Workspace, loc: Location, values: Record<string, string[] | null>) {
+/** The record a write goes to (null: the start of a line has no move). */
+export const recAt = (loc: Location, on: On): Rec | null => (on === 'move' ? loc.move : loc.pos)
+
+/** Sets or removes tags (`null`, "" or an empty list removes the key). */
+export function setTags(ws: Workspace, loc: Location, on: On, values: Record<string, TagValue | null>) {
+  const r = recAt(loc, on)
+  if (!r) return
   for (const [k, v] of Object.entries(values)) {
-    if (!v || !v.length || v.every((x) => x === '')) delete loc.node.data[k]
-    else loc.node.data[k] = v
+    if (v === null || v === '' || v === false || (Array.isArray(v) && !v.length)) delete r.tags[k]
+    else r.tags[k] = v
   }
+  touch(ws, loc.file)
+}
+
+/** Replaces the comments (empty ones are dropped). */
+export function setComments(ws: Workspace, loc: Location, on: On, list: string[]) {
+  const r = recAt(loc, on)
+  if (!r) return
+  r.comments = list.map((x) => x.trim()).filter(Boolean)
+  touch(ws, loc.file)
+}
+
+/** Renames a key on a record, keeping its value and its place. */
+export function renameTag(ws: Workspace, loc: Location, on: On, from: string, to: string) {
+  const r = recAt(loc, on)
+  if (!r || !(from in r.tags) || !to || to === from) return
+  r.tags = Object.fromEntries(Object.entries(r.tags).map(([k, v]) => [k === from ? to : k, v]))
   touch(ws, loc.file)
 }
 
@@ -238,23 +235,29 @@ function collect(ws: Workspace, db: string, fromId: string) {
   }
 }
 
-/** Makes the last move of `path` the first move listed from its position in the target database. */
-export function promote(ws: Workspace, path: Step[], target: string): boolean {
-  const e = path[path.length - 1].edge
-  if (!e) return false
-  let done = false
-  for (const c of e.contribs.filter((c) => c.db === target && c.move)) {
-    if (c.pos.moves[0] === c.move) continue
-    c.pos.moves = [c.move!, ...c.pos.moves.filter((m) => m !== c.move)]
-    touch(ws, fileOfPos(ws, target, c.pos))
-    done = true
+/**
+ * Sets the order of the moves from the last position of `path` in the target database; the first is the
+ * main move (docs/MODEL.md §1). The target database gets every one of these moves (copied when only
+ * another database had them), so its order is the one used.
+ */
+export function orderMoves(ws: Workspace, ctx: Ctx, path: Step[], target: string, entryId: string | null, children: Step[]) {
+  const fresh = (): Ctx => ({ ...ctx, graph: buildGraph(ws.files) })
+  let c = ctx
+  for (const child of children) {
+    locate(ws, c, [...path, child], target, entryId, true)
+    c = fresh()
   }
-  return done
+  const parent = locate(ws, c, path, target, entryId, false)
+  if (!parent) return
+  const n = c.graph.nodes.get(path[path.length - 1].key)
+  const mine = children.flatMap((ch) => n?.edges.find((e) => e.child === ch.key)?.contribs.filter((x) => x.db === target && x.pos === parent.pos).map((x) => x.move!) ?? [])
+  parent.pos.moves = [...mine, ...parent.pos.moves.filter((m) => !mine.includes(m))]
+  touch(ws, parent.file)
 }
 
 /**
  * Starts a sequence at the last position of `path`: the position gets the id `seq`, and the positions
- * after it that were in the same sequence move to the new one (docs/MODEL.md §3).
+ * after it that were in the same sequence move to the new one (docs/MODEL.md §4).
  */
 export function nameSequence(ws: Workspace, ctx: Ctx, path: Step[], target: string, seq: string, name: string | null): string | null {
   seq = seq.split('/').map((s) => s.trim()).filter(Boolean).join('/')
@@ -293,7 +296,10 @@ export function nameSequence(ws: Workspace, ctx: Ctx, path: Step[], target: stri
       if (hit) touch(ws, f)
     }
   }
-  if (name !== null) setProps(ws, loc, { XNAME: name ? [name] : null })
+  if (name !== null) {
+    const others = (Array.isArray(loc.pos.tags.name) ? loc.pos.tags.name : []).slice(1)
+    setTags(ws, loc, 'pos', { name: name ? [name, ...others] : others.length ? others : null })
+  }
   touch(ws, loc.file)
   return null
 }
@@ -315,11 +321,11 @@ export function createEntry(ws: Workspace, target: string, e: NewEntry): string 
   const board: SignMap = boardOf('')
   for (const [x, y] of e.stones.B) board[y][x] = 1
   for (const [x, y] of e.stones.W) board[y][x] = -1
-  const data: Props = { XNAME: [e.name] }
-  if (e.difficulty) data.XDIFF = [e.difficulty]
+  const tags: Record<string, TagValue> = { name: [e.name] }
+  if (e.difficulty) tags.difficulty = e.difficulty
   let path = `${target}/${seq.startsWith('joseki') ? 'joseki' : 'shapes'}/${slugify(seq.split('/').slice(1).join(' ') || seq)}.json`
   for (let k = 2; ws.files.some((f) => f.path === path); k++) path = path.replace(/(-\d+)?\.json$/, `-${k}.json`)
-  ws.files.push({ db: target, path, positions: [{ id: seq, stones: stonesOf(board), toPlay: colorOf(e.toMove || 1), free: e.free, data, moves: [] }], original: null })
+  ws.files.push({ db: target, path, positions: [{ id: seq, stones: stonesOf(board), toPlay: colorOf(e.toMove || 1), free: e.free, comments: [], tags, moves: [] }], loose: [], original: null })
   ws.dirty.add(path)
   ws.version++
   return null
@@ -339,6 +345,6 @@ export function describePosition(g: Graph, key: string): string | null {
   const c = g.nodes.get(key)?.contribs[0]
   if (!c) return null
   const seq = seqOf(c.pos.id)
-  const name = g.entries.get(seq)?.contribs[0]?.props.XNAME?.[0] ?? seq.split('/').pop()
+  const name = asText(g.entries.get(seq)?.contribs[0]?.rec.tags.name) || seq.split('/').pop()
   return isStartId(c.pos.id) ? `${name}` : `${name}, move ${nOf(c.pos.id)}`
 }

@@ -1,5 +1,5 @@
 /** User settings (SPEC §8.8). Defaults equal the mock-up behavior. Saved in localStorage. */
-import type { Category } from './core/fields'
+import type { Category } from './core/kinds'
 import type { DisplayOptions } from './core/geometry'
 import { storageKey } from './storage'
 
@@ -14,7 +14,7 @@ export interface Settings {
   moveNumbers: boolean
   showNext: boolean
   hiddenCategories: Category[]
-  /** Value keys (db/schema.json) you do not want to see in the panels. */
+  /** Tag keys you do not want to see in the panels (described in db/tags.json or not). */
   hiddenKeys: string[]
   /** Your own colors for the databases (only in this browser; several may share one). */
   dbColors: Record<string, string>

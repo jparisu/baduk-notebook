@@ -5,15 +5,32 @@ import GoBoard from '@sabaki/go-board'
 import * as sgf from '@sabaki/sgf'
 import { Workbench } from './Workbench'
 import { Board } from './Board'
+import { StoneIcon } from './Panels'
+import { Info } from './EditPanel'
 import { search, userViewFor, type Match } from '../core/search'
-import { parseSgfPt, parseSgfPtList, ptName, type DisplayOptions, type Pt, type Sign, type SignMap } from '../core/geometry'
+import { parseSgfPt, parseSgfPtList, type DisplayOptions, type Pt, type Sign, type SignMap } from '../core/geometry'
 import { candidates, rootStep, type Ctx, type Step } from '../view'
 import type { Settings } from '../settings'
-import { CATEGORIES } from '../core/fields'
 import { IDENTITY } from '../core/geometry'
 
 type Tool = 'B' | 'W' | 'alt' | 'erase'
 const FIND_KEY = storageKey('baduk-notebook.find.v1')
+const TO_PLAY_KEY = storageKey('baduk-notebook.find.toPlay')
+function loadToPlay(): Sign {
+  try {
+    const v = Number(localStorage.getItem(TO_PLAY_KEY) ?? '1')
+    return v === -1 || v === 0 ? (v as Sign) : 1
+  } catch {
+    return 1
+  }
+}
+function saveToPlay(s: Sign) {
+  try {
+    localStorage.setItem(TO_PLAY_KEY, String(s))
+  } catch {
+    /* ignore */
+  }
+}
 function loadFind(): { boards: SignMap[]; at: number } {
   try {
     const h = JSON.parse(localStorage.getItem(FIND_KEY) ?? 'null')
@@ -50,6 +67,9 @@ function boardAt(game: Game, n: number): SignMap {
   }
   return b.signMap as SignMap
 }
+
+/** Who plays after the first n moves of a game: the other color than the last move (Black at the start). */
+const nextIn = (game: Game, n: number): Sign => (n > 0 ? (-game.moves[n - 1].sign as Sign) : game.moves[0]?.sign ?? 1)
 
 function parseGame(text: string): Game {
   const root = sgf.parse(text)[0]
@@ -101,13 +121,20 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
     return () => window.removeEventListener('keydown', onKey)
   })
   const [tool, setTool] = useState<Tool>('alt')
-  const [nextAlt, setNextAlt] = useState<Sign>(1)
+  // Who plays next on this board. Alternate placement keeps it in step (after Black, White plays);
+  // you can also set it yourself. The same stones with the other player to move are another position.
+  const [toPlay, setToPlayState] = useState<Sign>(loadToPlay)
+  const setToPlay = (s: Sign) => {
+    setToPlayState(s)
+    saveToPlay(s)
+  }
+  const nextAlt: Sign = toPlay || 1
   const [game, setGame] = useState<Game | null>(null)
   const [moveNo, setMoveNo] = useState(0)
   const [paste, setPaste] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const results = useMemo(() => search(ctx.graph, ctx.active, board), [board, ctx.graph, ctx.active])
+  const results = useMemo(() => search(ctx.graph, ctx.active, board, toPlay), [board, toPlay, ctx.graph, ctx.active])
   const base: Ctx = { ...ctx, U: IDENTITY }
 
   const onPoint = ([x, y]: Pt) => {
@@ -115,7 +142,7 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
     if (tool === 'erase') next[y][x] = 0
     else if (tool === 'alt') {
       next[y][x] = next[y][x] ? 0 : nextAlt
-      if (!board[y][x]) setNextAlt((-nextAlt) as Sign)
+      if (!board[y][x]) setToPlay((-nextAlt) as Sign)
     } else {
       const s: Sign = tool === 'B' ? 1 : -1
       next[y][x] = next[y][x] === s ? 0 : s
@@ -130,10 +157,17 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
       setGame(g)
       setMoveNo(g.moves.length)
       setBoard(boardAt(g, g.moves.length))
+      setToPlay(nextIn(g, g.moves.length))
       setError(null)
     } catch (e) {
       setError((e as Error).message)
     }
+  }
+
+  /** The player to move in a match, in the colors of the board you set up. */
+  const nextOf = (m: Match): Sign => {
+    const n = ctx.graph.nodes.get(m.keys[m.keys.length - 1])!
+    return (m.toCanon.swap ? -n.toMove : n.toMove) as Sign
   }
 
   const openMatch = (m: Match) => {
@@ -148,6 +182,14 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
         {(['alt', 'B', 'W', 'erase'] as Tool[]).map((t) => (
           <button key={t} class={tool === t ? 'on' : ''} onClick={() => setTool(t)}>{{ alt: 'Alternate', B: '● Black', W: '○ White', erase: 'Erase' }[t]}</button>
         ))}
+      </div>
+      <div class="f to-play">
+        <span class="fl">Next to play<Info text="The same stones with the other player to move are a different position. Alternate placement sets it for you." /></span>
+        <span class="seg" role="group" aria-label="Next to play">
+          {([[1, 'Black'], [-1, 'White'], [0, 'Either']] as [Sign, string][]).map(([v, l]) => (
+            <button key={v} class={toPlay === v ? 'on' : ''} aria-pressed={toPlay === v} onClick={() => setToPlay(v)}>{l}</button>
+          ))}
+        </span>
       </div>
       <div class="grp">
         <label class="file-btn">
@@ -173,22 +215,20 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
             const n = Number((e.target as HTMLInputElement).value)
             setMoveNo(n)
             setBoard(boardAt(game, n))
+            setToPlay(nextIn(game, n))
           }} />
         </div>
       )}
-      <h2>How it searches</h2>
-      <p class="hint">Each 10×10 corner is compared with every position fixed in the corner, in all 8 orientations (colors are never swapped). Positions that may slide, such as side and centre shapes, are also found where you placed them. Exact matches come first, then positions contained in yours, then positions that differ by up to 2 stones.</p>
     </div>
   )
 
   const list = (
     <div class="results">
-      <h2>Matches ({results.length})</h2>
+      <h2>Matches ({results.length})<Info text="Each 10×10 corner is compared with every position fixed in the corner, in all 8 orientations and also with the colors swapped. Side and centre shapes are found wherever they may slide. Exact matches first, then positions contained in yours, then positions that differ by up to 2 stones." /></h2>
       {!board.some((r) => r.some(Boolean)) && <p class="hint">Place stones on the board, or load a game, to search.</p>}
       {board.some((r) => r.some(Boolean)) && results.length === 0 && <p class="hint">No joseki or shape matches these stones.</p>}
       {results.map((m, i) => {
         const steps = lineSteps(base, m.entryId, m.keys)
-        const next = candidates(base, steps[steps.length - 1]).slice(0, 3)
         const view = userViewFor(m.toCanon, steps[steps.length - 1].D)
         return (
           <button key={i} class="result" onClick={() => openMatch(m)}>
@@ -197,14 +237,14 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
               <b>{m.labels.map(props.entryName).join(' · ')}</b>
             </span>
             <span class="r-meta">
-              {m.keys.length > 1 ? `Move ${m.keys.length - 1}` : 'Start position'} · {m.where}
-              {view.swap ? ' · colors swapped' : ''}{view.mirror ? ' · mirrored' : ''}
+              {/* Who plays next, in the colors of your board (the match may have them swapped). */}
+              <span class="r-turn"><StoneIcon sign={nextOf(m)} size={12} /> {nextOf(m) === 1 ? 'Black' : 'White'} to play</span>
+              {' · '}{m.keys.length > 1 ? `move ${m.keys.length - 1} of it` : 'its first position'}
+              {m.swapped && <span class="swapped-tag" title="Found with Black and White swapped"> · colors swapped</span>}
+              {view.mirror ? ' · mirrored' : ''}
               {m.kind === 'contained' ? ` · ${m.extra} extra stone${m.extra === 1 ? '' : 's'}` : ''}
               {m.kind === 'near' ? ` · differs by ${m.missing + m.extra}` : ''}
             </span>
-            {next.length > 0 && (
-              <span class="r-next">Next: {next.map((c) => `${c.pt ? ptName(c.pt) : 'tenuki'} (${c.cat ? CATEGORIES[c.cat].label.toLowerCase() : '?'})`).join(', ')}</span>
-            )}
           </button>
         )
       })}
@@ -220,7 +260,7 @@ export function FindMode(props: { ctx: Ctx; phone: boolean; settings: Settings; 
       <div class="nav find-nav">
         <button onClick={undo} disabled={hist.at === 0} title="Undo (Ctrl+Z)">↶ Undo</button>
         <button onClick={redo} disabled={hist.at === hist.boards.length - 1} title="Redo (Ctrl+Y)">↷ Redo</button>
-        <button onClick={() => { setBoard(empty()); setGame(null); setNextAlt(1) }} disabled={!board.some((r) => r.some(Boolean))}>Clear board</button>
+        <button onClick={() => { setBoard(empty()); setGame(null); setToPlay(1) }} disabled={!board.some((r) => r.some(Boolean))}>Clear board</button>
       </div>
       {props.phone && tools}
     </main>

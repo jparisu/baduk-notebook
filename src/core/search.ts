@@ -1,9 +1,10 @@
 /**
- * Find position (docs/MODEL.md §4–5): exact, contained and near matches. Positions fixed in the corner
+ * Find position (docs/MODEL.md §5–6): exact, contained and near matches. Positions fixed in the corner
  * are compared corner by corner; the others slide along the directions their placement (`free`) allows.
- * Colors are never swapped.
+ * Every orientation is tried, also with the colors swapped; such matches say so and come after the
+ * same match with the colors as stored.
  */
-import { SIZE, SYMMETRIES, compose, cornerWindow, inverse, transformMap, userTransform, type Corner, type DisplayOptions, type Sign, type SignMap, type Transform } from './geometry'
+import { SIZE, SYMMETRIES, applySign, compose, cornerWindow, inverse, transformMap, userTransform, type Corner, type DisplayOptions, type Sign, type SignMap, type Transform } from './geometry'
 import { freeOf, labelsAt, type Graph } from './graph'
 import { canonical } from './hash'
 
@@ -18,6 +19,8 @@ export interface Match {
   where: string // "top-right corner" / "shape area around Q16"
   /** user frame → canonical frame of the matched position */
   toCanon: Transform
+  /** Found with Black and White swapped. */
+  swapped: boolean
   missing: number
   extra: number
   stones: number
@@ -25,7 +28,8 @@ export interface Match {
 }
 
 const CORNERS: [Corner, string][] = [['tl', 'top-left'], ['tr', 'top-right'], ['bl', 'bottom-left'], ['br', 'bottom-right']]
-const ALL: Transform[] = SYMMETRIES
+/** The 8 orientations, then the same with the colors swapped. */
+const ALL: Transform[] = [...SYMMETRIES, ...SYMMETRIES.map((t) => ({ ...t, swap: true }))]
 
 function cropCorner(map: SignMap, c: Corner): SignMap {
   const [x0, x1, y0, y1] = cornerWindow(c)
@@ -38,7 +42,11 @@ function stonesOf(map: SignMap): [number, number, Sign][] {
   return out
 }
 
-/** For every position: one line (keys from the entry root) per entry that reaches it. */
+/**
+ * For every position: one line (keys from the entry root) per entry that reaches it without leaving the
+ * entry. A position that no entry reaches that way (it sits after a named variation but kept the id of
+ * the sequence before it) gets the line from the closest entry start.
+ */
 export function indexLines(g: Graph, active: Set<string>): Map<string, { entryId: string; keys: string[] }[]> {
   const out = new Map<string, { entryId: string; keys: string[] }[]>()
   for (const e of g.entries.values()) {
@@ -59,6 +67,19 @@ export function indexLines(g: Graph, active: Set<string>): Map<string, { entryId
       }
     }
   }
+  // Positions not reached inside their entry: the closest entry start, crossing into other entries.
+  const queue: { entryId: string; keys: string[] }[] = [...out.entries()].flatMap(([k, ls]) => ls.filter((l) => l.keys[l.keys.length - 1] === k))
+  const reached = new Set(out.keys())
+  for (let i = 0; i < queue.length; i++) {
+    const { entryId, keys } = queue[i]
+    for (const ed of g.nodes.get(keys[keys.length - 1])?.edges ?? []) {
+      if (reached.has(ed.child) || !ed.contribs.some((c) => active.has(c.db))) continue
+      reached.add(ed.child)
+      const line = { entryId, keys: [...keys, ed.child] }
+      out.set(ed.child, [line])
+      queue.push(line)
+    }
+  }
   return out
 }
 
@@ -74,13 +95,19 @@ function compare(node: SignMap, user: SignMap, region?: [number, number, number,
   return { missing, extra, stones }
 }
 
-export function search(g: Graph, active: Set<string>, user: SignMap, maxNear = 2): Match[] {
+/**
+ * `toPlay` is who plays next on the user's board (0: either). The same stones with the other player to
+ * move are a different position, so only positions with that player to move are listed.
+ */
+export function search(g: Graph, active: Set<string>, user: SignMap, toPlay: Sign = 0, maxNear = 2): Match[] {
+  /** The user's player to move, seen in the position's canonical frame (colors may be swapped). */
+  const playerFits = (t: Transform, nodeToMove: Sign) => !toPlay || applySign(t, toPlay) === nodeToMove
   const lines = indexLines(g, active)
   const best = new Map<string, Match>() // one result per entry+position
   const keep = (m: Match) => {
     const id = m.entryId + '|' + m.keys[m.keys.length - 1]
     const cur = best.get(id)
-    const score = (x: Match) => (x.kind === 'exact' ? 0 : x.kind === 'contained' ? 1 : 2) * 100 + x.missing + x.extra
+    const score = (x: Match) => (x.kind === 'exact' ? 0 : x.kind === 'contained' ? 1 : 2) * 100 + x.missing + x.extra + (x.swapped ? 50 : 0)
     if (!cur || score(m) < score(cur)) best.set(id, m)
   }
 
@@ -93,11 +120,11 @@ export function search(g: Graph, active: Set<string>, user: SignMap, maxNear = 2
       for (const [key, owners] of lines) {
         const node = g.nodes.get(key)!
         for (const o of owners) {
-          if (freeOf(node) !== 'corner') continue
+          if (freeOf(node) !== 'corner' || !playerFits(t, node.toMove)) continue
           const { missing, extra, stones } = compare(node.board, u)
           if (!stones) continue
           const kind: MatchKind | null = !missing && !extra ? 'exact' : !missing ? 'contained' : missing + extra <= maxNear && stones >= 3 ? 'near' : null
-          if (kind) keep({ kind, entryId: o.entryId, labels: [o.entryId], keys: o.keys, where: `${label} corner`, toCanon: t, missing, extra, stones })
+          if (kind) keep({ kind, entryId: o.entryId, labels: [o.entryId], keys: o.keys, where: `${label} corner`, toCanon: t, swapped: t.swap, missing, extra, stones })
         }
       }
     }
@@ -111,17 +138,17 @@ export function search(g: Graph, active: Set<string>, user: SignMap, maxNear = 2
         const node = g.nodes.get(key)!
         const free = freeOf(node)
         if (free === 'corner') continue
-        // The free direction is given in the stored frame; find it in the canonical frame.
-        const T = node.contribs[0].toCanon
-        const storedX = T.a !== 0 // the stored x axis stays the x axis
-        const freeX = free === 'anywhere' || (free === 'horizontal' ? storedX : !storedX)
-        const freeY = free === 'anywhere' || (free === 'horizontal' ? !storedX : storedX)
         const st = stonesOf(node.board)
         if (!st.length) continue
         const xs = st.map((s) => s[0]), ys = st.map((s) => s[1])
         const [minx, maxx, miny, maxy] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]
+        // A side shape slides along the edge it sits on (the closest one), keeping its distance from it.
+        const toLeftRight = Math.min(minx, SIZE - 1 - maxx), toTopBottom = Math.min(miny, SIZE - 1 - maxy)
+        const freeX = free === 'anywhere' || toTopBottom < toLeftRight
+        const freeY = free === 'anywhere' || toLeftRight <= toTopBottom
         const range = (lo: number, hi: number, free: boolean) => (free ? Array.from({ length: SIZE - (hi - lo) }, (_, i) => i - lo) : [0])
         for (const t of ALL) {
+          if (!playerFits(t, node.toMove)) continue
           const u = transformMap(t, user)
           for (const dx of range(minx, maxx, freeX))
             for (const dy of range(miny, maxy, freeY)) {
@@ -135,12 +162,13 @@ export function search(g: Graph, active: Set<string>, user: SignMap, maxNear = 2
                   if (b && node.board[y - dy][x - dx] !== b) extra++
                 }
               const kind: MatchKind | null = !missing && !extra ? 'exact' : missing + extra <= maxNear && st.length >= 3 ? 'near' : null
-              if (kind) keep({ kind, entryId: o.entryId, labels: [o.entryId], keys: o.keys, where: 'shape', toCanon: t, missing, extra, stones: st.length, translated: [dx, dy] })
+              if (kind) keep({ kind, entryId: o.entryId, labels: [o.entryId], keys: o.keys, where: 'shape', toCanon: t, swapped: t.swap, missing, extra, stones: st.length, translated: [dx, dy] })
             }
         }
       }
 
-  return sameStones(g, dedupe([...best.values()]))
+  // Without a player to move, the same stones before and after a tenuki would both be listed.
+  return toPlay ? dedupe([...best.values()]) : sameStones(g, dedupe([...best.values()]))
 }
 
 /**
@@ -172,7 +200,7 @@ export function dedupe(all: Match[]): Match[] {
     else {
       for (const l of m.labels) if (!cur.labels.includes(l)) cur.labels.push(l)
       // Keep the most specific label (the shortest line from its first node) as the main one.
-      if (m.keys.length < cur.keys.length) Object.assign(cur, { entryId: m.entryId, keys: m.keys, toCanon: m.toCanon })
+      if (Number(m.swapped) < Number(cur.swapped) || (m.swapped === cur.swapped && m.keys.length < cur.keys.length)) Object.assign(cur, { entryId: m.entryId, keys: m.keys, toCanon: m.toCanon, swapped: m.swapped, where: m.where })
     }
   }
   const covered = new Set([...exact.values()].flatMap((m) => m.labels))
@@ -180,11 +208,11 @@ export function dedupe(all: Match[]): Match[] {
   for (const m of all.filter((m) => m.kind !== 'exact')) {
     if (covered.has(m.entryId) || exact.has(m.keys[m.keys.length - 1])) continue
     const cur = rest.get(m.entryId)
-    const better = !cur || order[m.kind] < order[cur.kind] || (order[m.kind] === order[cur.kind] && (m.stones > cur.stones || (m.stones === cur.stones && m.missing + m.extra < cur.missing + cur.extra)))
+    const better = !cur || order[m.kind] < order[cur.kind] || (order[m.kind] === order[cur.kind] && (Number(m.swapped) < Number(cur.swapped) || (m.swapped === cur.swapped && (m.stones > cur.stones || (m.stones === cur.stones && m.missing + m.extra < cur.missing + cur.extra)))))
     if (better) rest.set(m.entryId, m)
   }
   return [...exact.values(), ...rest.values()]
-    .sort((a, b) => order[a.kind] - order[b.kind] || b.stones - a.stones || a.missing + a.extra - (b.missing + b.extra))
+    .sort((a, b) => order[a.kind] - order[b.kind] || Number(a.swapped) - Number(b.swapped) || b.stones - a.stones || a.missing + a.extra - (b.missing + b.extra))
     .slice(0, 30)
 }
 

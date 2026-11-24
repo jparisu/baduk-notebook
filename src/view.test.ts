@@ -56,3 +56,25 @@ describe('free play', () => {
     expect(inBook(ctx2, line[2])).toBe(true)
   })
 })
+
+import { shortAfter } from './ui/Panels'
+describe('names along the line', () => {
+  it('drop the part they share with the name before them', () => {
+    expect(shortAfter('4-4 point', '4-4 point · 3-3 invasion')).toBe('3-3 invasion')
+    expect(shortAfter('4-4 point · 3-3 invasion', '4-4 point · 3-3 invasion · extend')).toBe('extend')
+    expect(shortAfter('Empty corner', '4-4 point')).toBe('4-4 point')
+    expect(shortAfter('3-4 point · low', '3-4 point · high · hane')).toBe('3-4 point · high · hane')
+  })
+})
+
+import { balanceText } from './core/tags'
+describe('balance in words', () => {
+  it('has levels on each side', () => {
+    expect(balanceText('evaluation', 0)).toBe('Even')
+    expect(balanceText('evaluation', 0.15)).toBe('Slightly better for Black')
+    expect(balanceText('evaluation', -0.4)).toBe('Better for White')
+    expect(balanceText('evaluation', 0.6)).toBe('Much better for Black')
+    expect(balanceText('evaluation', -1)).toBe('Winning for White')
+  })
+})
+

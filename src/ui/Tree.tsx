@@ -1,13 +1,15 @@
 /**
- * Tree of moves (docs/MODEL.md §6) with three modes and a zoom. The layout is always the one of the
- * whole tree, in a fixed order, so the tree never moves when you move through it (like OGS):
- * - linear:    shows the current line, before and ahead, plus the lines visited in this session (the trail);
- * - proximity: the same, plus the other moves from the current position;
+ * Tree of moves (docs/MODEL.md §7) with three modes and a zoom. Moves are always in the same fixed
+ * order (database moves best first, then your own), and each mode packs its rows as tightly as the
+ * tree allows:
+ * - linear:    the current line, before and ahead to its end, plus the lines visited in this session (the trail);
+ * - proximity: the same, plus the other moves from the current position, in the closest free rows;
  * - complete:  every move from the start of the line.
+ * The rows of the lines only depend on which lines are drawn, so moving along them never moves the tree.
  * Hidden branches show a "+n" badge; "ahead" limits how far after the current move the tree goes.
  */
 import { useLayoutEffect, useRef } from 'preact/hooks'
-import { CATEGORIES, type Category } from '../core/fields'
+import { CATEGORIES, type Category } from '../core/kinds'
 import { apply, applySign, ptName, type Pt } from '../core/geometry'
 import { candidates, frame, moveOf, type Candidate, type Ctx, type Step } from '../view'
 
@@ -198,23 +200,41 @@ export function Tree(props: Props) {
     cur = next
   }
 
-  // 3. Layout of the whole tree: each node one column right of its parent; the first child stays on its parent's row.
+  // 3. Layout: each node one column right of its parent; the first child stays on its parent's row and
+  //    each other child takes the next free row, in the fixed order. Complete lays out every node;
+  //    Linear and Proximity only the lines they draw, so no empty rows are left for hidden moves.
+  const laid = mode === 'complete' ? new Set(placed.map((_, i) => i)) : new Set(visible)
   let row = 0
   const lay = (i: number, y: number) => {
     placed[i].y = y
-    kids[i].forEach((k, n) => lay(k, n === 0 ? y : ++row))
+    let first = true
+    for (const k of kids[i]) {
+      if (!laid.has(k)) continue
+      lay(k, first ? y : ++row)
+      first = false
+    }
   }
   lay(0, 0)
 
-  // 4. What each mode shows: Complete everything, Linear the lines, Proximity also the moves from here.
+  // 4. What each mode shows: Complete everything, Linear the lines, Proximity also the moves from here,
+  //    each in the first free row at or below the current move (the lines above keep their rows).
   if (mode === 'complete') placed.forEach((_, i) => visible.add(i))
-  if (mode === 'proximity') kids[cur].forEach((k) => visible.add(k))
+  if (mode === 'proximity') {
+    const used = new Set([...laid].map((i) => `${placed[i].x},${placed[i].y}`))
+    for (const k of kids[cur]) {
+      if (laid.has(k)) continue
+      let y = placed[cur].y
+      while (used.has(`${placed[k].x},${y}`)) y++
+      placed[k].y = y
+      used.add(`${placed[k].x},${y}`)
+      visible.add(k)
+    }
+  }
   const show = placed.map((p, i) => visible.has(i) && p.line.length - 1 <= Math.max(limit, path.length - 1))
   // Leaves that hide more moves get a "›".
   placed.forEach((p, i) => {
     if (show[i] && !p.folded) p.more = kids[i].some((k) => !show[k]) || (!kids[i].length && i > 0 && !p.transposition && childrenOf(p.line).list.length > 0 && placed.length > MAX_NODES)
   })
-  // Hidden rows keep their place (nothing moves); only the empty space below the last visible row is cut.
   const rows = Math.max(...placed.filter((_, i) => show[i]).map((p) => p.y)) + 1
 
   const select = (i: number) => props.onSelect(placed[i].line)
@@ -276,7 +296,7 @@ export function Tree(props: Props) {
               </>
             ) : (
               <>
-                <circle cx={x} cy={y} r="9" fill={fill} stroke={ring} stroke-width="3" stroke-dasharray={dashed ? '3 2' : undefined} />
+                <circle cx={x} cy={y} r="9" fill={fill} stroke={ring} stroke-width={dashed ? 1.6 : 3} stroke-dasharray={dashed ? '2.5 2' : undefined} />
                 <text x={x} y={y + 3.5} font-size={props.labels === 'coord' ? 7.5 : 9} text-anchor="middle" fill={ink}>
                   {p.transposition ? '⇄' : props.labels === 'coord' && p.pt ? ptName(p.pt) : (props.first ?? 0) + p.line.length - 1}
                 </text>

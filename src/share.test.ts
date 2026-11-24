@@ -2,8 +2,8 @@ import { loadDb } from './testdb'
 import { describe, expect, it } from 'vitest'
 import { buildGraph } from './core/graph'
 import { IDENTITY, parsePt } from './core/geometry'
-import { candidates, playFree, startStep, type Ctx, type Start } from './view'
-import { decodeLine, decodeView, encodeLine, encodeView, readUrl } from './share'
+import { candidates, openPath, playFree, startStep, type Ctx, type Start } from './view'
+import { decodeLine, decodeView, encodeLine, encodeView, linkFor, readUrl } from './share'
 
 const files = loadDb((p) => p.startsWith('general/joseki/'))
 const ctx: Ctx = { graph: buildGraph(files), active: new Set(['general']), order: ['general'], U: IDENTITY }
@@ -43,3 +43,24 @@ describe('shareable links', () => {
     expect(decodeView('tl-s')).toEqual({ corner: 'tl', mirror: false, swap: true })
   })
 })
+
+describe('opening a sequence directly', () => {
+  const start: Start = { kind: 'label', id: 'joseki/4-4 point/3-3 invasion' }
+  it('its line starts at the empty corner, through the main moves before it', () => {
+    const p = openPath(ctx, start)
+    expect(p.length).toBe(3) // empty corner, 4-4 stone, 3-3 invasion
+    expect(ctx.graph.nodes.get(p[0].key)!.board.flat().every((x) => x === 0)).toBe(true)
+    expect(p[2].key).toBe(ctx.graph.entries.get(start.id)!.root)
+    expect(startStep(ctx, start).key).toBe(p[0].key)
+  })
+  it('a link names the sequence and only the moves after its first position', () => {
+    ;(globalThis as { location?: unknown }).location ??= { origin: 'https://example.org', pathname: '/' }
+    const p = openPath(ctx, start)
+    const q = [...p, candidates(ctx, p[2])[0].step]
+    const url = new URL(linkFor(ctx, start, q, { corner: 'tr', mirror: false, swap: false })!)
+    expect(url.searchParams.get('open')).toBe(start.id)
+    expect(url.searchParams.get('line')!.split('.').length).toBe(1)
+    expect(decodeLine(ctx, start, url.searchParams.get('line')!).map((x) => x.key)).toEqual(q.map((x) => x.key))
+  })
+})
+

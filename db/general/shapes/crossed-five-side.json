@@ -4,17 +4,24 @@
       "id": "life & death/Crossed five/Side, enclosed",
       "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,rg,sc,sd,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,rh,sb,sh",
       "toPlay": "B",
-      "free": "horizontal",
-      "name": "Crossed five · side · enclosed",
-      "notes": [
+      "free": "side",
+      "comments": [
+        "Five points in a plus shape. The center is the vital point.",
         "{{SQ:S14,S15,S16,R15,T15|The crossed five}}. {{CR:S15|The center}} touches all four other points.",
         "One eye space of 5 points",
         "0 outside liberties"
       ],
-      "values": {
+      "tags": {
+        "name": [
+          "Crossed five · side · enclosed",
+          "Flower five",
+          "Plus five",
+          "Hanago",
+          "花五"
+        ],
         "black-first": "B-alive",
         "white-first": "B-dead",
-        "tags": [
+        "topics": [
           "eye shape",
           "killable eye shape"
         ],
@@ -24,82 +31,79 @@
         "inside-stones": "0",
         "arrangement": "connected",
         "difficulty": "20k",
-        "summary": "Five points in a plus shape. The center is the vital point.",
-        "aliases": [
-          "Flower five",
-          "Plus five",
-          "Hanago",
-          "花五"
-        ],
         "sources": [
           "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search."
         ]
-      },
-      "moves": [
-        {
-          "move": "re",
-          "to": "life & death/Crossed five/Side, enclosed/Black vital point",
-          "notes": [
-            "Takes the center: four single-point eyes."
-          ],
-          "values": {
-            "category": "main"
-          }
-        },
-        {
-          "move": "tenuki",
-          "to": "life & death/Crossed five/Side, enclosed/White first"
-        }
-      ]
+      }
     },
     {
       "id": "life & death/Crossed five/Side, enclosed/Black vital point",
       "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,re,rg,sc,sd,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,rh,sb,sh",
       "toPlay": "W",
-      "free": "horizontal",
-      "name": "Black vital point",
-      "notes": [
+      "free": "side",
+      "comments": [
         "Four eyes"
       ],
-      "values": {
+      "tags": {
+        "name": [
+          "Black vital point"
+        ],
         "black-first": "B-alive",
         "white-first": "B-alive"
-      },
-      "moves": []
+      }
     },
     {
       "id": "life & death/Crossed five/Side, enclosed/White first/White vital point",
       "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,rg,sc,sd,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,re,rh,sb,sh",
       "toPlay": "B",
-      "free": "horizontal",
-      "name": "White vital point",
-      "notes": [
+      "free": "side",
+      "comments": [
         "One eye"
       ],
-      "values": {
+      "tags": {
+        "name": [
+          "White vital point"
+        ],
         "black-first": "B-dead",
         "white-first": "B-dead"
-      },
-      "moves": []
+      }
     },
     {
       "id": "life & death/Crossed five/Side, enclosed/White first",
       "stones": "B:pd,pe,pf,qc,qd,qf,qg,rc,rg,sc,sd,sf,sg W:oc,od,oe,of,og,pb,pc,pg,ph,qb,qh,rb,rh,sb,sh",
       "toPlay": "W",
-      "free": "horizontal",
-      "name": "White first",
-      "moves": [
-        {
-          "move": "re",
-          "to": "life & death/Crossed five/Side, enclosed/White first/White vital point",
-          "notes": [
-            "Takes the center. {{Black}} can make only one eye."
-          ],
-          "values": {
-            "category": "main"
-          }
-        }
-      ]
+      "free": "side",
+      "tags": {
+        "name": [
+          "White first"
+        ]
+      }
+    }
+  ],
+  "moves": [
+    {
+      "from": "life & death/Crossed five/Side, enclosed",
+      "to": "life & death/Crossed five/Side, enclosed/Black vital point",
+      "comments": [
+        "Takes the center: four single-point eyes."
+      ],
+      "tags": {
+        "kind": "main"
+      }
+    },
+    {
+      "from": "life & death/Crossed five/Side, enclosed",
+      "to": "life & death/Crossed five/Side, enclosed/White first"
+    },
+    {
+      "from": "life & death/Crossed five/Side, enclosed/White first",
+      "to": "life & death/Crossed five/Side, enclosed/White first/White vital point",
+      "comments": [
+        "Takes the center. {{Black}} can make only one eye."
+      ],
+      "tags": {
+        "kind": "main"
+      }
     }
   ]
 }

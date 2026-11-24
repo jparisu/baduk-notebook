@@ -2,10 +2,10 @@
 import { useMemo, useState } from 'preact/hooks'
 import type { ComponentChildren } from 'preact'
 import { validateAll } from '../core/validate'
-import type { FieldDef, FieldOption, FieldType, Schema } from '../core/schema'
+import type { TagDef as FieldDef, TagOption as FieldOption, TagType as FieldType, TagRegistry } from '../core/tags'
 import { changes, download, makePatch, makeZip, type Workspace } from '../edit/workspace'
 import { parsePt, type Pt, type Sign } from '../core/geometry'
-import type { Free } from '../core/model'
+import { FREE_LABELS, type Free } from '../core/model'
 import type { NewEntry } from '../edit/ops'
 import type { DatabaseInfo } from '../data/load'
 import { BRANCH, REPO } from '../config'
@@ -141,7 +141,7 @@ export function NewEntryDialog({ type: initial, target, close, create }: { type:
   const [type, setType] = useState(initial)
   const [name, setName] = useState('')
   const [id, setId] = useState('')
-  const [free, setFree] = useState<Free>(type === 'joseki' ? 'corner' : 'horizontal')
+  const [free, setFree] = useState<Free>(type === 'joseki' ? 'corner' : 'side')
   const [diff, setDiff] = useState(type === 'shape' ? '25k' : '15k')
   const [preset, setPreset] = useState(type === 'joseki' ? '44' : 'empty')
   const [toMove, setToMove] = useState<Sign>(type === 'joseki' ? -1 : 1)
@@ -161,17 +161,14 @@ export function NewEntryDialog({ type: initial, target, close, create }: { type:
       <form onSubmit={submit} class="form">
         <div class="seg" role="group" aria-label="Kind">
           <button type="button" class={type === 'joseki' ? 'on' : ''} onClick={() => { setType('joseki'); setFree('corner'); setPreset('44'); setToMove(-1) }}>Joseki</button>
-          <button type="button" class={type === 'shape' ? 'on' : ''} onClick={() => { setType('shape'); setFree('horizontal'); setPreset('empty'); setToMove(1) }}>Life &amp; death</button>
+          <button type="button" class={type === 'shape' ? 'on' : ''} onClick={() => { setType('shape'); setFree('side'); setPreset('empty'); setToMove(1) }}>Life &amp; death</button>
         </div>
         <label class="f"><span class="fl">Name</span><input id="new-name" type="text" value={name} onInput={(e) => setName((e.target as HTMLInputElement).value)} placeholder={type === 'joseki' ? '3-4 point · small knight approach' : 'Bent four · corner'} /></label>
         <label class="f"><span class="fl">Sequence id</span><input id="new-id" type="text" value={finalId} onInput={(e) => setId((e.target as HTMLInputElement).value)} /></label>
         <label class="f">
           <span class="fl">Placement</span>
           <select id="new-free" value={free} onChange={(e) => setFree((e.target as HTMLSelectElement).value as Free)}>
-            <option value="corner">Fixed in the corner</option>
-            <option value="horizontal">Slides along the top edge</option>
-            <option value="vertical">Slides along the right edge</option>
-            <option value="anywhere">Anywhere</option>
+            {FREE_LABELS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </label>
         <label class="f"><span class="fl">Difficulty</span><input id="new-diff" type="text" value={diff} onInput={(e) => setDiff((e.target as HTMLInputElement).value)} /></label>
@@ -291,12 +288,16 @@ export function SaveLinesDialog(props: {
 
 const TYPES: [FieldType, string][] = [
   ['choice', 'Choice (dropdown or buttons)'], ['multi', 'Several choices'], ['slider', 'Slider (a bar between two ends)'],
-  ['flag', 'Flag (on or off)'], ['color', 'Color (Black / White)'], ['text', 'Text'], ['list', 'List of words (like Tags)'],
+  ['number', 'Number'], ['flag', 'Yes / no'], ['color', 'Color (Black / White)'], ['rank', 'Rank (15k, 2d…)'], ['text', 'Text'],
+  ['list', 'List of texts'], ['board', 'Shapes on the board'],
 ]
 
-/** Edits the value schema (db/schema.json): keys, their type, options, icons, colors and swap behavior. */
-export function SchemaDialog({ schema, save, close }: { schema: Schema; save: (s: Schema) => void; close: () => void }) {
-  const [fields, setFields] = useState<FieldDef[]>(() => JSON.parse(JSON.stringify(schema.fields)))
+/**
+ * Edits the tag descriptions (db/tags.json): how the interface shows and edits a key — label, type,
+ * options, icons, colors and swap behavior. Keys that are not described still work, shown as key: value.
+ */
+export function TagsDialog({ registry, save, close }: { registry: TagRegistry; save: (r: TagRegistry) => void; close: () => void }) {
+  const [fields, setFields] = useState<FieldDef[]>(() => JSON.parse(JSON.stringify(registry.tags)))
   const [sel, setSel] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const f = fields[sel]
@@ -315,22 +316,22 @@ export function SchemaDialog({ schema, save, close }: { schema: Schema; save: (s
     const bad = fields.find((x) => !/^[a-z0-9][a-z0-9-]*$/.test(x.key))
     if (bad) return setError(`"${bad.key || '(empty)'}": keys use lowercase letters, digits and hyphens.`)
     if (new Set(keys).size !== keys.length) return setError('Two keys have the same name.')
-    if (!keys.includes('category')) return setError('The "category" key (This move is) is needed by the app.')
-    save({ fields })
+    if (!keys.includes('kind')) return setError('The "kind" key (main move, mistake…) is needed by the app.')
+    save({ tags: fields })
     close()
   }
   return (
-    <Shell title="Keys of positions and moves" close={close}>
-      <p class="hint">Every position and move has a list of notes and values for these keys. Changes are saved in this browser; <b>Export / pull request</b> proposes them as <code>db/schema.json</code>.</p>
+    <Shell title="Known tags" close={close}>
+      <p class="hint">Positions and moves can carry any tag. The keys described here are shown and edited their own way; any other key appears as key: value. Changes are saved in this browser; <b>Export / pull request</b> proposes them as <code>db/tags.json</code>.</p>
       <div class="schema-edit">
         <div class="schema-list" role="listbox" aria-label="Keys">
           {fields.map((x, i) => (
             <button key={i} role="option" aria-selected={i === sel} class={i === sel ? 'on' : ''} onClick={() => setSel(i)}>
               <span>{x.icon ?? ''} {x.label || x.key}</span>
-              <small>{{ move: 'move', position: 'position', sequence: 'joseki' }[x.for]} · {x.type}</small>
+              <small>{x.for ?? 'any'}{x.panel === 'sequence' ? ' · joseki' : ''} · {x.type}</small>
             </button>
           ))}
-          <button class="add" onClick={() => { setFields([...fields, { key: `key-${fields.length + 1}`, label: 'New key', for: 'position', type: 'choice', options: [] }]); setSel(fields.length) }}>+ New key</button>
+          <button class="add" onClick={() => { setFields([...fields, { key: `key-${fields.length + 1}`, label: 'New key', type: 'choice', options: [] }]); setSel(fields.length) }}>+ New key</button>
         </div>
         {f && (
           <div class="schema-field">
@@ -338,23 +339,30 @@ export function SchemaDialog({ schema, save, close }: { schema: Schema; save: (s
               <button onClick={() => { setFields(move(fields, sel, -1)); setSel(Math.max(0, sel - 1)) }} disabled={sel === 0}>↑</button>
               <button onClick={() => { setFields(move(fields, sel, 1)); setSel(Math.min(fields.length - 1, sel + 1)) }} disabled={sel === fields.length - 1}>↓</button>
               <span class="spacer" />
-              <button class="danger-text" disabled={f.key === 'category'} onClick={() => { setFields(fields.filter((_, i) => i !== sel)); setSel(Math.max(0, sel - 1)) }}>Remove key</button>
+              <button class="danger-text" disabled={f.key === 'kind'} onClick={() => { setFields(fields.filter((_, i) => i !== sel)); setSel(Math.max(0, sel - 1)) }}>Remove key</button>
             </div>
             <label class="f"><span class="fl">Label</span><input id="schema-label" value={f.label} onInput={(e) => upd({ label: (e.target as HTMLInputElement).value })} /></label>
-            <label class="f"><span class="fl">Key</span><input id="schema-key" value={f.key} onInput={(e) => upd({ key: (e.target as HTMLInputElement).value.trim() })} disabled={f.key === 'category'} /></label>
-            <label class="f"><span class="fl">Applies to</span>
-              <select value={f.for} onChange={(e) => upd({ for: (e.target as HTMLSelectElement).value as FieldDef['for'] })}>
-                <option value="move">Moves</option><option value="position">Positions</option><option value="sequence">Joseki (start of a sequence)</option>
+            <label class="f"><span class="fl">Key</span><input id="schema-key" value={f.key} onInput={(e) => upd({ key: (e.target as HTMLInputElement).value.trim() })} disabled={f.key === 'kind'} /></label>
+            <label class="f"><span class="fl">Offered on</span>
+              <select value={f.for ?? ''} onChange={(e) => upd({ for: ((e.target as HTMLSelectElement).value || undefined) as FieldDef['for'] })}>
+                <option value="">Positions and moves</option><option value="move">Moves</option><option value="position">Positions</option>
               </select>
             </label>
+            <label class="f"><span class="fl">Shown in</span>
+              <select value={f.panel ?? ''} onChange={(e) => upd({ panel: ((e.target as HTMLSelectElement).value || undefined) as FieldDef['panel'] })}>
+                <option value="">The position or move panel</option><option value="sequence">This joseki (from the start of the sequence)</option>
+              </select>
+            </label>
+            <label class="f"><span class="fl">Suggested</span><span><input type="checkbox" checked={!!f.suggest} onChange={(e) => upd({ suggest: (e.target as HTMLInputElement).checked || undefined })} /> always offered in the editor, even without a value</span></label>
             <label class="f"><span class="fl">Type</span>
               <select id="schema-type" value={f.type} onChange={(e) => upd({ type: (e.target as HTMLSelectElement).value as FieldType })}>
                 {TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </label>
             <label class="f"><span class="fl">Icon</span><input value={f.icon ?? ''} placeholder="a symbol or emoji" onInput={(e) => upd({ icon: (e.target as HTMLInputElement).value || undefined })} /></label>
-            <label class="f"><span class="fl">Hint</span><input value={f.hint ?? ''} onInput={(e) => upd({ hint: (e.target as HTMLInputElement).value || undefined })} /></label>
-            {f.for === 'position' && <label class="f"><span class="fl">Inherited</span><span><input type="checkbox" checked={!!f.inherit} onChange={(e) => upd({ inherit: (e.target as HTMLInputElement).checked || undefined })} /> later positions show it until they set their own</span></label>}
+            <label class="f"><span class="fl">Description</span><input id="schema-description" value={f.description ?? ''} placeholder="What it means (shown when you hover its name)" onInput={(e) => upd({ description: (e.target as HTMLInputElement).value || undefined })} /></label>
+            <label class="f"><span class="fl">Hint</span><input value={f.hint ?? ''} placeholder="Help in the editor" onInput={(e) => upd({ hint: (e.target as HTMLInputElement).value || undefined })} /></label>
+            {f.for !== 'move' && <label class="f"><span class="fl">Inherited</span><span><input type="checkbox" checked={!!f.inherit} onChange={(e) => upd({ inherit: (e.target as HTMLInputElement).checked || undefined })} /> later positions show it until they set their own</span></label>}
             {f.type === 'choice' && (
               <label class="f"><span class="fl">Shown as</span>
                 <select value={f.control ?? 'dropdown'} onChange={(e) => upd({ control: (e.target as HTMLSelectElement).value as 'buttons' | 'dropdown' })}><option value="dropdown">Dropdown</option><option value="buttons">Buttons</option></select>
@@ -381,12 +389,13 @@ export function SchemaDialog({ schema, save, close }: { schema: Schema; save: (s
                     <input class="o-icon" value={o.icon ?? ''} placeholder="icon" aria-label="Icon" onInput={(e) => updOpt(k, { icon: (e.target as HTMLInputElement).value || undefined })} />
                     <input class="o-label" value={o.label} placeholder="label" aria-label="Label" onInput={(e) => updOpt(k, { label: (e.target as HTMLInputElement).value })} />
                     <input class="o-value" value={o.value} placeholder="value" aria-label="Stored value" onInput={(e) => updOpt(k, { value: (e.target as HTMLInputElement).value.trim() })} />
+                    <input class="o-desc" value={o.description ?? ''} placeholder="what it means" aria-label="Description" onInput={(e) => updOpt(k, { description: (e.target as HTMLInputElement).value || undefined })} />
                     <input class="o-color" type="color" value={o.color ?? '#888888'} aria-label="Color" onInput={(e) => updOpt(k, { color: (e.target as HTMLInputElement).value })} />
                     <select aria-label="With Swap colors it becomes" value={o.swap ?? ''} onChange={(e) => updOpt(k, { swap: (e.target as HTMLSelectElement).value || undefined })}>
                       <option value="">no swap</option>
                       {opts.filter((x) => x.value !== o.value).map((x) => <option key={x.value} value={x.value}>⇄ {x.label}</option>)}
                     </select>
-                    {f.key === 'category' && <label title="Counts as a good move"><input type="checkbox" checked={!!o.good} onChange={(e) => updOpt(k, { good: (e.target as HTMLInputElement).checked || undefined })} />good</label>}
+                    {f.key === 'kind' && <label title="Counts as a good move"><input type="checkbox" checked={!!o.good} onChange={(e) => updOpt(k, { good: (e.target as HTMLInputElement).checked || undefined })} />good</label>}
                     <button class="icon ghost" aria-label="Move up" onClick={() => upd({ options: move(opts, k, -1) })}>↑</button>
                     <button class="icon ghost" aria-label="Remove option" onClick={() => upd({ options: opts.filter((_, i) => i !== k) })}>×</button>
                   </div>
@@ -398,7 +407,7 @@ export function SchemaDialog({ schema, save, close }: { schema: Schema; save: (s
         )}
       </div>
       {error && <p class="error">{error}</p>}
-      <div class="actions"><button onClick={close}>Cancel</button><button class="on" onClick={submit}>Save keys</button></div>
+      <div class="actions"><button onClick={close}>Cancel</button><button class="on" onClick={submit}>Save tags</button></div>
     </Shell>
   )
 }

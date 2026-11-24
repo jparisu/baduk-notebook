@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { buildGraph } from '../core/graph'
 import { IDENTITY, parsePt } from '../core/geometry'
 import { writeDbFile } from '../core/model'
-import { candidates, startStep, type Ctx, type Step } from '../view'
+import { candidates, rootStep, type Ctx, type Step } from '../view'
 import { createWorkspace, changes, makePatch } from './workspace'
-import { addMove, checkMove, createDatabase, deleteMove, locate, nameSequence, setProps } from './ops'
+import { addMove, checkMove, createDatabase, deleteMove, locate, nameSequence, setComments, setTags } from './ops'
 import { listDb, readDb } from '../testdb'
 
 const DBS = [
@@ -19,7 +19,7 @@ function setup() {
   let ctx = ctxOf()
   /** The 3-3 invasion line: 4-4 stone, then the first move each time. */
   const line = (n: number): Step[] => {
-    const p = [startStep(ctx, { kind: 'label', id: 'joseki/4-4 point' })]
+    const p = [rootStep(ctx, 'joseki/4-4 point')]
     p.push(candidates(ctx, p[0]).find((c) => c.pt && c.pt[0] === 16 && c.pt[1] === 2)!.step) // R17
     for (let i = 1; i < n; i++) p.push(candidates(ctx, p[p.length - 1])[0].step)
     return p
@@ -52,14 +52,17 @@ describe('edit operations', () => {
     expect(checkMove(t.ctx(), tenuki, -1, null).ok).toBe(false)
   })
 
-  it('writes notes into a new database: the line is created there with the same ids', () => {
+  it('writes comments and tags into a new database: the line is created there with the same ids', () => {
     const t = setup()
     expect(createDatabase(t.ws, { id: 'mine', name: 'Mine', description: '', color: '#123456', activeByDefault: true })).toBeNull()
     const path = t.line(2)
     const loc = locate(t.ws, t.ctx(), path, 'mine', INV, true)!
-    setProps(t.ws, loc, { XPN: ['My note'], XCAT: ['main'] })
-    expect(loc.move?.data.XCAT).toEqual(['main']) // move fields go to the move
-    expect(loc.pos.data.XPN).toEqual(['My note'])
+    setTags(t.ws, loc, 'move', { kind: 'main', 'my-own-key': 3 })
+    setComments(t.ws, loc, 'pos', ['My note', ' '])
+    expect(loc.move?.tags).toEqual({ kind: 'main', 'my-own-key': 3 })
+    expect(loc.pos.comments).toEqual(['My note'])
+    setTags(t.ws, loc, 'move', { 'my-own-key': null })
+    expect(loc.move?.tags).toEqual({ kind: 'main' })
     t.rebuild()
     const node = t.ctx().graph.nodes.get(path[2].key)!
     const ids = new Set(node.contribs.map((c) => c.pos.id))
@@ -92,6 +95,6 @@ describe('edit operations', () => {
     const next = candidates(t.ctx(), path[2])[0]
     expect(g.nodes.get(next.step.key)!.contribs.find((c) => c.db === 'general')!.pos.id.startsWith(`${INV}/test:`)).toBe(true)
     expect(g.problems).toEqual([])
-    expect(writeDbFile(t.ws.files.find((f) => f.positions.some((p) => p.id === `${INV}/test`))!)).toContain('"name": "Test"')
+    expect(writeDbFile(t.ws.files.find((f) => f.positions.some((p) => p.id === `${INV}/test`))!)).toMatch(/"name": \[\s*"Test"/)
   })
 })

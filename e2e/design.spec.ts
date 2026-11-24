@@ -19,7 +19,10 @@ test('builds a mistake line: right-click to classify, name it, save it, export i
   await page.locator('.dtree-canvas .tree-node', { hasText: 'S18' }).click({ button: 'right' })
   await page.locator('.ctx-menu').getByRole('menuitem', { name: 'Mistake', exact: true }).click()
   await expect(page.locator('.toast')).toContainText('Saved as mistake in jparisu')
-  await page.locator('.design-info').getByRole('tab', { name: 'Name' }).click()
+  // The selected position: one panel with its tags, its name and the move into it.
+  await page.locator('.dtree-canvas .tree-node', { hasText: 'S18' }).click()
+  await expect(page.locator('.design-info .move-in-head')).toContainText('White S18')
+  await page.locator('.design-info').getByRole('tab', { name: 'Position' }).click()
   await page.locator('#f-name-new').fill('3-3 point · 2-2 invasion')
   await page.getByRole('button', { name: 'Name this position' }).click()
   await expect(page.locator('.design-board .status')).toContainText('2-2 invasion')
@@ -59,7 +62,8 @@ test('the library shows mistake joseki only when asked', async ({ page }) => {
   await clickPoint(page, 'S18')
   await page.locator('.dtree-canvas .tree-node', { hasText: 'S18' }).click({ button: 'right' })
   await page.locator('.ctx-menu').getByRole('menuitem', { name: 'Mistake', exact: true }).click()
-  await page.locator('.design-info').getByRole('tab', { name: 'Name' }).click()
+  await page.locator('.dtree-canvas .tree-node', { hasText: 'S18' }).click()
+  await page.locator('.design-info').getByRole('tab', { name: 'Position' }).click()
   await page.locator('#f-name-new').fill('2-2 invasion')
   await page.getByRole('button', { name: 'Name this position' }).click()
   await page.locator('.top .modes').getByText('Explore').click()
@@ -87,5 +91,80 @@ test('position fields show the value inherited from earlier moves until you writ
   await openDesign(page, './?open=joseki/4-4+point')
   await clickPoint(page, 'S12') // a new move: the position has no explanation of its own
   await page.locator('.design-info').getByRole('tab', { name: 'Position' }).click()
-  await expect(page.locator('.design-info .hint.inherited').first()).toContainText('Inherited from the start')
+  // The 4-4 stone (move 1: the line starts at the empty corner) sets values this position inherits.
+  await expect(page.locator('.design-info .tag-row.from-inherited .src-badge').first()).toHaveText('move 1')
+})
+
+test('the next moves are ordered in the editor; the first is the main move, and the tree and → follow it', async ({ page }) => {
+  await openDesign(page, './?open=joseki/4-4+point/3-3+invasion')
+  for (let i = 0; i < 2; i++) await page.keyboard.press('ArrowRight') // Black Q17, White R16: Black has three answers
+  await page.locator('.design-info').getByRole('tab', { name: 'Position' }).click()
+  const rows = page.locator('.order-list .order-row')
+  await expect(rows).toHaveCount(3)
+  const first = (await rows.nth(0).locator('b').textContent())!, second = (await rows.nth(1).locator('b').textContent())!
+  await expect(rows.nth(0)).toContainText('main')
+  await rows.nth(0).getByRole('button', { name: `Move ${first} down` }).click()
+  await expect(page.locator('.toast')).toContainText('Order of the next moves saved in jparisu')
+  await expect(rows.nth(0).locator('b')).toHaveText(second)
+  await expect(rows.nth(0)).toContainText('main')
+  await page.locator('.design-board').click({ position: { x: 5, y: 5 } }) // focus off the list
+  await page.keyboard.press('ArrowRight')
+  await expect(page.locator('.design-board .status')).toContainText(`Move 5: Black ${second}`)
+})
+
+test('values from another database are shown with it, and can be removed', async ({ page }) => {
+  await openDesign(page, './?open=joseki/4-4+point/3-3+invasion')
+  await page.locator('.design-info').getByRole('tab', { name: 'Position' }).click()
+  const status = page.locator('.design-info .tag-row', { has: page.locator('#f-pos-status') })
+  await expect(status.locator('.src-badge')).toHaveText('general') // edits go into jparisu; the value is in general
+  await expect(page.locator('#f-pos-status')).toHaveValue('progress')
+  await status.getByRole('button', { name: 'Remove Status' }).click()
+  await expect(page.locator('.toast')).toContainText('Status removed from general')
+  await expect(page.locator('#f-pos-status')).toHaveCount(0)
+  // The badge switches the edits to the database that stores a value.
+  const evaluation = page.locator('.design-info .tag-row', { has: page.locator('#f-pos-evaluation') })
+  await evaluation.getByRole('button', { name: 'general' }).click()
+  await expect(page.locator('.toast')).toContainText('Editing into general')
+  // Options explain themselves on hover.
+  await page.locator('.design-info').getByRole('tab', { name: /Move into it/ }).click()
+  await expect(page.locator('.cat-btn', { hasText: 'Alternative' })).toHaveAttribute('title', /unusual but valid play/)
+})
+
+test('a tag can be removed right after it is added, on the position and on the move alike', async ({ page }) => {
+  await openDesign(page, './?open=joseki/4-4+point/3-3+invasion')
+  await page.keyboard.press('ArrowRight')
+  const info = page.locator('.design-info')
+  for (const [tab, on] of [['Position', 'pos'], [/Move into it/, 'move']] as const) {
+    await info.getByRole('tab', { name: tab }).click()
+    const chip = info.locator('.add-chip:not(.new):not(.free)').first()
+    const name = (await chip.textContent())!.replace('+ ', '')
+    await chip.click()
+    const row = info.locator('.tag-row', { has: page.locator('.tag-name', { hasText: name }) })
+    await expect(row).toHaveCount(1)
+    await row.getByRole('button', { name: `Remove ${name}` }).click()
+    await expect(row).toHaveCount(0)
+    // A new key, with a value, then removed.
+    await info.locator(`#add-tag-${on}`).click()
+    await info.locator(`#add-tag-key-${on}`).fill('my key')
+    await info.locator('.new-key').getByRole('button', { name: 'Add' }).click()
+    await info.locator(`#f-${on}-my-key`).fill('x')
+    await info.locator(`#f-${on}-my-key`).blur()
+    await info.getByRole('button', { name: 'Remove My key' }).click()
+    await expect(info.locator(`#f-${on}-my-key`)).toHaveCount(0)
+  }
+})
+
+test('naming a position: parents (current ones by default) can be removed and added', async ({ page }) => {
+  await openDesign(page, './?open=joseki/3-3+point')
+  await clickPoint(page, 'S18')
+  await page.locator('.design-info').getByRole('tab', { name: 'Position' }).click()
+  await expect(page.locator('.seq-preview')).toHaveText('joseki/3-3 point/2')
+  await page.getByRole('button', { name: 'Remove parent 3-3 point' }).click()
+  await page.getByLabel('Add a parent').fill('mistakes')
+  await page.getByLabel('Add a parent').press('Enter')
+  await page.locator('#f-name-new').fill('2-2 invasion')
+  await expect(page.locator('.seq-preview')).toHaveText('joseki/mistakes/2-2 invasion')
+  await page.getByRole('button', { name: 'Name this position' }).click()
+  await expect(page.locator('.toast')).toContainText('Named this position "2-2 invasion"')
+  await expect(page.locator('.design-board .status')).toContainText('2-2 invasion')
 })
