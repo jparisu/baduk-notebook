@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="description" content="A personal notebook to study and annotate Go joseki and shapes." />
+    <title>Baduk Notebook</title>
+    <script>
+      // Apply the saved theme before the first paint, so the page never flashes the wrong colors.
+      try {
+        // Pull request previews use their own storage names (see src/storage.ts).
+        var base = '/baduk-notebook/pr-preview/pr-13/'
+        var key = 'baduk-notebook.settings' + (base === '/baduk-notebook/' || base === '/' ? '' : '@' + base)
+        var s = JSON.parse(localStorage.getItem(key) || '{}')
+        document.documentElement.dataset.style = s.theme || 'modern'
+        document.documentElement.dataset.mode = s.colorMode || 'auto'
+      } catch (e) {
+        document.documentElement.dataset.style = 'modern'
+        document.documentElement.dataset.mode = 'auto'
+      }
+    </script>
+    <script type="module" crossorigin src="/baduk-notebook/pr-preview/pr-13/assets/index-CLSuDVFs.js"></script>
+    <link rel="stylesheet" crossorigin href="/baduk-notebook/pr-preview/pr-13/assets/index-2NbjStbd.css">
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>

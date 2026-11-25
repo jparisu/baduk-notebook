@@ -1,0 +1,187 @@
+{
+  "positions": [
+    {
+      "id": "life & death/Bent four/Corner",
+      "stones": "B:pa,pb,qb,rb,rc,sc W:oa,ob,oc,pc,qc,qd,rd,sd",
+      "toPlay": "B",
+      "comments": [
+        "Bent four with the bend on the 1-1 point. Normally bent four is alive, but in the corner it is unsettled: {{Black}} lives by playing first, and if {{White}} plays first it becomes a ko.",
+        "{{SQ:R19,S19,T19,T18|The 4-point eye space}}, with {{TR:T19|the bend on the 1-1 point}}. {{CR:S19|The 1-2 point on the long side}} is the vital point.",
+        "One eye space of 4 points",
+        "0 outside liberties",
+        "Rules: Under Japanese rules a group that cannot stop this shape from being reached is dead: the attacker removes all ko threats first and only then starts the ko, so it does not have to be played out. Under Chinese and AGA rules it has to be played out as a ko."
+      ],
+      "tags": {
+        "name": [
+          "Bent four in the corner",
+          "Sumi no magari yonmoku",
+          "隅の曲り四目",
+          "盘角曲四",
+          "귀곡사"
+        ],
+        "black-first": "B-alive",
+        "white-first": "ko",
+        "topics": [
+          "eye shape",
+          "ko",
+          "rules"
+        ],
+        "eye-space": "4",
+        "surrounded": "full",
+        "outside-liberties": "0",
+        "inside-stones": "0",
+        "arrangement": "connected",
+        "ko-type": "direct",
+        "difficulty": "10k",
+        "sources": [
+          "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search."
+        ]
+      }
+    },
+    {
+      "id": "life & death/Bent four/Corner/Black vital point",
+      "stones": "B:pa,pb,qb,ra,rb,rc,sc W:oa,ob,oc,pc,qc,qd,rd,sd",
+      "toPlay": "W",
+      "comments": [
+        "Two eyes"
+      ],
+      "tags": {
+        "name": [
+          "Black vital point"
+        ],
+        "black-first": "B-alive",
+        "white-first": "B-alive"
+      }
+    },
+    {
+      "id": "life & death/Bent four/Corner/White first/White vital point",
+      "stones": "B:pa,pb,qb,rb,rc,sc W:oa,ob,oc,pc,qc,qd,ra,rd,sd",
+      "toPlay": "B",
+      "tags": {
+        "name": [
+          "White vital point"
+        ],
+        "black-first": "ko",
+        "white-first": "B-dead"
+      }
+    },
+    {
+      "id": "life & death/Bent four/Corner/White first",
+      "stones": "B:pa,pb,qb,rb,rc,sc W:oa,ob,oc,pc,qc,qd,rd,sd",
+      "toPlay": "W",
+      "tags": {
+        "name": [
+          "White first"
+        ]
+      }
+    },
+    {
+      "id": "life & death/Bent four/Corner/White first:3b",
+      "stones": "B:pa,pb,qb,rb,rc,sa,sc W:oa,ob,oc,pc,qc,qd,ra,rd,sd",
+      "toPlay": "W",
+      "tags": {
+        "black-first": "B-alive",
+        "white-first": "ko"
+      }
+    },
+    {
+      "id": "life & death/Bent four/Corner/White first:4",
+      "stones": "B:pa,pb,qb,rb,rc,sc W:oa,ob,oc,pc,qc,qd,ra,rd,sb,sd",
+      "toPlay": "B",
+      "comments": [
+        "Ko: {{White}} has taken first. If {{Black}} wins the ko, {{Black}} lives."
+      ],
+      "tags": {
+        "black-first": "ko",
+        "white-first": "B-dead"
+      }
+    },
+    {
+      "id": "life & death/Bent four/Corner/White first/White T19",
+      "stones": "B:pa,pb,qb,rb,rc,sc W:oa,ob,oc,pc,qc,qd,rd,sa,sd",
+      "toPlay": "B",
+      "tags": {
+        "name": [
+          "White T19"
+        ],
+        "black-first": "B-alive",
+        "white-first": "B-dead"
+      }
+    },
+    {
+      "id": "life & death/Bent four/Corner/White first:3",
+      "stones": "B:pa,pb,qb,ra,rb,rc,sc W:oa,ob,oc,pc,qc,qd,rd,sa,sd",
+      "toPlay": "W",
+      "tags": {
+        "black-first": "B-alive",
+        "white-first": "B-alive"
+      }
+    }
+  ],
+  "moves": [
+    {
+      "from": "life & death/Bent four/Corner",
+      "to": "life & death/Bent four/Corner/Black vital point",
+      "comments": [
+        "Takes the vital point: {{SQ:R19}} and {{SQ:T19,T18}} become two eyes."
+      ],
+      "tags": {
+        "kind": "main"
+      }
+    },
+    {
+      "from": "life & death/Bent four/Corner",
+      "to": "life & death/Bent four/Corner/White first"
+    },
+    {
+      "from": "life & death/Bent four/Corner/White first/White vital point",
+      "to": "life & death/Bent four/Corner/White first:3b",
+      "comments": [
+        "{{Black}}'s best: it puts {{TR:S19|the {{white}} stone}} in atari."
+      ],
+      "tags": {
+        "kind": "situational"
+      }
+    },
+    {
+      "from": "life & death/Bent four/Corner/White first",
+      "to": "life & death/Bent four/Corner/White first/White vital point",
+      "comments": [
+        "Takes the vital point. {{Black}} cannot make two eyes without a ko."
+      ],
+      "tags": {
+        "kind": "main"
+      }
+    },
+    {
+      "from": "life & death/Bent four/Corner/White first",
+      "to": "life & death/Bent four/Corner/White first/White T19",
+      "comments": [
+        "The 1-1 point is not the vital point."
+      ],
+      "tags": {
+        "kind": "mistake"
+      }
+    },
+    {
+      "from": "life & death/Bent four/Corner/White first:3b",
+      "to": "life & death/Bent four/Corner/White first:4",
+      "comments": [
+        "Captures {{TR:T19}} and takes the ko first. {{Black}} needs a ko threat."
+      ],
+      "tags": {
+        "kind": "situational"
+      }
+    },
+    {
+      "from": "life & death/Bent four/Corner/White first/White T19",
+      "to": "life & death/Bent four/Corner/White first:3",
+      "comments": [
+        "{{Black}} lives: {{White}} cannot approach from either side."
+      ],
+      "tags": {
+        "kind": "main"
+      }
+    }
+  ]
+}

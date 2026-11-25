@@ -1,0 +1,265 @@
+{
+  "positions": [
+    {
+      "id": "joseki/3-3 point/Shoulder hit",
+      "stones": "B:qc W:pd",
+      "toPlay": "B",
+      "comments": [
+        "{{White}} presses on the 3-3 stone from the outside. {{Black}} pushes and slides along the side for territory; {{White}} builds influence and then jumps out or blocks. Source: 33PointShoulderHit.",
+        "{{TR:Q16|{{White}}'s shoulder hit}} on {{TR:R17|the 3-3 stone}}. The corner is already secure, so {{White}} plays on the outside. Shoulder hit: keeps {{Black}} low and builds influence."
+      ],
+      "tags": {
+        "name": [
+          "3-3 point · shoulder hit",
+          "San-san katatsuki",
+          "三々肩ツキ"
+        ],
+        "evaluation": 0,
+        "status": "start",
+        "topics": [
+          "influence",
+          "basic joseki"
+        ],
+        "difficulty": "15k",
+        "sources": [
+          "Sensei's Library (senseis.xmp.net), joseki pages listed in XSUM. Sequences copied from its diagrams and mirrored to the top-right corner."
+        ]
+      }
+    },
+    {
+      "id": "joseki/3-3 point/Shoulder hit:3",
+      "stones": "B:qc,qd W:pd",
+      "toPlay": "W",
+      "tags": {
+        "evaluation": 0,
+        "status": "progress"
+      }
+    },
+    {
+      "id": "joseki/3-3 point/Shoulder hit:4",
+      "stones": "B:qc,qd W:pd,pe",
+      "toPlay": "B",
+      "tags": {
+        "evaluation": 0,
+        "status": "progress"
+      }
+    },
+    {
+      "id": "joseki/3-3 point/Shoulder hit:5",
+      "stones": "B:ob,qc,qd W:pd,pe",
+      "toPlay": "W",
+      "tags": {
+        "evaluation": 0,
+        "status": "progress"
+      }
+    },
+    {
+      "id": "joseki/3-3 point/Shoulder hit:6",
+      "stones": "B:ob,qc,qd W:md,pd,pe",
+      "toPlay": "B",
+      "tags": {
+        "evaluation": 0,
+        "status": "progress"
+      }
+    },
+    {
+      "id": "joseki/3-3 point/Shoulder hit:7",
+      "stones": "B:ob,qc,qd,rf W:md,pd,pe",
+      "toPlay": "W",
+      "tags": {
+        "evaluation": 0,
+        "status": "progress"
+      }
+    },
+    {
+      "id": "joseki/3-3 point/Shoulder hit:8",
+      "stones": "B:ob,qc,qd,rf W:md,pd,pe,ph",
+      "toPlay": "B",
+      "comments": [
+        "Outcome: {{Black}} has the corner and some side territory; {{White}} has influence toward the center."
+      ],
+      "tags": {
+        "evaluation": 0,
+        "status": "end",
+        "sente": "B"
+      }
+    },
+    {
+      "id": "joseki/3-3 point/Shoulder hit:6b",
+      "stones": "B:ob,qc,qd W:pd,pe,qe",
+      "toPlay": "B",
+      "tags": {
+        "evaluation": 0,
+        "status": "progress"
+      }
+    },
+    {
+      "id": "joseki/3-3 point/Shoulder hit:7b",
+      "stones": "B:nd,ob,qc,qd W:pd,pe,qe",
+      "toPlay": "W",
+      "tags": {
+        "evaluation": 0,
+        "status": "progress"
+      }
+    },
+    {
+      "id": "joseki/3-3 point/Shoulder hit:8b",
+      "stones": "B:nd,ob,qc,qd W:pd,pe,qe,qi",
+      "toPlay": "B",
+      "comments": [
+        "Outcome: {{White}} takes the left side; {{Black}} presses along the top."
+      ],
+      "tags": {
+        "evaluation": 0,
+        "status": "end",
+        "sente": "B"
+      }
+    }
+  ],
+  "moves": [
+    {
+      "from": "joseki/3-3 point/Shoulder hit",
+      "to": "joseki/3-3 point/Shoulder hit:3",
+      "comments": [
+        "Pushes along the side. Push on the side where {{White}}'s wall would work worse."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "territory"
+        ]
+      }
+    },
+    {
+      "from": "joseki/3-3 point/Shoulder hit:3",
+      "to": "joseki/3-3 point/Shoulder hit:4",
+      "comments": [
+        "Stretches."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "balanced"
+        ],
+        "purpose": [
+          "influence"
+        ]
+      }
+    },
+    {
+      "from": "joseki/3-3 point/Shoulder hit:4",
+      "to": "joseki/3-3 point/Shoulder hit:5",
+      "comments": [
+        "Keima slide: the most common move, taking territory along the top."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "balanced"
+        ],
+        "purpose": [
+          "territory"
+        ]
+      }
+    },
+    {
+      "from": "joseki/3-3 point/Shoulder hit:5",
+      "to": "joseki/3-3 point/Shoulder hit:6",
+      "comments": [
+        "Jumps, keeping the emphasis on the outside."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "balanced"
+        ],
+        "purpose": [
+          "influence"
+        ]
+      }
+    },
+    {
+      "from": "joseki/3-3 point/Shoulder hit:5",
+      "to": "joseki/3-3 point/Shoulder hit:6b",
+      "comments": [
+        "Blocks, taking the left side instead of the center."
+      ],
+      "tags": {
+        "kind": "alt",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "territory"
+        ]
+      }
+    },
+    {
+      "from": "joseki/3-3 point/Shoulder hit:6",
+      "to": "joseki/3-3 point/Shoulder hit:7",
+      "comments": [
+        "Correct shape on the left side."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "territory"
+        ]
+      }
+    },
+    {
+      "from": "joseki/3-3 point/Shoulder hit:7",
+      "to": "joseki/3-3 point/Shoulder hit:8",
+      "comments": [
+        "Nice shape, but slow: {{White}} often plays elsewhere instead."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "balanced"
+        ],
+        "purpose": [
+          "influence"
+        ]
+      }
+    },
+    {
+      "from": "joseki/3-3 point/Shoulder hit:6b",
+      "to": "joseki/3-3 point/Shoulder hit:7b",
+      "comments": [
+        "Plays in the direction {{White}} neglected."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "aggressive"
+        ],
+        "purpose": [
+          "attack"
+        ]
+      }
+    },
+    {
+      "from": "joseki/3-3 point/Shoulder hit:7b",
+      "to": "joseki/3-3 point/Shoulder hit:8b",
+      "comments": [
+        "Extends to stabilize."
+      ],
+      "tags": {
+        "kind": "main",
+        "intention": [
+          "solid"
+        ],
+        "purpose": [
+          "eye"
+        ]
+      }
+    }
+  ]
+}

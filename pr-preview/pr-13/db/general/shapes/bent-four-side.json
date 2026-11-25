@@ -1,0 +1,148 @@
+{
+  "positions": [
+    {
+      "id": "life & death/Bent four/Side, enclosed",
+      "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,sh",
+      "toPlay": "B",
+      "free": "side",
+      "comments": [
+        "Four points with a bend, away from the corner. Alive: the two middle points are miai, just as in straight four. In the corner it is a different story: see \"Bent four in the corner\".",
+        "{{SQ:T16,T15,T14,S14|The 4-point eye space}} has {{CR:T15,T14|two middle points}}. {{White}} can take only one of them.",
+        "One eye space of 4 points",
+        "0 outside liberties"
+      ],
+      "tags": {
+        "name": [
+          "Bent four · side · enclosed",
+          "Kyokushi",
+          "Magari yonmoku",
+          "曲がり四目",
+          "曲四"
+        ],
+        "black-first": "B-alive",
+        "white-first": "B-alive",
+        "topics": [
+          "eye shape"
+        ],
+        "eye-space": "4",
+        "surrounded": "full",
+        "outside-liberties": "0",
+        "inside-stones": "0",
+        "arrangement": "connected",
+        "difficulty": "25k",
+        "sources": [
+          "Sensei's Library (senseis.xmp.net): KillableEyeshapes and the shape's own page. Results checked with a small life-and-death search."
+        ]
+      }
+    },
+    {
+      "id": "life & death/Bent four/Side, enclosed/White first/White T15",
+      "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,se,sh",
+      "toPlay": "B",
+      "free": "side",
+      "tags": {
+        "name": [
+          "White T15"
+        ],
+        "black-first": "B-alive",
+        "white-first": "B-dead"
+      }
+    },
+    {
+      "id": "life & death/Bent four/Side, enclosed/White first",
+      "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,sh",
+      "toPlay": "W",
+      "free": "side",
+      "tags": {
+        "name": [
+          "White first"
+        ]
+      }
+    },
+    {
+      "id": "life & death/Bent four/Side, enclosed/White first:3b",
+      "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,sf,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,se,sh",
+      "toPlay": "W",
+      "free": "side",
+      "comments": [
+        "Two eyes"
+      ],
+      "tags": {
+        "black-first": "B-alive",
+        "white-first": "B-alive"
+      }
+    },
+    {
+      "id": "life & death/Bent four/Side, enclosed/White first/White T14",
+      "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,sf,sh",
+      "toPlay": "B",
+      "free": "side",
+      "tags": {
+        "name": [
+          "White T14"
+        ],
+        "black-first": "B-alive",
+        "white-first": "B-dead"
+      }
+    },
+    {
+      "id": "life & death/Bent four/Side, enclosed/White first:3",
+      "stones": "B:qe,qf,qg,rc,rd,re,rg,sc,se,sg W:pd,pe,pf,pg,ph,qb,qc,qd,qh,rb,rh,sb,sf,sh",
+      "toPlay": "W",
+      "free": "side",
+      "comments": [
+        "Two eyes"
+      ],
+      "tags": {
+        "black-first": "B-alive",
+        "white-first": "B-alive"
+      }
+    }
+  ],
+  "moves": [
+    {
+      "from": "life & death/Bent four/Side, enclosed",
+      "to": "life & death/Bent four/Side, enclosed/White first"
+    },
+    {
+      "from": "life & death/Bent four/Side, enclosed/White first/White T15",
+      "to": "life & death/Bent four/Side, enclosed/White first:3b",
+      "comments": [
+        "Takes the other one. {{SQ:T16}} and {{SQ:S14}} are two eyes."
+      ],
+      "tags": {
+        "kind": "main"
+      }
+    },
+    {
+      "from": "life & death/Bent four/Side, enclosed/White first",
+      "to": "life & death/Bent four/Side, enclosed/White first/White T15",
+      "comments": [
+        "Takes one middle point."
+      ],
+      "tags": {
+        "kind": "mistake"
+      }
+    },
+    {
+      "from": "life & death/Bent four/Side, enclosed/White first",
+      "to": "life & death/Bent four/Side, enclosed/White first/White T14",
+      "comments": [
+        "Takes the other middle point."
+      ],
+      "tags": {
+        "kind": "mistake"
+      }
+    },
+    {
+      "from": "life & death/Bent four/Side, enclosed/White first/White T14",
+      "to": "life & death/Bent four/Side, enclosed/White first:3",
+      "comments": [
+        "Takes the remaining middle point. {{TR:T14|The {{white}} stone}} is in atari, and {{SQ:T16}} is already an eye."
+      ],
+      "tags": {
+        "kind": "main"
+      }
+    }
+  ]
+}
