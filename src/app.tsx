@@ -414,15 +414,6 @@ export function App() {
     commit(msg)
   }
 
-  /** Focuses the first of these fields that exists, once the panel has drawn the new position. */
-  function focusLater(...ids: string[]) {
-    setTimeout(() => {
-      const el = ids.map((id) => document.getElementById(id)).find(Boolean)
-      el?.scrollIntoView({ block: 'nearest' })
-      el?.focus()
-    }, 60)
-  }
-
   /** Sets the order of the moves after the last position of `at` (docs/MODEL.md §1): the first is the main move. */
   function orderAt(at: Step[], children: Step[]) {
     orderMoves(w, ctx!, at, target, primaryLabel(ctx!, at), children)
@@ -1052,11 +1043,6 @@ export function App() {
             <hr />
           </>
         )}
-        <button role="menuitem" onClick={() => { writeAt(ctxMenu.line, 'pos', { status: 'end' }, 'Marked as joseki end'); setCtxMenu(null) }}>▣ Mark as joseki end</button>
-        <button role="menuitem" onClick={() => { writeAt(ctxMenu.line, 'pos', { status: 'end-mistake' }, 'Marked as end after a mistake'); setCtxMenu(null) }}>▣ Mark as end after a mistake</button>
-        <button role="menuitem" onClick={() => { go(ctxMenu.line); setEditTab('pos'); setCtxMenu(null); focusLater('f-pos-status', 'add-tag-pos') }}>Set the result…</button>
-        <button role="menuitem" onClick={() => { go(ctxMenu.line); setEditTab('move'); setCtxMenu(null); focusLater('f-move-comment') }}>Edit why…</button>
-        <hr />
         {ctxLast.edge && (
           <button role="menuitem" onClick={() => { makeMain(ctxMenu.line); setCtxMenu(null) }}>Make this the main move</button>
         )}

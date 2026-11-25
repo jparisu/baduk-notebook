@@ -178,7 +178,8 @@ test('the tree can start at a move, hiding the moves before it; the right-click 
   const menu = page.locator('.ctx-menu')
   const box = (await menu.boundingBox())!
   expect(box.y + box.height).toBeLessThanOrEqual(page.viewportSize()!.height)
-  await expect(menu.getByRole('menuitem', { name: /Name a joseki/ })).toHaveCount(0)
+  for (const gone of [/Name a joseki/, /Mark as joseki end/, /end after a mistake/, /Set the result/, /Edit why/]) await expect(menu.getByRole('menuitem', { name: gone })).toHaveCount(0)
+  for (const kept of ['Make this the main move', 'Copy link', 'Start the tree here', 'Hide this branch', 'Forget this branch (trail)', 'Delete this move and what follows…']) await expect(menu.getByRole('menuitem', { name: kept })).toHaveCount(1)
   await menu.getByRole('menuitem', { name: 'Start the tree here' }).click()
   await expect(page.locator('.from-chip')).toHaveText('From move 6 ✕')
   expect(await nodes.count()).toBeLessThan(before)

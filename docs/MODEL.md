@@ -279,7 +279,8 @@ The tree draws the graph around the line you are on.
 - **Ahead** (all / next 3 / 6 / 10) and zoom work in every mode.
 
 ### Design
-- Design shows the same tree with the same right-click options, plus editing (kind, comments, id, name…).
+- Design shows the same tree; its right-click menu also sets the move's kind, makes it the main move and
+  deletes it. Everything else (comments, tags, name) is in the editor next to it.
 - **Only new:** hides everything that is already in the target database except the position you
   started from.
 

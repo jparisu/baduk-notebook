@@ -6,7 +6,7 @@
 - **Find opened new joseki on an empty corner.** A database may store a line in another corner (jparisu keeps the 4-4 point at the bottom left), and positions built from it were stored there too; the board's view assumed the upper-right corner. A sequence is now shown in the orientation that puts its stones in the upper-right corner, whatever corner it is stored in.
 - **Words for board references:** inserting a reference (Link text) has a field for its words, filled with the text selected in the comment; under each comment, every reference has a row with its shape, its points (as the board shows them) and its words, to change them without editing the `{{…}}`. A space is added before a reference that would touch the previous word.
 - **Start the tree here** (right-click a move, Explore and Design): hides the moves before it; "From move N ✕" shows them again.
-- The right-click menu always fits in the window (it measures itself and scrolls if needed). "Name a joseki from here" is gone from it.
+- The right-click menu always fits in the window (it measures itself and scrolls if needed). In Design it keeps: the move's kind, Make this the main move, Copy link, Start the tree here, Hide / Show this branch, Forget this branch and Delete; "Name a joseki from here", "Mark as joseki end", "Mark as end after a mistake", "Set the result…" and "Edit why…" are gone (the editor next to it does these).
 - **Inherited tags:** the evaluation is worked out from the leaves up (the best for the player to move) and sente from the main line, for positions without their own value; values also pass from earlier positions across the start of a named sequence. The Tags tab sets this for any tag ("A position without it takes it from the moves after it").
 
 
