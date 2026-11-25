@@ -510,6 +510,14 @@ function TagEditor(p: {
             <>
               <label class="te-check"><input type="checkbox" checked={d.panel === 'sequence'} onChange={(e) => upd({ panel: (e.target as HTMLInputElement).checked ? 'sequence' : undefined })} /> About the whole sequence (read from its first position)</label>
               <label class="te-check"><input type="checkbox" checked={!!d.inherit} onChange={(e) => upd({ inherit: (e.target as HTMLInputElement).checked || undefined })} /> Later positions keep it until they set their own</label>
+              <label class="te-check te-rollup">
+                A position without it takes it from the moves after it:
+                <select id="te-rollup" value={d.rollup ?? ''} onChange={(e) => upd({ rollup: ((e.target as HTMLSelectElement).value || undefined) as TagDef['rollup'] })}>
+                  <option value="">no</option>
+                  {d.type === 'slider' && <option value="best">the best for the player to move</option>}
+                  <option value="main">the one the main move leads to</option>
+                </select>
+              </label>
             </>
           )}
           <label class="te-check"><input type="checkbox" checked={!!d.suggest} onChange={(e) => upd({ suggest: (e.target as HTMLInputElement).checked || undefined })} /> Always offered in the editor</label>

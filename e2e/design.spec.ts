@@ -168,3 +168,21 @@ test('naming a position: parents (current ones by default) can be removed and ad
   await expect(page.locator('.toast')).toContainText('Named this position "2-2 invasion"')
   await expect(page.locator('.design-board .status')).toContainText('2-2 invasion')
 })
+
+test('the tree can start at a move, hiding the moves before it; the right-click menu stays in the window', async ({ page }) => {
+  await openDesign(page, './?open=joseki/4-4+point/3-3+invasion')
+  for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowRight')
+  const nodes = page.locator('.dtree-canvas .tree-node')
+  const before = await nodes.count()
+  await page.locator('.dtree-canvas .tree-node.cur').click({ button: 'right' })
+  const menu = page.locator('.ctx-menu')
+  const box = (await menu.boundingBox())!
+  expect(box.y + box.height).toBeLessThanOrEqual(page.viewportSize()!.height)
+  await expect(menu.getByRole('menuitem', { name: /Name a joseki/ })).toHaveCount(0)
+  await menu.getByRole('menuitem', { name: 'Start the tree here' }).click()
+  await expect(page.locator('.from-chip')).toHaveText('From move 6 ✕')
+  expect(await nodes.count()).toBeLessThan(before)
+  await page.locator('.from-chip').click()
+  await expect(page.locator('.from-chip')).toHaveCount(0)
+  expect(await nodes.count()).toBe(before)
+})

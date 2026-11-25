@@ -128,14 +128,18 @@ export function EditPanel(p: EditApi) {
 
   /** A value inherited from an earlier position of the line. */
   const lf = lineFields(ctx, path)
-  const inherited = (key: string): { value: TagValue; from: number } | null => {
-    if (!isInherited(key) || read('pos', key) !== undefined) return null
+  const inherited = (key: string): { value: TagValue; from: number | 'below' } | null => {
+    if (read('pos', key) !== undefined) return null
+    // From the moves after it first (the best balance, the sente of the main line), then from earlier moves.
+    const below = lf.below(key)
+    if (below !== undefined) return { value: below, from: 'below' }
+    if (!isInherited(key)) return null
     const i = lf.source(key)
     if (i === null || i === path.length - 1) return null
     const r = lf.get(key)
     return r ? { value: r.value, from: i } : null
   }
-  const fromText = (i: number) => (i === 0 ? 'the start' : `move ${i}`)
+  const fromText = (i: number | 'below') => (i === 'below' ? 'later moves' : i === 0 ? 'the start' : `move ${i}`)
 
   /** One tag: its name (hover for its meaning), its control, where the value comes from, and ×. */
   const tagRow = (on: On, key: string) => {
@@ -240,7 +244,7 @@ export function EditPanel(p: EditApi) {
           {from === 'other' && (
             <button class="src-badge" onClick={() => p.onTarget(other!.db)} title={`Stored in ${other!.db}. Changing it here stores your own value in ${p.target}; click to edit into ${other!.db} instead.`}>{other!.db}</button>
           )}
-          {from === 'inherited' && <span class="src-badge" title="Inherited from an earlier position of the line; setting it here changes it from this move on">{fromText(inh!.from)}</span>}
+          {from === 'inherited' && <span class="src-badge" title={inh!.from === 'below' ? 'Worked out from the moves after this position; setting it here gives it its own value' : 'Inherited from an earlier position of the line; setting it here changes it from this move on'}>{fromText(inh!.from)}</span>}
           <span class="spacer" />
           {(own !== undefined || from === 'other' || (v === undefined && key in added[on])) && (
             <button class="icon ghost tag-x" title={own !== undefined || from !== 'other' ? `Remove ${labelOf(key)}` : `Remove ${labelOf(key)} from ${other!.db}`} aria-label={`Remove ${labelOf(key)}`} onClick={() => removeTag(on, key, own !== undefined)}>×</button>
@@ -262,6 +266,13 @@ export function EditPanel(p: EditApi) {
   }
 
   /** Comments: other databases' (read only, with a way to edit them there), then this database's, one box each. */
+  /** Points of a reference as the board shows them (references are stored in the record's frame). */
+  const shownPoints = (on: On) => (body: string) => {
+    const loc = where(false)
+    if (!loc) return body
+    const t = compose(on === 'move' && prev ? frame(ctx, prev) : F, loc.T)
+    return body.replace(/[A-HJ-T]\d{1,2}/g, (pt) => String(movePoint(pt, t)))
+  }
   const comments = (on: On) => {
     const own = recOf(where(false), on)?.comments ?? []
     const firstId = `f-${on}-comment`
@@ -279,9 +290,12 @@ export function EditPanel(p: EditApi) {
           </div>
         ))}
         {own.map((t, i) => (
-          <div class="comment-item" key={i}>
-            <textarea id={i === 0 ? firstId : `${firstId}-${i}`} defaultValue={t} onFocus={(e) => p.onFocusText(e.currentTarget)} onBlur={(e) => e.currentTarget.value !== t && save(own.map((x, j) => (j === i ? e.currentTarget.value : x)))} />
-            <button class="icon ghost" title="Remove this comment" aria-label="Remove this comment" onClick={() => save(own.filter((_, j) => j !== i))}>×</button>
+          <div class="comment-wrap" key={i}>
+            <div class="comment-item">
+              <textarea id={i === 0 ? firstId : `${firstId}-${i}`} defaultValue={t} onFocus={(e) => p.onFocusText(e.currentTarget)} onBlur={(e) => e.currentTarget.value !== t && save(own.map((x, j) => (j === i ? e.currentTarget.value : x)))} />
+              <button class="icon ghost" title="Remove this comment" aria-label="Remove this comment" onClick={() => save(own.filter((_, j) => j !== i))}>×</button>
+            </div>
+            <RefWords text={t} shown={shownPoints(on)} onChange={(next) => save(own.map((x, j) => (j === i ? next : x)))} />
           </div>
         ))}
         <div class="comment-item new">
@@ -498,6 +512,37 @@ function SequenceEditor({ parents: initial, name: initialName, known, action, su
         <button class="on" type="submit" disabled={!clean(name)}>{action}</button>
       </div>
     </form>
+  )
+}
+
+const REF_RE = /\{\{([A-Z]{2,4}):([^|}]*)(?:\|([^}]*))?\}\}/g
+const REF_NAMES: Record<string, string> = { TR: 'Triangle', SQ: 'Square', CR: 'Circle', MA: 'Cross', LB: 'Letter', AR: 'Arrow', LN: 'Line', WALL: 'Wall', INF: 'Influence', TB: 'Black area', TW: 'White area', CUT: 'Cutting point', EYE: 'Eye' }
+
+/**
+ * The board references of a comment ({{TR:R16|the 3-4 stone}}), one row each: its shape, its points
+ * and the words that show it. Changing the words rewrites the reference in the comment.
+ */
+function RefWords({ text, shown, onChange }: { text: string; shown: (body: string) => string; onChange: (next: string) => void }) {
+  const refs = [...text.matchAll(REF_RE)]
+  if (!refs.length) return null
+  return (
+    <div class="ref-words" aria-label="Board references in this comment">
+      {refs.map((m, i) => {
+        const [all, type, body, words] = m
+        const set = (w: string) => {
+          const next = `{{${type}:${body}${w.trim() ? '|' + w.trim() : ''}}}`
+          if (next === all) return
+          onChange(text.slice(0, m.index) + next + text.slice(m.index! + all.length))
+        }
+        return (
+          <label key={i + all} class="ref-row">
+            <span class="ref-kind" title={`${REF_NAMES[type] ?? type} on ${shown(body)}`}>{REF_NAMES[type] ?? type} <code>{shown(body)}</code></span>
+            <input value={words ?? ''} placeholder="Words that show it" aria-label={`Words for the ${(REF_NAMES[type] ?? type).toLowerCase()} on ${shown(body)}`}
+              onBlur={(e) => set(e.currentTarget.value)} onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()} />
+          </label>
+        )
+      })}
+    </div>
   )
 }
 
