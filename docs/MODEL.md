@@ -123,11 +123,20 @@ mirroring the board never changes colors.
 
 ### 3.3 Inherited tags
 
-A position without its own value for a key described with `inherit` (evaluation, sente, the life &
-death results) shows the value of the closest earlier position of the line you played. Inheritance
-stops at the start of a sequence. Names, comments, board shapes, keys that are not described and
-every move tag are never inherited. Nothing is copied: removing your own value brings the inherited
-one back.
+A position without its own value for a tag can take it from other positions. Nothing is copied:
+setting a value gives the position its own; removing it brings the other one back.
+
+1. **From the moves after it** (`rollup`), first:
+   - `best`: the best value for the player to move, from the leaves up: a balance takes the highest
+     value for Black, the lowest for White (the **evaluation**);
+   - `main`: the value the main move leads to (**sente**: who gets sente at the end of the main line).
+   The search stops at positions that have a value of their own.
+2. **From earlier positions** (`inherit`): the value of the closest earlier position of the line you
+   played, back to its start, also across the start of a named sequence (a new joseki keeps the
+   evaluation of the position it branches from) — the evaluation, sente and the life & death results.
+
+Names, status, comments, board shapes, the tags about the whole sequence (difficulty, topics,
+sources…), keys that are not described and every move tag are not inherited.
 
 ### 3.4 Showing tags
 
@@ -261,6 +270,8 @@ The tree draws the graph around the line you are on.
 
 - Placing stones moves the tree to that line. If the line leaves the databases, it branches there.
 - **Right-click a move:**
+  - **Start the tree here:** hides the moves before it (in Explore and Design); "From move N ✕" in
+    the tree's toolbar shows them again. When you step back before it, the whole tree shows.
   - **Hide this branch:** a view-only setting, kept in the browser. A "+n" badge shows what is hidden.
   - **Forget this branch:** removes it from your trail (database moves stay in the database).
   - **Remove this move** (only for moves that are not in a database): deletes it and what follows.
@@ -268,7 +279,8 @@ The tree draws the graph around the line you are on.
 - **Ahead** (all / next 3 / 6 / 10) and zoom work in every mode.
 
 ### Design
-- Design shows the same tree with the same right-click options, plus editing (kind, comments, id, name…).
+- Design shows the same tree; its right-click menu also sets the move's kind, makes it the main move and
+  deletes it. Everything else (comments, tags, name) is in the editor next to it.
 - **Only new:** hides everything that is already in the target database except the position you
   started from.
 

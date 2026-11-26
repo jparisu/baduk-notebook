@@ -93,3 +93,29 @@ test('Find: alternate placement sets who plays next, and a side shape is found a
   await expect(page.locator('.result', { has: page.locator('.pill-exact') }).first()).toContainText('Bent four')
 })
 
+
+test('Find opens a new joseki with its stones, also when its database stores it in another corner', async ({ page }) => {
+  // jparisu stores the 4-4 point in the bottom-left corner: a joseki built from it is stored there too.
+  await clickPoint(page, 'Q16')
+  await page.getByRole('button', { name: 'Edit' }).click()
+  for (const p of ['R13', 'O17']) {
+    await clickPoint(page, p)
+    await page.getByRole('tab', { name: /Move into it/ }).click()
+    await page.locator('.cat-btn', { hasText: 'Main move' }).click()
+  }
+  await page.keyboard.press('ArrowLeft')
+  await page.getByRole('tab', { name: 'Position' }).click()
+  await page.locator('#f-name-new').fill('Test low')
+  await page.getByRole('button', { name: 'Name this position' }).click()
+  await page.locator('.top').getByRole('button', { name: 'Editing' }).click()
+  // Find it in the bottom-left corner, mirrored.
+  await page.locator('.top .modes').getByText('Find').click()
+  await page.getByRole('button', { name: '● Black' }).click()
+  for (const p of ['D4', 'F3']) await clickPoint(page, p)
+  await page.getByRole('button', { name: '○ White' }).click()
+  await clickPoint(page, 'C7')
+  await page.getByRole('group', { name: 'Next to play' }).getByRole('button', { name: 'White' }).click()
+  await page.locator('.result', { hasText: 'Test low' }).first().click()
+  await expect(page.locator('.status')).toContainText('Test low')
+  await expect(page.locator('svg.board .stone-b, svg.board .stone-w')).toHaveCount(3) // the stones are in the corner shown
+})

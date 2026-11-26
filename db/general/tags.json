@@ -211,7 +211,8 @@
       ],
       "negate": true,
       "inherit": true,
-      "description": "Who is better after this position, from White (left) to Black (right)."
+      "description": "Who is better after this position, from White (left) to Black (right).",
+      "rollup": "best"
     },
     {
       "key": "status",
@@ -331,7 +332,8 @@
       "type": "color",
       "inherit": true,
       "hint": "Who can play elsewhere first",
-      "description": "Who has sente: who can play elsewhere first after this position."
+      "description": "Who has sente: who can play elsewhere first after this position.",
+      "rollup": "main"
     },
     {
       "key": "ko",

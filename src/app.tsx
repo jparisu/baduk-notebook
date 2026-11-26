@@ -1,3 +1,4 @@
+import type { ComponentChildren } from 'preact'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks'
 import {
   ArrowLeftRight, ArrowRight, Link2, BookOpen, GitBranch, Grid3x3, MessageSquare, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Search, ChevronLeft, ChevronRight, Contrast, Flag, Menu, Pencil, Plus, RotateCcw, Save,
@@ -92,12 +93,16 @@ export function App() {
   const [tool, setTool] = useState<Tool>('move')
   const [pending, setPending] = useState<Pt[]>([])
   const [refType, setRefType] = useState<string | null>(null)
+  /** The words of the reference being inserted (null: the text selected in the comment). */
+  const [refWords, setRefWords] = useState<string | null>(null)
   // The editor opens on the move you just played (its kind is what you set most); the start of a line has only its position.
   const [editTab, setEditTab] = useState<EditTab>('move')
   const [phoneTab, setPhoneTab] = useState<'next' | 'pos' | 'tree' | 'edit'>('next')
   const [toast, setToast] = useState<string | null>(null)
   // Design tab (SPEC §8.10)
   const [onlyNew, setOnlyNew] = useState(false)
+  /** The tree starts at this position when it is on the line ("Start the tree here"): the moves before it are hidden. */
+  const [treeFrom, setTreeFrom] = useState<string | null>(null)
   const [ahead, setAhead] = useState<number | null>(null)
   const [trail, setTrailState] = useState<Line[]>(loadTrail)
   const setTrail = (t: Line[]) => {
@@ -409,15 +414,6 @@ export function App() {
     commit(msg)
   }
 
-  /** Focuses the first of these fields that exists, once the panel has drawn the new position. */
-  function focusLater(...ids: string[]) {
-    setTimeout(() => {
-      const el = ids.map((id) => document.getElementById(id)).find(Boolean)
-      el?.scrollIntoView({ block: 'nearest' })
-      el?.focus()
-    }, 60)
-  }
-
   /** Sets the order of the moves after the last position of `at` (docs/MODEL.md §1): the first is the main move. */
   function orderAt(at: Step[], children: Step[]) {
     orderMoves(w, ctx!, at, target, primaryLabel(ctx!, at), children)
@@ -485,11 +481,16 @@ export function App() {
     const toFile = inverse(compose(F, loc.T))
     const names = pending.map((p) => ptName(apply(toFile, p)))
     const body = ['WALL', 'INF', 'AR'].includes(refType) ? `${names[0]}-${names[1] ?? names[0]}` : names.join(',')
-    const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd)
-    ta.setRangeText(`{{${refType}:${body}${sel ? '|' + sel : ''}}}`, ta.selectionStart, ta.selectionEnd, 'end')
+    const words = (refWords ?? ta.value.slice(ta.selectionStart, ta.selectionEnd)).trim()
+    // A space before it when it would touch the previous word (comments are trimmed when saved).
+    const gap = /\S$/.test(ta.value.slice(0, ta.selectionStart)) ? ' ' : ''
+    ta.setRangeText(`${gap}{{${refType}:${body}${words ? '|' + words : ''}}}`, ta.selectionStart, ta.selectionEnd, 'end')
+    // Store it at once (the text box saves when it loses focus).
     ta.focus()
+    ta.blur()
     setPending([])
     setRefType(null)
+    setRefWords(null)
   }
 
   function clearMarks() {
@@ -714,9 +715,15 @@ export function App() {
         <span class="grp-label" title="Insert a link in the text box you clicked last: hovering the words will show the mark">Link text</span>
         <div class="tools">
           {REF_TYPES.map(([t, name]) => (
-            <button key={t} class={refType === t ? 'on' : ''} title={`Link words to a ${name.toLowerCase()} on the board`} onClick={() => { setRefType(refType === t ? null : t); setPending([]) }}>{name}</button>
+            <button key={t} class={refType === t ? 'on' : ''} title={`Link words to a ${name.toLowerCase()} on the board`} onClick={() => { setRefType(refType === t ? null : t); setPending([]); setRefWords(null) }}>{name}</button>
           ))}
-          {refType && <button class="on" disabled={!pending.length} onClick={insertRef}>Insert{pending.length ? ` (${pending.length})` : ''}</button>}
+          {refType && (
+            <span class="ref-insert">
+              <input id="ref-words" value={refWords ?? (lastText.current ? lastText.current.value.slice(lastText.current.selectionStart, lastText.current.selectionEnd) : '')} placeholder={pending.length ? 'Words that show it' : 'Click the points on the board'}
+                aria-label="Words that show the mark" onInput={(e) => setRefWords((e.target as HTMLInputElement).value)} onKeyDown={(e) => e.key === 'Enter' && insertRef()} />
+              <button class="on" disabled={!pending.length} onClick={insertRef}>Insert{pending.length ? ` (${pending.length})` : ''}</button>
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -759,6 +766,11 @@ export function App() {
   const showHiddenBtn = folded.size > 0 && (
     <button class={showFolded ? 'on' : ''} onClick={() => setShowFolded(!showFolded)} aria-pressed={showFolded} title="Hidden branches are only hidden in this browser">Show hidden ({folded.size})</button>
   )
+  // Start the tree here: from that position of the line on (when you step back before it, the whole tree shows).
+  const fromIdx = treeFrom ? Math.max(0, path.findIndex((s) => s.key === treeFrom)) : 0
+  const fromChip = fromIdx > 0 && (
+    <button class="chip from-chip" onClick={() => setTreeFrom(null)} title="Show the moves before it again">From move {fromIdx} ✕</button>
+  )
   const treeToolbar = (
     <div class="tree-toolbar">
       {modeSeg}
@@ -769,6 +781,7 @@ export function App() {
         <button class="icon" onClick={() => setZoom(1)} disabled={zoomIdx === ZOOMS.length - 1} aria-label="Bigger tree">+</button>
       </div>
       {showHiddenBtn}
+      {fromChip}
     </div>
   )
   /**
@@ -826,7 +839,7 @@ export function App() {
       />
     )
   }
-  const treeView = treeFor({ root: 0, zoom: ZOOMS[zoomIdx] })
+  const treeView = treeFor({ root: fromIdx, zoom: ZOOMS[zoomIdx] })
   const treeLegend = (
     <div class="legend">
       <span><MoveMark cat="main" main />main move</span>
@@ -953,7 +966,7 @@ export function App() {
   const isNew = (parent: Step, child: Step) => (!!child.free && !child.edge) || !known.current?.has(`${parent.key}>${child.key}`)
   let newIdx = path.findIndex((s, i) => i > 0 && isNew(path[i - 1], s))
   newIdx = newIdx < 0 ? path.length - 1 : newIdx - 1
-  const rootIdx = mode === 'design' && onlyNew ? newIdx : 0
+  const rootIdx = Math.max(fromIdx, mode === 'design' && onlyNew ? newIdx : 0)
   const prefix = path.slice(0, rootIdx)
   const designZoom = settings.designZoom
   const setDesignZoom = (z: number) => setSettings({ ...settings, designZoom: Math.max(0.5, Math.min(2, Math.round(z * 100) / 100)) })
@@ -995,25 +1008,28 @@ export function App() {
       <button role="menuitem" onClick={() => { setTrail(erase(trail, start, movesOf(ctxMenu.line))); setCtxMenu(null); flash('Removed from the trail') }}>Forget this branch (trail)</button>
     </>
   )
+  const fromHere = ctxMenu && ctxLast && ctxMenu.line.length > 1 && (
+    <button role="menuitem" onClick={() => {
+      if (!ctxMenu.line.every((s, i) => path[i]?.key === s.key)) go(ctxMenu.line)
+      setTreeFrom(ctxLast.key)
+      setCtxMenu(null)
+    }}>Start the tree here</button>
+  )
   const exploreMenuEl = ctxMenu && ctxLast && (
     <div class="ctx-backdrop" onClick={() => setCtxMenu(null)} onContextMenu={(e) => { e.preventDefault(); setCtxMenu(null) }}>
-      <div class="ctx-menu" role="menu" style={{ left: `${Math.min(ctxMenu.x, window.innerWidth - 260)}px`, top: `${Math.min(ctxMenu.y, window.innerHeight - 200)}px` }} onClick={(e) => e.stopPropagation()}>
+      <CtxMenu x={ctxMenu.x} y={ctxMenu.y}>
+        {fromHere}
         {hideItems}
         {ctxIsFree && (
           <button role="menuitem" class="danger-text" onClick={() => { setSession(erase(session, start, movesOf(ctxMenu.line))); setTrail(erase(trail, start, movesOf(ctxMenu.line))); go(ctxMenu.line.slice(0, -2 + 1)); setCtxMenu(null); flash('Removed: it was not in your databases') }}>Remove this move and what follows</button>
         )}
         <button role="menuitem" onClick={() => { copyLink(linkFor(ctx, start, ctxMenu.line, settings.display), 'this position'); setCtxMenu(null) }}>Copy link</button>
-      </div>
+      </CtxMenu>
     </div>
   )
   const ctxMenuEl = ctxMenu && ctxLast && mode !== 'design' ? exploreMenuEl : ctxMenu && ctxLast && (
     <div class="ctx-backdrop" onClick={() => setCtxMenu(null)} onContextMenu={(e) => { e.preventDefault(); setCtxMenu(null) }}>
-      <div
-        class="ctx-menu"
-        role="menu"
-        style={{ left: `${Math.min(ctxMenu.x, window.innerWidth - 260)}px`, top: `${Math.min(ctxMenu.y, window.innerHeight - 420)}px` }}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <CtxMenu x={ctxMenu.x} y={ctxMenu.y}>
         {ctxMenu.line.length > 1 && (
           <>
             <div class="ctx-h">This move is…</div>
@@ -1027,22 +1043,17 @@ export function App() {
             <hr />
           </>
         )}
-        <button role="menuitem" onClick={() => { writeAt(ctxMenu.line, 'pos', { status: 'end' }, 'Marked as joseki end'); setCtxMenu(null) }}>▣ Mark as joseki end</button>
-        <button role="menuitem" onClick={() => { writeAt(ctxMenu.line, 'pos', { status: 'end-mistake' }, 'Marked as end after a mistake'); setCtxMenu(null) }}>▣ Mark as end after a mistake</button>
-        <button role="menuitem" onClick={() => { go(ctxMenu.line); setEditTab('pos'); setCtxMenu(null); focusLater('f-pos-status', 'add-tag-pos') }}>Set the result…</button>
-        <button role="menuitem" onClick={() => { go(ctxMenu.line); setEditTab('move'); setCtxMenu(null); focusLater('f-move-comment') }}>Edit why…</button>
-        <hr />
-        <button role="menuitem" onClick={() => { go(ctxMenu.line); setEditTab('pos'); setCtxMenu(null); focusLater('f-name-new', 'f-pos-name') }}>⚑ Name a joseki from here…</button>
         {ctxLast.edge && (
           <button role="menuitem" onClick={() => { makeMain(ctxMenu.line); setCtxMenu(null) }}>Make this the main move</button>
         )}
         <button role="menuitem" onClick={() => { copyLink(linkFor(ctx, start, ctxMenu.line, settings.display), 'this position'); setCtxMenu(null) }}>Copy link</button>
         <hr />
+        {fromHere}
         {hideItems}
         {ctxMenu.line.length > 1 && (
           <button role="menuitem" class="danger-text" onClick={() => { setCtxMenu(null); deleteAt(ctxMenu.line) }}>Delete this move and what follows…</button>
         )}
-      </div>
+      </CtxMenu>
     </div>
   )
   const designControls = (
@@ -1098,6 +1109,7 @@ export function App() {
         <div class="dtree-bar">
           {modeSeg}
           <button class={onlyNew ? 'on' : ''} aria-pressed={onlyNew} onClick={() => setOnlyNew(!onlyNew)} title="Only the moves added since you opened Design, from the position where they start">Only new</button>
+          {fromChip}
           {aheadSel}
           <div class="zoom" role="group" aria-label="Tree size">
             <button class="icon" onClick={() => setDesignZoom(designZoom - 0.15)} aria-label="Smaller tree">−</button>
@@ -1369,3 +1381,19 @@ function rebaseLine(path: Step[], source: Step[]): Step[] {
   return out.slice(path.length)
 }
 
+/** A right-click menu at (x, y) that always fits in the window: it measures itself, moves in, and scrolls if taller than the window. */
+function CtxMenu({ x, y, children }: { x: number; y: number; children: ComponentChildren }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [at, setAt] = useState({ left: x, top: y })
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const pad = 8, w = el.offsetWidth, h = Math.min(el.scrollHeight, window.innerHeight - 2 * pad)
+    setAt({ left: Math.max(pad, Math.min(x, window.innerWidth - w - pad)), top: Math.max(pad, Math.min(y, window.innerHeight - h - pad)) })
+  }, [x, y])
+  return (
+    <div ref={ref} class="ctx-menu" role="menu" style={{ left: `${at.left}px`, top: `${at.top}px`, maxHeight: 'calc(100vh - 16px)', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
+      {children}
+    </div>
+  )
+}

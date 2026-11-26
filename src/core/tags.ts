@@ -53,6 +53,11 @@ export interface TagDef {
   swapKey?: string
   /** A position without its own value shows the one of the closest earlier position of the line. */
   inherit?: boolean
+  /**
+   * A position without its own value takes it from the moves after it: "best" — the best value for the
+   * player to move, from the leaves up (a balance); "main" — the value the main move leads to.
+   */
+  rollup?: 'best' | 'main'
   /** Choice: big buttons instead of a dropdown. */
   control?: 'buttons' | 'dropdown'
   icon?: string

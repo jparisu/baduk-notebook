@@ -4,9 +4,9 @@ import { edgeCategory, labelsAt, visibleEdges } from './core/graph'
 import type { Category } from './core/kinds'
 import GoBoard from '@sabaki/go-board'
 import { isStartId } from './core/model'
-import { asList, asText, defOf, movePoint, sortKeys, swapValue, swapsValue, typeOf, type TagValue } from './core/tags'
+import { asList, asText, defOf, getRegistry, movePoint, sortKeys, swapValue, swapsValue, typeOf, type TagValue } from './core/tags'
 import { canonical } from './core/hash'
-import { apply, applySign, compose, inverse, transformMap, type Pt, type Sign, type SignMap, type Transform } from './core/geometry'
+import { SYMMETRIES, apply, applySign, compose, inverse, transformMap, type Pt, type Sign, type SignMap, type Transform } from './core/geometry'
 import { boardMarks, parseText, playerWords, transformMarks, type Mark, type Segment } from './core/refs'
 
 /**
@@ -91,9 +91,30 @@ export function rebaseLine(ctx: Ctx, entryId: string, old: Step[]): Step[] {
   return out
 }
 
+/**
+ * How a sequence is shown: in the frame its first database stores it in, unless that puts the stones
+ * elsewhere than the upper-right corner (a database may store a line in another corner); then in the
+ * orientation that brings them closest to it. The corner, mirror and color buttons, Find and links all
+ * count from the upper-right corner.
+ */
 export function rootStep(ctx: Ctx, entryId: string): Step {
   const e = ctx.graph.entries.get(entryId)!
-  return { key: e.root, D: inverse(e.contribs[0].toCanon) }
+  const stored = inverse(e.contribs[0].toCanon)
+  const board = ctx.graph.nodes.get(e.root)!.board
+  return { key: e.root, D: upperRight(board, stored) }
+}
+
+/** The transform (canonical frame → shown frame) that puts the stones in the upper-right corner; `prefer` when it already does. */
+export function upperRight(board: SignMap, prefer: Transform): Transform {
+  const pts: Pt[] = []
+  board.forEach((row, y) => row.forEach((v, x) => v && pts.push([x, y])))
+  if (!pts.length) return prefer
+  // How far toward the upper right the stones lie: right is +x, up is -y (the board's y grows downward).
+  const score = (t: Transform) => pts.reduce((sum, p) => { const [x, y] = apply(t, p); return sum + x - y }, 0)
+  const best = Math.max(...SYMMETRIES.map(score))
+  if (score({ ...prefer, swap: false }) >= best - 1e-9) return prefer
+  const t = SYMMETRIES.find((x) => score(x) >= best - 1e-9)!
+  return { ...t, swap: prefer.swap }
 }
 
 export function childStep(parent: Step, edge: Edge): Step {
@@ -275,26 +296,60 @@ export class Fields {
   }
 }
 
-/** Tags that a position takes from the earlier positions of the line until it sets its own (the tags of the databases (db/<database>/tags.json) `inherit`). */
+/** Tags that a position takes from the earlier positions of the line until it sets its own (`inherit` in the tags of the databases). */
 export const isInherited = (key: string) => !!defOf(key)?.inherit
 
-const startsSequence = (ctx: Ctx, step: Step) => node(ctx, step).contribs.some((c) => ctx.active.has(c.db) && isStartId(c.pos.id))
+/**
+ * A value worked out from the moves after a position (`rollup` in the tags of the databases):
+ * - "best": the best value for the player to move, from the leaves up (a balance: the highest for
+ *   Black, the lowest for White);
+ * - "main": the value the main move leads to.
+ * A position's own value always wins; the search stops at positions that have one.
+ */
+export function rollupValue(ctx: Ctx, step: Step, key: string, seen = new Set<string>(), memo = new Map<string, TagValue | undefined>()): TagValue | undefined {
+  const how = defOf(key)?.rollup
+  if (!how || seen.has(step.key)) return undefined
+  if (memo.has(step.key)) return memo.get(step.key)
+  seen.add(step.key)
+  let out: TagValue | undefined
+  const kids = candidates(ctx, step)
+  const valueOf = (c: Candidate) => positionFields(ctx, c.step).get(key)?.value ?? rollupValue(ctx, c.step, key, seen, memo)
+  if (how === 'main') {
+    if (kids[0]) out = valueOf(kids[0])
+  } else {
+    const vals = kids.map(valueOf).filter((v): v is number => typeof v === 'number')
+    // Black is + on a balance: Black to play takes the highest, White the lowest (in the colors shown).
+    if (vals.length) out = toMove(ctx, step) === -1 ? Math.min(...vals) : Math.max(...vals)
+  }
+  seen.delete(step.key)
+  memo.set(step.key, out)
+  return out
+}
 
 /**
- * Fields of the last position of `path`, with inherited values: a tag marked `inherit` that this position
- * does not set is read from the closest earlier position of the line, up to the start of its sequence.
+ * Fields of the last position of `path`, with values it does not set itself:
+ * 1. from the moves after it, for tags with a `rollup` (the best balance, the sente of the main line);
+ * 2. else from the closest earlier position of the line, for tags marked `inherit`, back to its start.
  */
 export class LineFields extends Fields {
   constructor(ctx: Ctx, private path: Step[]) {
     const s = path[path.length - 1]
     super(ctx, node(ctx, s).contribs, frame(ctx, s), `p:${s.key}`, node(ctx, s).toMove)
   }
-  /** Index in the line of the position the value comes from (the last one when it is its own), or null. */
+  private last() {
+    return this.path[this.path.length - 1]
+  }
+  /** The value worked out from the moves after this position, when it has none of its own. */
+  below(key: string): TagValue | undefined {
+    return super.get(key) ? undefined : rollupValue(this.ctx, this.last(), key)
+  }
+  /** Index in the line of the position the value comes from (the last one when it is its own, or when it comes from below), or null. */
   source(key: string): number | null {
     const last = this.path.length - 1
+    if (this.below(key) !== undefined) return last
     for (let i = last; i >= 0; i--) {
       if (positionFields(this.ctx, this.path[i]).get(key)) return i
-      if (!isInherited(key) || startsSequence(this.ctx, this.path[i])) return null
+      if (!isInherited(key)) return null
     }
     return null
   }
@@ -303,21 +358,23 @@ export class LineFields extends Fields {
     return i === null || i === this.path.length - 1 ? null : positionFields(this.ctx, this.path[i])
   }
   get(key: string) {
+    const below = this.below(key)
+    if (below !== undefined) return { value: below, db: '', overridden: [] }
     const f = this.at(key)
     return f ? f.get(key) : super.get(key)
   }
   list(key: string) {
+    const below = this.below(key)
+    if (below !== undefined) return asList(below)
     const f = this.at(key)
     return f ? f.list(key) : super.list(key)
   }
   keys() {
     const own = super.keys()
-    const inherited = new Set<string>()
-    for (let i = this.path.length - 2; i >= 0; i--) {
-      if (startsSequence(this.ctx, this.path[i + 1])) break
-      for (const k of positionFields(this.ctx, this.path[i]).keys()) if (isInherited(k)) inherited.add(k)
-    }
-    return sortKeys([...own, ...inherited])
+    const more = new Set<string>()
+    for (let i = this.path.length - 2; i >= 0; i--) for (const k of positionFields(this.ctx, this.path[i]).keys()) if (isInherited(k)) more.add(k)
+    for (const d of getRegistry().tags) if (d.rollup && this.below(d.key) !== undefined) more.add(d.key)
+    return sortKeys([...own, ...more])
   }
 }
 export const lineFields = (ctx: Ctx, path: Step[]) => new LineFields(ctx, path)

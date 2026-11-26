@@ -121,3 +121,28 @@ test('life & death results name the color, and Swap colors flips them', async ({
   await page.getByRole('button', { name: /Swap colors/ }).click()
   await expect(row('White plays first')).toContainText('White lives')
 })
+
+test('a board reference in a comment gets its words from a field, when inserted and afterwards', async ({ page }) => {
+  await clickPoint(page, 'Q16')
+  await clickPoint(page, 'R13') // not in the databases
+  await page.getByRole('button', { name: 'Edit' }).click()
+  await page.getByRole('tab', { name: /Move into it/ }).click()
+  const box = page.locator('#f-move-comment')
+  await box.fill('Look at ')
+  await box.blur() // saved: the comment is now the first one
+  await page.locator('#f-move-comment').click() // where the reference goes
+  await page.locator('#f-move-comment').press('End')
+  await page.locator('.edit-toolbar').getByRole('button', { name: 'Triangle', exact: true }).click()
+  await expect(page.locator('#ref-words')).toBeVisible()
+  await clickPoint(page, 'Q16')
+  await page.locator('#ref-words').fill('the 4-4 stone')
+  await page.locator('.edit-toolbar').getByRole('button', { name: /^Insert/ }).click()
+  // Stored in the database's own orientation (jparisu keeps this corner at the bottom left): shown as Q16 here.
+  await expect(page.locator('#f-move-comment')).toHaveValue(/^Look at \{\{TR:[A-T]\d+\|the 4-4 stone\}\}$/)
+  // Its words can be changed afterwards, without touching the {{…}}.
+  const words = page.getByLabel('Words for the triangle on Q16')
+  await expect(words).toHaveValue('the 4-4 stone')
+  await words.fill('this stone')
+  await words.press('Enter')
+  await expect(page.locator('#f-move-comment')).toHaveValue(/^Look at \{\{TR:[A-T]\d+\|this stone\}\}$/)
+})

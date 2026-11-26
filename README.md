@@ -42,7 +42,7 @@ Fast keys in Edit mode (when the board has focus):
 | `←` `→` `Home` `End` | Navigate (also outside Edit mode) |
 | `↓` | One move forward along the next variation instead of the line → follows |
 
-**Designing a tree** (for example every way the 2-2 invasion under the 3-3 point fails): open the **Design** tab, play the lines, switch the tree to **Only new** to see just what you add, right-click moves to classify them (Mistake, Punishment…), mark the ends and results, name the position where the variation starts (it becomes `joseki/3-3 point/2-2 invasion`), then **Save to database** and **Export / pull request → Propose on GitHub**. **Load SGF** adds every line of an SGF file; **SGF** downloads the position and what follows.
+**Designing a tree** (for example every way the 2-2 invasion under the 3-3 point fails): open the **Design** tab, play the lines, switch the tree to **Only new** to see just what you add, right-click moves to classify them (Mistake, Punishment…), set their status and results in the editor, name the position where the variation starts (it becomes `joseki/3-3 point/2-2 invasion`), then **Save to database** and **Export / pull request → Propose on GitHub**. **Load SGF** adds every line of an SGF file; **SGF** downloads the position and what follows.
 
 **Sharing**: the address bar always links to what is on the board, and the 🔗 buttons copy it. For example `https://jparisu.github.io/baduk-notebook/?open=joseki/3-4+point/Low+approach` opens that sequence at its first position; `&line=…` adds moves and `&view=br` the orientation (SPEC.md §8.9).
 
